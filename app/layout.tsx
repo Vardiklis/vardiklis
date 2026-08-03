@@ -58,6 +58,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="lt"
+      // Glotnus slinkimas galioja tik nuorodoms puslapio viduje („Kaip tai veikia").
+      // Šis atributas leidžia Next'ui jį išjungti pereinant į kitą puslapį —
+      // kitaip naršyklė lėtai nuslenka į viršų vietoj to, kad tiesiog atidarytų.
+      data-scroll-behavior="smooth"
       className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
     >
       <body className="min-h-dvh bg-paper text-ink antialiased">
