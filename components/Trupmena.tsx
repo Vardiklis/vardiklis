@@ -22,8 +22,8 @@ const dydziai: Record<Dydis, { tekstas: string; tarpas: string; storis: string }
   normalus: { tekstas: 'text-base leading-tight', tarpas: 'px-1.5 py-0.5', storis: 'h-px' },
   didelis: { tekstas: 'text-xl leading-tight', tarpas: 'px-2 py-1', storis: 'h-0.5' },
   hero: {
-    tekstas: 'text-[1.0625rem] md:text-xl leading-snug',
-    tarpas: 'px-1 py-2 md:py-3',
+    tekstas: 'leading-snug',
+    tarpas: 'px-2 py-3 md:py-4',
     storis: 'h-0.5',
   },
 }

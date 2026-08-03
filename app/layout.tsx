@@ -6,9 +6,10 @@ import { svetaine } from '@/lib/kontaktai'
 import './globals.css'
 
 // `latin-ext` privalomas — be jo lūžta ą č ę ė į š ų ū ž.
+// Display naudojamas tik 600 svoriu — 400 nekraunam.
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin', 'latin-ext'],
-  weight: ['400', '600'],
+  weight: ['600'],
   display: 'swap',
   variable: '--font-bricolage',
 })
@@ -20,10 +21,12 @@ const instrument = Instrument_Sans({
   variable: '--font-instrument',
 })
 
+// Mono nenaudojamas virš lanksto — nepreloadinam, kad neužimtų juostos nuo LCP.
 const jetbrains = JetBrains_Mono({
   subsets: ['latin', 'latin-ext'],
   weight: ['400', '600'],
   display: 'swap',
+  preload: false,
   variable: '--font-jetbrains',
 })
 

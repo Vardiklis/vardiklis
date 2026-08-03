@@ -5,7 +5,9 @@ type Variantas = 'pilnas' | 'konturas' | 'tekstinis'
 type Dydis = 'normalus' | 'didelis'
 
 const variantai: Record<Variantas, string> = {
-  pilnas: 'border border-orange bg-orange text-white hover:bg-[#E65300]',
+  // Tekstas ant oranžinės — `--ink`, ne balta. Balta ant #FF5C00 duoda 3.09:1
+  // ir nepraeina WCAG AA; `--ink` duoda 6.17:1 nekeičiant signature spalvos.
+  pilnas: 'border border-orange bg-orange text-ink hover:bg-[#F05600]',
   konturas: 'border border-line bg-paper text-ink hover:border-ink',
   tekstinis:
     'border border-transparent bg-transparent text-ink underline-offset-4 hover:text-orange hover:underline',
