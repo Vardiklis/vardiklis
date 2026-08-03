@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "patikra": "tsx scripts/patikrink-generatorius.ts 100"
+    "patikra": "tsx scripts/patikrink-generatorius.ts 100",
+    "patikra:diagnostika": "tsx scripts/patikrink-diagnostika.ts"
   },
   "dependencies": {
     "@types/katex": "^0.16.8",
