@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Antraste from '@/components/Antraste'
 import BruksnysDivider from '@/components/BruksnysDivider'
+import JsonLd from '@/components/JsonLd'
 import Mygtukas from '@/components/Mygtukas'
 import Trupmena from '@/components/Trupmena'
 
@@ -48,6 +49,8 @@ const ataskaitosDalys = [
 export default function Pradzia() {
   return (
     <>
+      <JsonLd />
+
       {/* Hero */}
       <section className="turinys pt-16 pb-20 md:pt-24 md:pb-28">
         <h1 className="display-xl max-w-[15ch]">

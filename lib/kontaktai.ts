@@ -1,16 +1,17 @@
 /**
  * Vienintelė kontaktų vieta. Pakeitus čia — pasikeičia visoje svetainėje.
- *
- * TODO(Modesta): pakeisti placeholder'ius tikrais duomenimis prieš paleidimą.
  */
 export const kontaktai = {
   vardas: 'Modesta',
   pareigos: 'matematikos korepetitorė',
-  elPastas: 'modesta@vardiklis.lt', // placeholder
-  telefonas: '+370 600 00000', // placeholder
-  telefonasNuoroda: '+37060000000', // placeholder
-  messenger: '', // placeholder — palikta tuščia, kol nėra tikros nuorodos
-  miestas: 'Vilnius', // placeholder
+  elPastas: 'korepetitore.modesta@gmail.com',
+  telefonas: '+370 636 65873',
+  telefonasNuoroda: '+37063665873',
+  messenger: '',
+  // TODO(Modesta): jei dirbama ir gyvai konkrečiame mieste — įrašyk jį čia,
+  // tada jis atsiras poraštėje, „Apie" puslapyje ir struktūriniuose duomenyse.
+  miestas: '',
+  vietove: 'Nuotoliu ir gyvai',
 } as const
 
 export const svetaine = {

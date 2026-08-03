@@ -53,7 +53,7 @@ export function Poraste() {
                 {kontaktai.telefonas}
               </a>
             </li>
-            <li className="t-small text-muted">{kontaktai.miestas} ir nuotoliu</li>
+            <li className="t-small text-muted">{kontaktai.vietove}</li>
           </ul>
         </div>
       </div>
