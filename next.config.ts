@@ -1,7 +1,11 @@
-import type { NextConfig } from "next";
+import { fileURLToPath } from 'node:url'
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  // Aiškiai nurodom šaknį — aukščiau esantis package-lock.json klaidina Turbopack.
+  turbopack: {
+    root: fileURLToPath(new URL('.', import.meta.url)),
+  },
+}
 
-export default nextConfig;
+export default nextConfig

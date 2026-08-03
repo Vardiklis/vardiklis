@@ -1,26 +1,212 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #ffffff;
+  --paper-2: #faf8f6;
+  --ink: #12100e;
+  --muted: #6b655f;
+  --line: #e7e3df;
+  --orange: #ff5c00;
+  --orange-soft: #fff0e6;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --radius-kortele: 8px;
+  --radius-mygtukas: 6px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 400;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--orange);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--orange-soft);
+    color: var(--ink);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Tipografijos skalė — 5.2. Tik du svoriai: 400 ir 600. */
+  .display-xl {
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 6vw, 4.5rem);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .display-l {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .t-h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .t-h3 {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .t-body {
+    font-size: 1.0625rem;
+    font-weight: 400;
+    line-height: 1.65;
+  }
+
+  .t-small {
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .t-mono {
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Išdėstymas — 5.4 */
+  .turinys {
+    width: 100%;
+    max-width: 68rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  .tekstas {
+    max-width: 40rem;
+  }
+
+  .sekcija {
+    padding-block: 64px;
+  }
+
+  @media (min-width: 768px) {
+    .sekcija {
+      padding-block: 96px;
+    }
+  }
+}
+
+/* KaTeX derinamas prie aplinkinio teksto, ne atvirkščiai */
+.katex {
+  font-size: 1.05em;
+}
+
+.katex-display {
+  margin: 0;
+}
+
+/* Vienintelis judesys visame puslapyje — 5.3 */
+@keyframes vardiklis-iskyla {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animacija-vardiklis {
+  animation: vardiklis-iskyla 500ms ease-out 400ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animacija-vardiklis {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Spausdinimas — 6.4: tvarkingas darbo lapas, juoda ant balto */
+@media print {
+  :root {
+    --paper: #ffffff;
+    --paper-2: #ffffff;
+    --ink: #000000;
+    --muted: #333333;
+    --line: #999999;
+    --orange: #000000;
+    --orange-soft: #ffffff;
+  }
+
+  .be-spausdinimo {
+    display: none !important;
+  }
+
+  body {
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .sekcija {
+    padding-block: 0;
+  }
+
+  .spausdinimo-blokas {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
