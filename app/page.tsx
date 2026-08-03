@@ -69,11 +69,11 @@ export default function Pradzia() {
             bruksnys="orange"
             animuotas
             skaitiklis={
-              <span className="t-body text-muted md:text-xl">dvejetas 7 klasėje</span>
+              <span className="t-body text-muted md:text-xl">Dvejetas iš lygčių su trupmenomis 7 klasėje</span>
             }
             vardiklis={
               <span className="font-display text-2xl font-semibold tracking-[-0.02em] md:text-4xl">
-                bendravardiklinimas, 5 klasė
+                Neišmoktas bendravardiklinimas 5 klasėje
               </span>
             }
           />
@@ -158,22 +158,22 @@ export default function Pradzia() {
           <BruksnysDivider className="mb-12" />
           <div className="md:grid md:grid-cols-[1fr_1fr] md:items-start md:gap-16">
             <Antraste lygis={2} dydis="display-l">
-              Kas yra Modesta
+              Apie mane
             </Antraste>
 
             <div className="mt-8 md:mt-0">
               <p className="tekstas t-body text-muted">
-                Modesta — matematikos korepetitorė, dirbanti su 1–10 klasių mokiniais. Prie kiekvieno
-                vaiko ji pradeda ne nuo šios savaitės temos, o nuo klausimo, kurioje vietoje
+                Aš esu Modesta — matematikos korepetitorė, dirbanti su 1–10 klasių mokiniais. Prie kiekvieno
+                vaiko pradedu ne nuo šios savaitės temos, o nuo klausimo, kurioje vietoje
                 grandinė nutrūko. Diagnostika, kurią matote šioje svetainėje, yra tas pats metodas,
-                kurį ji taiko pirmoje pamokoje.
+                kurį taikau pirmoje pamokoje.
               </p>
               <p className="mt-6">
                 <Link
                   href="/apie"
                   className="t-body font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange"
                 >
-                  Plačiau apie Modestą ir metodiką
+                  Plačiau apie mane ir metodiką
                 </Link>
               </p>
             </div>
