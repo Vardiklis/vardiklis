@@ -28,7 +28,10 @@ type BendriProps = {
   children: ReactNode
 }
 
-type NuorodosProps = BendriProps & { href: string }
+type NuorodosProps = BendriProps & {
+  href: string
+  onClick?: () => void
+}
 
 type MygtukoProps = BendriProps &
   Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'>
@@ -43,8 +46,9 @@ export function Mygtukas({
   const stilius = `${baze} ${variantai[variantas]} ${dydziai[dydis]} ${className}`
 
   if ('href' in likusieji && typeof likusieji.href === 'string') {
+    const { href, onClick } = likusieji as NuorodosProps
     return (
-      <Link href={likusieji.href} className={stilius}>
+      <Link href={href} onClick={onClick} className={stilius}>
         {children}
       </Link>
     )

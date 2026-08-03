@@ -11,11 +11,6 @@ export function Navigacija() {
   const kelias = usePathname()
   const [atidarytas, setAtidarytas] = useState(false)
 
-  // Perėjus į kitą puslapį meniu užsidaro.
-  useEffect(() => {
-    setAtidarytas(false)
-  }, [kelias])
-
   useEffect(() => {
     if (!atidarytas) return
     const uzdaryk = (e: KeyboardEvent) => {
@@ -73,6 +68,7 @@ export function Navigacija() {
                 <Link
                   href={n.href}
                   aria-current={kelias === n.href ? 'page' : undefined}
+                  onClick={() => setAtidarytas(false)}
                   className="block border-b border-line py-3.5 t-body last:border-0"
                 >
                   {n.tekstas}
@@ -81,7 +77,7 @@ export function Navigacija() {
             ))}
           </ul>
           <div className="turinys pb-5">
-            <Mygtukas href="/testas" className="w-full">
+            <Mygtukas href="/testas" onClick={() => setAtidarytas(false)} className="w-full">
               Pradėti diagnostiką
             </Mygtukas>
           </div>
