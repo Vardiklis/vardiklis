@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #ffffff;
-  --paper-2: #faf8f6;
+  /* Dramblio kaulo fonas. Ribos ir orange-soft patamsinti tiek, kad ant
+     šiltesnio popieriaus liktų tokie pat matomi, kaip buvo ant balto. */
+  --paper: #fbf8f2;
+  --paper-2: #f3eee4;
   --ink: #12100e;
   --muted: #6b655f;
-  --line: #e7e3df;
+  --line: #e4ded2;
   --orange: #ff5c00;
-  --orange-soft: #fff0e6;
+  --orange-soft: #ffe9da;
 }
 
 @theme inline {

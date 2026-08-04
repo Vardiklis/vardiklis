@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import Klaviatura from '@/components/Klaviatura'
 import Mygtukas from '@/components/Mygtukas'
 import Trupmena from '@/components/Trupmena'
 import {
@@ -31,6 +32,7 @@ export function Testas() {
   const [busena, setBusena] = useState<Busena | null>(null)
   const [ivestis, setIvestis] = useState('')
   const [rysys, setRysys] = useState<GriztamasisRysys | null>(null)
+  const [klaviatura, setKlaviatura] = useState(false)
   const laukas = useRef<HTMLInputElement>(null)
 
   const uzdavinys = busena ? dabartinisUzdavinys(busena) : null
@@ -150,7 +152,9 @@ export function Testas() {
             id="atsakymas"
             ref={laukas}
             type="text"
-            inputMode="decimal"
+            // Kai atidaryta sava klaviatūra, telefono klaviatūros nekviečiam —
+            // kitaip abi grumtųsi dėl ekrano.
+            inputMode={klaviatura ? 'none' : 'decimal'}
             autoComplete="off"
             value={ivestis}
             readOnly={rysys !== null}
@@ -168,7 +172,31 @@ export function Testas() {
               Tikrinti
             </Mygtukas>
           )}
+
+          <button
+            type="button"
+            onClick={() => setKlaviatura((v) => !v)}
+            aria-expanded={klaviatura}
+            aria-controls="matematikos-klaviatura"
+            className="inline-flex items-center gap-2 rounded-[6px] border border-line bg-paper px-4 py-3 t-small transition-colors hover:border-ink"
+          >
+            <span aria-hidden="true" className="font-mono text-base leading-none">
+              ⌨
+            </span>
+            Klaviatūra
+          </button>
         </div>
+
+        {klaviatura && (
+          <div id="matematikos-klaviatura">
+            <Klaviatura
+              reiksme={ivestis}
+              onKeisti={setIvestis}
+              onUzdaryti={() => setKlaviatura(false)}
+              isjungta={rysys !== null}
+            />
+          </div>
+        )}
       </form>
 
       <div aria-live="polite" className="mt-6">

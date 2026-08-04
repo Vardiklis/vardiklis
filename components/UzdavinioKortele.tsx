@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import type { Uzdavinys } from '@/lib/generatoriai'
+import { arTeisingas } from '@/lib/matematika'
 import Formule from './Formule'
 
 type Props = {
@@ -11,9 +13,17 @@ type Props = {
 
 /**
  * Viena uždavinio kortelė uždavinių sąraše.
+ *
+ * Langelis atsakymui yra tikras įvesties laukas — jame galima spręsti ekrane,
+ * o atspausdintame lape jis lieka tuščias langelis rašymui ranka.
  * Spausdinant kortelė nelaužoma per puslapio ribą (`spausdinimo-blokas`).
  */
 export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) {
+  const [ivestis, setIvestis] = useState('')
+
+  const kazkasIvesta = ivestis.trim() !== ''
+  const teisinga = kazkasIvesta && arTeisingas(ivestis, uzdavinys.atsakymas)
+
   return (
     <li className="spausdinimo-blokas rounded-[8px] border border-line bg-paper p-5 md:p-6">
       <div className="flex gap-4">
@@ -25,12 +35,52 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
         </span>
 
         <div className="min-w-0 grow">
-          <Formule
-            tekstas={uzdavinys.klausimas}
-            className="block font-mono text-[1.0625rem] leading-relaxed"
-          />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+            <Formule
+              tekstas={uzdavinys.klausimas}
+              className="font-mono text-[1.0625rem] leading-relaxed"
+            />
 
-          {rodytiAtsakyma ? (
+            <span className="inline-flex items-center gap-2">
+              <label htmlFor={`atsakymas-${uzdavinys.id}`} className="sr-only">
+                Uždavinio {numeris} atsakymas
+              </label>
+              <input
+                id={`atsakymas-${uzdavinys.id}`}
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={ivestis}
+                onChange={(e) => setIvestis(e.target.value)}
+                placeholder="?"
+                aria-describedby={
+                  rodytiAtsakyma && kazkasIvesta ? `vertinimas-${uzdavinys.id}` : undefined
+                }
+                className={`w-28 rounded-[6px] border bg-paper px-3 py-2 text-center font-mono text-[1.0625rem] text-ink placeholder:text-muted/50 print:h-9 print:w-32 ${
+                  rodytiAtsakyma && kazkasIvesta
+                    ? teisinga
+                      ? 'border-ink'
+                      : 'border-orange bg-orange-soft'
+                    : 'border-line'
+                }`}
+              />
+
+              {/* Vertinimas rodomas tik atskleidus atsakymus — kitaip langelis
+                  virstų viktorina ir uždaviniai nustotų būti darbo lapu. */}
+              {rodytiAtsakyma && kazkasIvesta && (
+                <span
+                  id={`vertinimas-${uzdavinys.id}`}
+                  className={`be-spausdinimo t-small font-semibold ${
+                    teisinga ? 'text-ink' : 'text-orange'
+                  }`}
+                >
+                  {teisinga ? 'gerai' : 'ne'}
+                </span>
+              )}
+            </span>
+          </div>
+
+          {rodytiAtsakyma && (
             <div className="mt-4 border-t border-line pt-3">
               <p className="flex flex-wrap items-baseline gap-2">
                 <span className="t-small text-muted">Atsakymas:</span>
@@ -46,9 +96,6 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
                 />
               )}
             </div>
-          ) : (
-            // Vieta atsakymui ranka — kad išspausdintas lapas būtų naudingas.
-            <div className="mt-5 h-8 border-b border-line print:mt-6" aria-hidden="true" />
           )}
         </div>
       </div>

@@ -1,4 +1,6 @@
+import Image from 'next/image'
 import Link from 'next/link'
+import modestaNuotrauka from '@/public/Modesta.jpg'
 import Antraste from '@/components/Antraste'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import JsonLd from '@/components/JsonLd'
@@ -7,42 +9,42 @@ import Trupmena from '@/components/Trupmena'
 
 const priezastys = [
   {
-    antraste: 'Mokykla mato simptomą',
+    antraste: 'Pažymys parodo tik pasekmę',
     tekstas:
-      'Kontroliniame dvejetas iš lygčių. Mokytoja aiškina lygtis dar kartą. Vaikas vėl nesupranta, nes trūksta ne to.',
+      'Kontroliniame – dvejetas. Tačiau dar kartą paaiškinti tą pačią temą ne visada pakanka, nes sunkumą gali lemti anksčiau likusi žinių spraga.',
   },
   {
     antraste: 'Matematika sluoksniuota',
     tekstas:
-      'Kiekviena tema remiasi ankstesnėmis. Viena spraga penktoje klasėje blokuoja viską, kas ant jos statoma.',
+      'Kiekviena nauja tema remiasi tuo, kas išmokta anksčiau. Jei vienas pagrindas neįtvirtintas, vėliau gali pradėti strigti kelios skirtingos temos.',
   },
   {
-    antraste: 'Diagnostika kapstosi žemyn',
+    antraste: 'Diagnostika randa pradžios tašką',
     tekstas:
-      'Testas atseka temas atgal, kol randa vietą, kur vaikas dar tvirtas. Ten ir prasideda darbas.',
+      'Testas grįžta prie ankstesnių temų ir nustato, kur žinios dar tvirtos, o kur atsirado pirmoji spraga. Nuo tos vietos pradedamas mokymasis.',
   },
 ]
 
 const zingsniai = [
   'Nurodote vaiko klasę',
-  'Vaikas sprendžia uždavinius — testas prisitaiko prie atsakymų',
-  'Neišlaikius temos, testas nusileidžia į ankstesnes',
-  'Gaunate ataskaitą: kurioje klasėje spraga, ką ji blokuoja, kiek laiko taisyti',
+  'Vaikas sprendžia testą — testas prisitaiko prie atsakymų',
+  'Aptikęs spragą, testas grįžta prie ankstesnių temų ir ieško jos pradžios',
+  'Gaunate ataskaitą: kur atsirado spraga, ką ji veikia, ir kiek laiko reikės ją užpildyti',
 ]
 
 const ataskaitosDalys = [
   {
-    antraste: 'Spraga paprastais žodžiais',
-    pavyzdys: 'Vaikas nemoka bendravardiklinti trupmenų. Tai 5 klasės tema.',
+    antraste: 'Kur yra spraga',
+    pavyzdys: 'Vaikui sunku laikytis veiksmų atlikimo tvarkos ir teisingai atlikti veiksmus su skliaustais. Ši spraga siekia 5 klasės temas.',
   },
   {
-    antraste: 'Ką ji blokuoja',
+    antraste: 'Kur ji trukdo',
     pavyzdys:
-      'Dėl to neįmanomos lygtys, procentai ir proporcijos — visa ši mokslo metų dalis.',
+      'Dėl to kyla sunkumų skaičiuojant reiškinius ir sprendžiant lygtis 7 klasėje.',
   },
   {
-    antraste: 'Kiek laiko taisyti',
-    pavyzdys: 'Apie 6 savaites, vieną kartą per savaitę.',
+    antraste: 'Rekomenduojamas mokymosi planas',
+    pavyzdys: 'Numatomas laikas spragai užpildyti – apie 6 savaites, mokantis kartą per savaitę.',
   },
 ]
 
@@ -54,12 +56,10 @@ export default function Pradzia() {
       {/* Hero */}
       <section className="turinys pt-16 pb-20 md:pt-24 md:pb-28">
         <h1 className="display-xl max-w-[15ch]">
-          Dvejetas septintoje klasėje beveik visada prasidėjo penktoje.
-        </h1>
-
+          Šiandienos dvejetas – nepašalinta spraga prieš dvejus metus.
+          </h1>
         <p className="tekstas mt-7 t-body text-muted">
-          Nemokama diagnostika parodo, kurioje klasėje vaikui iš tikrųjų nutrūko matematika — ir
-          kiek laiko užtrunka tai sutaisyti.
+           Nemokama diagnostika parodo, kurioje klasėje pradėjo formuotis matematikos spragos — ir kiek laiko prireiks jas pašalinti
         </p>
 
         {/* Signature trupmena — produkto tezė, ne dekoracija (5.3) */}
@@ -69,11 +69,11 @@ export default function Pradzia() {
             bruksnys="orange"
             animuotas
             skaitiklis={
-              <span className="t-body text-muted md:text-xl">Dvejetas iš lygčių su trupmenomis 7 klasėje</span>
+              <span className="t-body text-muted md:text-xl">Sunkumai skaičiuojant plotą ir tūrį 7 klasėje</span>
             }
             vardiklis={
               <span className="font-display text-2xl font-semibold tracking-[-0.02em] md:text-4xl">
-                Neišmoktas bendravardiklinimas 5 klasėje
+                 Neįtvirtintas matavimo vienetų keitimas 5 klasėje
               </span>
             }
           />
@@ -157,9 +157,19 @@ export default function Pradzia() {
         <div className="turinys sekcija">
           <BruksnysDivider className="mb-12" />
           <div className="md:grid md:grid-cols-[1fr_1fr] md:items-start md:gap-16">
-            <Antraste lygis={2} dydis="display-l">
-              Apie mane
-            </Antraste>
+            <div>
+              <Antraste lygis={2} dydis="display-l">
+                Apie mane
+              </Antraste>
+
+              <Image
+                src={modestaNuotrauka}
+                alt="Modesta, matematikos korepetitorė"
+                className="mt-8 w-full max-w-xs rounded-[8px] border border-line"
+                sizes="(min-width: 768px) 20rem, 100vw"
+                placeholder="blur"
+              />
+            </div>
 
             <div className="mt-8 md:mt-0">
               <p className="tekstas t-body text-muted">

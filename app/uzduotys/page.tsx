@@ -19,10 +19,10 @@ export default function Uzduotys() {
       <Antraste
         lygis={1}
         dydis="display-l"
-        paantraste="Kiekvieną kartą sugeneruojami nauji uždaviniai su tais pačiais principais. Skaičiai parenkami taip, kad atsakymai būtų tvarkingi, o ne bjaurios trupmenos."
+        paantraste="Visos 1–10 klasių programos temos vienoje vietoje. Kiekvieną kartą sugeneruojami nauji uždaviniai su tais pačiais principais. Skaičiai parenkami taip, kad atsakymai būtų tvarkingi, o ne bjaurios trupmenos."
         className="be-spausdinimo"
       >
-        Uždavinių generatorius
+        Uždavinių biblioteka
       </Antraste>
 
       <UzduociuGeneratorius />

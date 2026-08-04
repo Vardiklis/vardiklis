@@ -11,6 +11,7 @@ import katex from 'katex'
 import { generatoriai } from '../lib/generatoriai/index'
 import type { Lygis, Uzdavinys } from '../lib/generatoriai/tipai'
 import { normalizuok } from '../lib/matematika'
+import { programa } from '../lib/programa'
 import { temos } from '../lib/temos'
 
 const KIEK = Number(process.argv[2] ?? 100)
@@ -58,11 +59,26 @@ function patikrinkGrafa(): void {
   }
   for (const t of temos) zemyn(t.id, [])
 
+  // Generatorius naudojamas arba diagnostikos grafe, arba uždavinių bibliotekoje.
+  const programosGeneratoriai = new Set(
+    programa.flatMap((k) => k.temos.map((t) => t.generatorius).filter(Boolean)),
+  )
   const nenaudojami = Object.keys(generatoriai).filter(
-    (g) => !temos.some((t) => t.generatorius === g),
+    (g) => !temos.some((t) => t.generatorius === g) && !programosGeneratoriai.has(g),
   )
   if (nenaudojami.length > 0) {
     perspejimai.push(`Generatoriai be temos: ${nenaudojami.join(', ')}`)
+  }
+
+  // Programa negali rodyti temos su neegzistuojančiu generatoriumi.
+  for (const k of programa) {
+    for (const t of k.temos) {
+      if (t.generatorius && !(t.generatorius in generatoriai)) {
+        klaidos.push(
+          `Programa: ${k.klase} kl. tema „${t.pavadinimas}" nurodo nežinomą generatorių "${t.generatorius}"`,
+        )
+      }
+    }
   }
 }
 
@@ -106,10 +122,15 @@ function patikrinkUzdavini(u: Uzdavinys, vardas: string, lygis: Lygis): void {
 
   const skaicius = kaipTrupmena(u.atsakymas)
   if (skaicius) {
-    if (skaicius.vd > 20) {
+    // Vardiklis, kuris dalija 1000, reiškia dešimtainę trupmeną (0,39 → 39/100).
+    // Tokie atsakymai tvarkingi; bjaurūs yra tik nedalūs vardikliai.
+    const desimtaine = 1000 % skaicius.vd === 0
+    if (!desimtaine && skaicius.vd > 20) {
       klaidos.push(`${kur}: bjaurus vardiklis ${skaicius.vd} atsakyme "${u.atsakymas}"`)
     }
-    if (Math.abs(skaicius.sk) > 5000) {
+    // Riba plati sąmoningai: 4 klasės programoje yra skaičiai iki 1 000 000,
+    // o kombinatorikoje — kėliniai. Tikroji bjaurumo riba yra vardiklis.
+    if (Math.abs(skaicius.sk) > 1_000_000) {
       klaidos.push(`${kur}: per didelis skaičius atsakyme "${u.atsakymas}"`)
     }
   } else {

@@ -1,31 +1,136 @@
+import {
+  funkcijos,
+  greitosiosFormules,
+  lygciuSistemos,
+  nelygybes,
+  raidiniaiReiskiniai,
+  saknys,
+} from './algebra'
 import { dalumas } from './dalumas'
+import {
+  apskritimas,
+  kampai,
+  perimetras,
+  pitagoras,
+  plotasTuris,
+  trigonometrija,
+} from './geometrija'
 import { kvadratinesLygtys, tiesinesLygtys } from './lygtys'
 import { laipsniai } from './laipsniai'
 import { neigiami } from './neigiami'
+import {
+  apvalinimas,
+  dalisIrVisuma,
+  desimtaines,
+  laikas,
+  matavimoVienetai,
+  pinigai,
+  sekos,
+  skaiciuPalyginimas,
+  sudetisAtimtis,
+  veiksmuTvarka,
+} from './pradinukams'
 import { procentai } from './procentai'
 import { proporcijos } from './proporcijos'
 import { sveikieji } from './sveikieji'
+import {
+  atvirkstinis,
+  greitis,
+  kombinatorika,
+  palukanos,
+  tikimybe,
+  vidurkis,
+} from './taikomieji'
 import { bendravardiklinimas, trupmenuDaugyba, trupmenuSudetis } from './trupmenos'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 export type { Generatorius, Lygis, Uzdavinys }
 
 /**
- * Generatorių registras. Raktas — `Tema.generatorius` reikšmė iš `lib/temos.ts`.
- * Pridedant naują generatorių pakanka įrašyti jį čia ir nurodyti temoje.
+ * Generatorių registras. Raktas naudojamas `lib/temos.ts` (diagnostikos grafe)
+ * ir `lib/programa.ts` (uždavinių bibliotekoje).
+ *
+ * Pridedant naują generatorių pakanka įrašyti jį čia ir nurodyti raktą temoje.
  */
 export const generatoriai: Record<string, Generatorius> = {
+  // Aritmetika ir pradinės klasės
+  'sudetis-atimtis': sudetisAtimtis,
+  'skaiciu-palyginimas': skaiciuPalyginimas,
+  sekos,
+  'dalies-radimas': dalisIrVisuma,
+  pinigai,
+  laikas,
+  'matavimo-vienetai': matavimoVienetai,
+  apvalinimas,
+  'veiksmu-tvarka': veiksmuTvarka,
+  desimtaines,
   sveikieji,
+
+  // Trupmenos ir skaičiai
   dalumas,
   bendravardiklinimas,
-  neigiami,
   'trupmenu-sudetis': trupmenuSudetis,
   'trupmenu-daugyba': trupmenuDaugyba,
+  neigiami,
   procentai,
+
+  // Algebra
+  'raidiniai-reiskiniai': raidiniaiReiskiniai,
   'tiesines-lygtys': tiesinesLygtys,
-  proporcijos,
+  nelygybes,
   laipsniai,
+  saknys,
+  'greitosios-formules': greitosiosFormules,
+  'lygciu-sistemos': lygciuSistemos,
   'kvadratines-lygtys': kvadratinesLygtys,
+  funkcijos,
+
+  // Proporcingumas ir taikymai
+  proporcijos,
+  atvirkstinis,
+  greitis,
+  palukanos,
+
+  // Geometrija
+  perimetras,
+  'plotas-turis': plotasTuris,
+  kampai,
+  pitagoras,
+  apskritimas,
+  trigonometrija,
+
+  // Duomenys ir tikimybės
+  vidurkis,
+  tikimybe,
+  kombinatorika,
+}
+
+/**
+ * Temos, iš kurių sudaromas mišrus pasiruošimo PUPP rinkinys.
+ * Tai ne NŠA užduotis, o mūsų uždaviniai iš tų pačių turinio sričių.
+ */
+const PUPP_TEMOS = [
+  'trupmenu-sudetis',
+  'procentai',
+  'neigiami',
+  'tiesines-lygtys',
+  'proporcijos',
+  'laipsniai',
+  'saknys',
+  'greitosios-formules',
+  'lygciu-sistemos',
+  'kvadratines-lygtys',
+  'funkcijos',
+  'pitagoras',
+  'plotas-turis',
+  'trigonometrija',
+  'vidurkis',
+  'tikimybe',
+] as const
+
+generatoriai.pupp = (lygis) => {
+  const vardas = PUPP_TEMOS[Math.floor(Math.random() * PUPP_TEMOS.length)]
+  return generatoriai[vardas](lygis)
 }
 
 /** Ar toks generatorius egzistuoja. */

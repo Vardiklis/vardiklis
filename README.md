@@ -47,6 +47,26 @@ uždavinių pavyzdžius peržiūrai.
 
 ## Kur ką redaguoti
 
+### Uždavinių biblioteka — `lib/programa.ts`
+
+Visa 1–10 klasių matematikos programa (104 stambieji punktai) surašyta duomenų failu.
+Jį naudoja `/uzduotys` puslapis. Tai atskiras dalykas nuo diagnostikos grafo: programa
+yra tai, ką vaikas mokosi mokykloje, o grafas — tai, kuo tema remiasi.
+
+```ts
+{
+  numeris: 3,                              // rodomas paryškintas
+  pavadinimas: 'Daugyba, dalyba',
+  potemes: ['Daugybos lentelė', '...'],
+  generatorius: 'sveikieji',               // jei nėra — tema rodoma kaip „netrukus"
+  lygis: 1,                                // numatytasis sunkumas
+}
+```
+
+Tema be `generatorius` lauko svetainėje rodoma pilka su žyme „netrukus". Taip matyti,
+kur biblioteką verta pildyti toliau — geometrijos braižymas, algoritmai ir duomenų
+interpretavimas kol kas be uždavinių, nes jiems reikia brėžinio ar duomenų rinkinio.
+
 ### Prielaidų grafas — `lib/temos.ts`
 
 **Tai duomenų failas.** Jame nėra ir neturi atsirasti jokios logikos — tik temų sąrašas.
@@ -177,8 +197,8 @@ scripts/                      patikros, nekeliaujančios į produkciją
 
 ## Dizainas
 
-Balta, oranžiniai akcentai, be gradientų, šešėlių ir blur efektų. Spalvos ir tipografijos
-skalė — `app/globals.css`.
+Dramblio kaulo fonas, oranžiniai akcentai, be gradientų, šešėlių ir blur efektų.
+Spalvos ir tipografijos skalė — `app/globals.css`.
 
 Signature elementas — trupmenos brūkšnys (`components/Trupmena.tsx`,
 `components/BruksnysDivider.tsx`). Trupmenos visur rašomos stackuotai.

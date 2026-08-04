@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     template: '%s — Vardiklis',
   },
   description:
-    'Nemokama diagnostika parodo, kurioje klasėje vaikui iš tikrųjų nutrūko matematika — ir kiek laiko užtrunka tai sutaisyti.',
+    'Nemokama diagnostika parodo, kurioje klasėje pradėjo formuotis matematikos spragos — ir kiek laiko prireiks jas pašalinti.',
   openGraph: {
     type: 'website',
     locale: 'lt_LT',
