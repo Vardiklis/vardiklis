@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
 import Mygtukas from '@/components/Mygtukas'
 import { generuokRinkini, type Lygis, type Uzdavinys } from '@/lib/generatoriai'
+import { uzdaviniuKiekis } from '@/lib/lietuviu'
 import { potemes, programa, type IsskleistaPotema, type ProgramosTema } from '@/lib/programa'
 
 // KaTeX (JS + CSS) užkraunamas tik tada, kai uždaviniai iš tikrųjų sugeneruoti —
@@ -20,23 +21,29 @@ const LYGIAI: { reiksme: Lygis; etikete: string }[] = [
   { reiksme: 3, etikete: 'Sunkus' },
 ]
 
-type Pasirinkta = {
-  klase: number
-  temosNumeris: number
-  potemesNumeris: string | null
+/** Vienas sugeneruotas rinkinys. Kiekviena tema ar potemė turi savąjį. */
+type Rinkinys = {
+  antraste: string
   temosPavadinimas: string
   generatorius: string
-  antraste: string
+  lygis: Lygis
+  kiekis: number
+  uzdaviniai: Uzdavinys[]
+  rodytiAtsakymus: boolean
 }
 
 export function UzduociuGeneratorius() {
   const [klase, setKlase] = useState(6)
   const [isskleista, setIsskleista] = useState<number | null>(null)
-  const [pasirinkta, setPasirinkta] = useState<Pasirinkta | null>(null)
-  const [lygis, setLygis] = useState<Lygis>(2)
-  const [kiekis, setKiekis] = useState<number>(10)
-  const [uzdaviniai, setUzdaviniai] = useState<Uzdavinys[]>([])
-  const [rodytiAtsakymus, setRodytiAtsakymus] = useState(false)
+
+  /**
+   * Rinkiniai laikomi pagal raktą, o ne po vieną. Todėl atidarius kitą temą
+   * ankstesnės uždaviniai ir į juos įrašyti atsakymai nedingsta — jie lieka
+   * tol, kol paspaudžiama atnaujinimo rodyklė.
+   */
+  const [rinkiniai, setRinkiniai] = useState<Record<string, Rinkinys>>({})
+  /** Atsakymai pagal uždavinio id. Uždavinio id nesikeičia, kol negeneruojama iš naujo. */
+  const [atsakymai, setAtsakymai] = useState<Record<string, string>>({})
 
   // Potemės išskleidžiamos kartą pakeitus klasę, o ne kiekvieno perpiešimo metu —
   // kiekvienas paspaudimas sąraše perpiešia visą akordeoną.
@@ -50,78 +57,101 @@ export function UzduociuGeneratorius() {
   )
   const skirstomaIPotemes = klasesTemos.some((t) => t.sarasas.length > 0)
 
-  function keiskKlase(nauja: number) {
-    setKlase(nauja)
-    setIsskleista(null)
-    setPasirinkta(null)
-    setUzdaviniai([])
+  function raktas(temosNumeris: number, potemesNumeris: string | null): string {
+    return `${klase}-${temosNumeris}-${potemesNumeris ?? 'visa'}`
   }
 
-  function generuok(p: Pasirinkta, naujasLygis: Lygis, naujasKiekis: number) {
-    setPasirinkta(p)
-    setLygis(naujasLygis)
-    setKiekis(naujasKiekis)
-    setUzdaviniai(generuokRinkini(p.generatorius, naujasLygis, naujasKiekis))
-    setRodytiAtsakymus(false)
+  function sukurk(
+    key: string,
+    pagrindas: Omit<Rinkinys, 'uzdaviniai' | 'rodytiAtsakymus'>,
+    isvalytiAtsakymus: boolean,
+  ) {
+    const uzdaviniai = generuokRinkini(pagrindas.generatorius, pagrindas.lygis, pagrindas.kiekis)
+
+    if (isvalytiAtsakymus) {
+      const senas = rinkiniai[key]
+      if (senas) {
+        setAtsakymai((esami) => {
+          const nauji = { ...esami }
+          for (const u of senas.uzdaviniai) delete nauji[u.id]
+          return nauji
+        })
+      }
+    }
+
+    setRinkiniai((esami) => ({
+      ...esami,
+      [key]: { ...pagrindas, uzdaviniai, rodytiAtsakymus: false },
+    }))
   }
 
-  /** Visos temos uždaviniai — kai norima ne vienos potemės, o viso skyriaus. */
+  /** Paspaudus temą ar potemę sąrašas susiskleidžia — uždaviniai lieka matomi. */
   function pasirinkTema(tema: ProgramosTema) {
     if (!tema.generatorius) return
-    generuok(
-      {
-        klase,
-        temosNumeris: tema.numeris,
-        potemesNumeris: null,
-        temosPavadinimas: tema.pavadinimas,
-        generatorius: tema.generatorius,
-        antraste: `${tema.numeris}. ${tema.pavadinimas}`,
-      },
-      tema.lygis ?? 2,
-      kiekis,
-    )
+    const key = raktas(tema.numeris, null)
+    if (!rinkiniai[key]) {
+      sukurk(
+        key,
+        {
+          antraste: `${tema.numeris}. ${tema.pavadinimas}`,
+          temosPavadinimas: tema.pavadinimas,
+          generatorius: tema.generatorius,
+          lygis: tema.lygis ?? 2,
+          kiekis: 10,
+        },
+        false,
+      )
+    }
+    setIsskleista(null)
   }
 
   function pasirinkPotema(tema: ProgramosTema, p: IsskleistaPotema) {
     if (!p.generatorius) return
-    generuok(
-      {
-        klase,
-        temosNumeris: tema.numeris,
-        potemesNumeris: p.numeris,
-        temosPavadinimas: tema.pavadinimas,
-        generatorius: p.generatorius,
-        antraste: `${p.numeris}. ${p.pavadinimas}`,
-      },
-      p.lygis,
-      kiekis,
-    )
+    const key = raktas(tema.numeris, p.numeris)
+    if (!rinkiniai[key]) {
+      sukurk(
+        key,
+        {
+          antraste: `${p.numeris}. ${p.pavadinimas}`,
+          temosPavadinimas: tema.pavadinimas,
+          generatorius: p.generatorius,
+          lygis: p.lygis,
+          kiekis: 10,
+        },
+        false,
+      )
+    }
+    setIsskleista(null)
   }
 
-  /** Ar rinkinys priklauso būtent šiai vietai sąraše. */
-  function cia(temosNumeris: number, potemesNumeris: string | null): boolean {
-    return (
-      pasirinkta !== null &&
-      uzdaviniai.length > 0 &&
-      pasirinkta.klase === klase &&
-      pasirinkta.temosNumeris === temosNumeris &&
-      pasirinkta.potemesNumeris === potemesNumeris
-    )
+  function keiskKlase(nauja: number) {
+    setKlase(nauja)
+    setIsskleista(null)
+  }
+
+  /** Visi šios temos rinkiniai — ir pačios temos, ir jos potemių. */
+  function temosRinkiniai(temosNumeris: number, sarasas: IsskleistaPotema[]) {
+    const raktai = [raktas(temosNumeris, null), ...sarasas.map((p) => raktas(temosNumeris, p.numeris))]
+    return raktai.filter((k) => rinkiniai[k]).map((k) => [k, rinkiniai[k]] as const)
   }
 
   /**
-   * Sugeneruotas rinkinys. Rodomas iškart po pasirinkta tema ar poteme —
-   * taip matyti, iš kur uždaviniai atsirado, ir nereikia slinkti į puslapio galą.
+   * Sugeneruotas rinkinys. Rodomas po ta tema, iš kurios buvo iškviestas,
+   * ir lieka net susiskleidus sąrašui.
    */
-  function rinkinys() {
-    if (!pasirinkta) return null
+  function rinkinioBlokas(key: string, r: Rinkinys) {
+    const keisk = (naujas: Partial<Pick<Rinkinys, 'lygis' | 'kiekis'>>) =>
+      sukurk(key, { ...r, ...naujas }, true)
 
     return (
-      <div className="mt-3 rounded-[8px] border border-line bg-paper p-4 md:p-5 print:border-0 print:p-0">
+      <div
+        key={key}
+        className="mt-3 rounded-[8px] border border-line bg-paper p-4 md:p-5 print:mt-0 print:border-0 print:p-0"
+      >
         {/* Antraštė lapui — matoma tik spausdinant. */}
         <div className="hidden print:block">
           <h3 className="t-h2">
-            {pasirinkta.klase} kl. · {pasirinkta.antraste}
+            {klase} kl. · {r.antraste}
           </h3>
           <p className="mt-6 t-small">
             Vardas, pavardė: ______________________ Data: ____________
@@ -129,10 +159,25 @@ export function UzduociuGeneratorius() {
         </div>
 
         <div className="be-spausdinimo">
-          <h3 className="t-h3">{pasirinkta.antraste}</h3>
-          <p className="mt-1 t-small text-muted">
-            {pasirinkta.klase} klasė · {uzdaviniai.length} uždaviniai
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="t-h3">{r.antraste}</h3>
+              <p className="mt-1 t-small text-muted">
+                {klase} klasė · {uzdaviniuKiekis(r.uzdaviniai.length)}
+              </p>
+            </div>
+
+            {/* Atnaujinimo rodyklė — sugeneruoja tos pačios temos uždavinius iš naujo. */}
+            <button
+              type="button"
+              onClick={() => sukurk(key, r, true)}
+              aria-label={`Generuoti naujus uždavinius: ${r.antraste}`}
+              title="Nauji uždaviniai"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] border border-line bg-paper text-lg leading-none transition-colors hover:border-ink"
+            >
+              <span aria-hidden="true">↻</span>
+            </button>
+          </div>
 
           <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-5">
             <div>
@@ -142,10 +187,10 @@ export function UzduociuGeneratorius() {
                   <button
                     key={l.reiksme}
                     type="button"
-                    onClick={() => generuok(pasirinkta, l.reiksme, kiekis)}
-                    aria-pressed={l.reiksme === lygis}
+                    onClick={() => keisk({ lygis: l.reiksme })}
+                    aria-pressed={l.reiksme === r.lygis}
                     className={`rounded-[6px] border px-4 py-2 t-small transition-colors ${
-                      l.reiksme === lygis
+                      l.reiksme === r.lygis
                         ? 'border-ink bg-paper font-semibold'
                         : 'border-line bg-paper text-muted hover:border-ink'
                     }`}
@@ -163,10 +208,10 @@ export function UzduociuGeneratorius() {
                   <button
                     key={k}
                     type="button"
-                    onClick={() => generuok(pasirinkta, lygis, k)}
-                    aria-pressed={k === kiekis}
+                    onClick={() => keisk({ kiekis: k })}
+                    aria-pressed={k === r.kiekis}
                     className={`rounded-[6px] border px-4 py-2 font-mono t-small transition-colors ${
-                      k === kiekis
+                      k === r.kiekis
                         ? 'border-ink bg-paper font-semibold'
                         : 'border-line bg-paper text-muted hover:border-ink'
                     }`}
@@ -179,11 +224,16 @@ export function UzduociuGeneratorius() {
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
-            <Mygtukas onClick={() => generuok(pasirinkta, lygis, kiekis)}>
-              Nauji uždaviniai
-            </Mygtukas>
-            <Mygtukas variantas="konturas" onClick={() => setRodytiAtsakymus((v) => !v)}>
-              {rodytiAtsakymus ? 'Slėpti atsakymus' : 'Rodyti atsakymus'}
+            <Mygtukas
+              variantas="konturas"
+              onClick={() =>
+                setRinkiniai((esami) => ({
+                  ...esami,
+                  [key]: { ...r, rodytiAtsakymus: !r.rodytiAtsakymus },
+                }))
+              }
+            >
+              {r.rodytiAtsakymus ? 'Slėpti atsakymus' : 'Rodyti atsakymus'}
             </Mygtukas>
             <Mygtukas variantas="konturas" onClick={() => window.print()}>
               Spausdinti
@@ -192,12 +242,14 @@ export function UzduociuGeneratorius() {
         </div>
 
         <ol className="mt-6 flex flex-col gap-4 print:gap-3">
-          {uzdaviniai.map((u, i) => (
+          {r.uzdaviniai.map((u, i) => (
             <UzdavinioKortele
               key={u.id}
               uzdavinys={u}
               numeris={i + 1}
-              rodytiAtsakyma={rodytiAtsakymus}
+              rodytiAtsakyma={r.rodytiAtsakymus}
+              ivestis={atsakymai[u.id] ?? ''}
+              onIvestis={(nauja) => setAtsakymai((esami) => ({ ...esami, [u.id]: nauja }))}
             />
           ))}
         </ol>
@@ -235,8 +287,8 @@ export function UzduociuGeneratorius() {
           <h2 className="t-h3">{klase} klasės temos</h2>
           <p className="mt-2 t-small text-muted">
             {skirstomaIPotemes
-              ? 'Spustelėkite temą — ji išsiskleis į potemes. Paspaudus potemę, uždaviniai atsiranda čia pat, po ja.'
-              : 'Šios klasės programoje temos į potemes neskirstomos, tad spustelėjus temą uždaviniai atsiranda čia pat, po ja.'}
+              ? 'Spustelėkite temą — ji išsiskleis į potemes. Pasirinkus potemę, sąrašas susiskleidžia, o uždaviniai lieka žemiau. Rodyklė ↻ sugeneruoja naujus.'
+              : 'Šios klasės programoje temos į potemes neskirstomos. Spustelėjus temą uždaviniai atsiranda čia pat, o rodyklė ↻ sugeneruoja naujus.'}
           </p>
         </div>
 
@@ -244,9 +296,8 @@ export function UzduociuGeneratorius() {
           {klasesTemos.map(({ tema, sarasas }) => {
             const skirstoma = sarasas.length > 0
             const atidaryta = skirstoma && isskleista === tema.numeris
-            // 5–7 klasių programoje potemių nėra — ten stambusis punktas ir yra
-            // smulkiausias dalykas, tad paspaudus iškart generuojami uždaviniai.
-            const rinkinysCia = cia(tema.numeris, null)
+            const sirinkiniai = temosRinkiniai(tema.numeris, sarasas)
+            const turiRinkiniu = sirinkiniai.length > 0
 
             return (
               <li key={tema.numeris}>
@@ -258,9 +309,8 @@ export function UzduociuGeneratorius() {
                       : pasirinkTema(tema)
                   }
                   aria-expanded={skirstoma ? atidaryta : undefined}
-                  aria-current={rinkinysCia ? 'true' : undefined}
                   className={`be-spausdinimo flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors ${
-                    rinkinysCia ? 'bg-orange-soft' : 'hover:bg-paper-2'
+                    turiRinkiniu ? 'bg-orange-soft' : 'hover:bg-paper-2'
                   }`}
                 >
                   {/* Stambieji punktai paryškinti — tai programos skyriai. */}
@@ -276,30 +326,19 @@ export function UzduociuGeneratorius() {
                   </span>
                 </button>
 
-                {/* Tema be potemių — rinkinys tiesiai po ja. */}
-                {!skirstoma && rinkinysCia && (
-                  <div className="border-t border-line bg-paper-2 px-5 py-4 print:border-0 print:bg-transparent print:p-0">
-                    {rinkinys()}
-                  </div>
-                )}
-
                 {atidaryta && (
-                  <div className="border-t border-line bg-paper-2 px-5 py-3 print:border-0 print:bg-transparent print:p-0">
+                  <div className="be-spausdinimo border-t border-line bg-paper-2 px-5 py-3">
                     <ol className="flex flex-col">
                       {sarasas.map((p) => {
-                        const aktyvi = cia(tema.numeris, p.numeris)
+                        const turi = Boolean(rinkiniai[raktas(tema.numeris, p.numeris)])
                         return (
                           <li key={p.numeris}>
                             <button
                               type="button"
                               onClick={() => pasirinkPotema(tema, p)}
                               disabled={!p.generatorius}
-                              aria-current={aktyvi ? 'true' : undefined}
-                              // Užvedus pelę ant jau pasirinktos potemės oranžinis
-                              // pažymėjimas turi likti — kitaip dingsta nuoroda,
-                              // iš kur uždaviniai atsirado.
-                              className={`be-spausdinimo flex w-full items-baseline gap-3 rounded-[6px] px-3 py-2.5 text-left transition-colors ${
-                                aktyvi
+                              className={`flex w-full items-baseline gap-3 rounded-[6px] px-3 py-2.5 text-left transition-colors ${
+                                turi
                                   ? 'bg-orange-soft'
                                   : p.generatorius
                                     ? 'hover:bg-paper'
@@ -320,15 +359,12 @@ export function UzduociuGeneratorius() {
                                 <span className="shrink-0 t-small text-muted">netrukus</span>
                               )}
                             </button>
-
-                            {/* Rinkinys išsiskleidžia po ta poteme, kurią paspaudė. */}
-                            {aktyvi && rinkinys()}
                           </li>
                         )
                       })}
                     </ol>
 
-                    <div className="be-spausdinimo mt-2 border-t border-line px-3 pt-3">
+                    <div className="mt-2 border-t border-line px-3 pt-3">
                       <button
                         type="button"
                         onClick={() => pasirinkTema(tema)}
@@ -337,9 +373,13 @@ export function UzduociuGeneratorius() {
                         Uždaviniai iš visos temos
                       </button>
                     </div>
+                  </div>
+                )}
 
-                    {/* Visos temos rinkinys — po nuoroda, kuri jį iškvietė. */}
-                    {rinkinysCia && rinkinys()}
+                {/* Rinkiniai lieka matomi ir susiskleidus sąrašui. */}
+                {turiRinkiniu && (
+                  <div className="border-t border-line bg-paper-2 px-5 py-4 print:border-0 print:bg-transparent print:p-0">
+                    {sirinkiniai.map(([key, r]) => rinkinioBlokas(key, r))}
                   </div>
                 )}
               </li>

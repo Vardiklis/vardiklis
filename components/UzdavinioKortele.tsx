@@ -11,6 +11,12 @@ type Props = {
   uzdavinys: Uzdavinys
   numeris: number
   rodytiAtsakyma: boolean
+  /**
+   * Įvestis laikoma ne kortelėje, o aukščiau — kitaip uždarius temą atsakymai
+   * dingtų kartu su komponentu.
+   */
+  ivestis: string
+  onIvestis: (nauja: string) => void
 }
 
 /**
@@ -20,12 +26,18 @@ type Props = {
  * o atspausdintame lape jis lieka tuščias langelis rašymui ranka.
  * Spausdinant kortelė nelaužoma per puslapio ribą (`spausdinimo-blokas`).
  */
-export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) {
-  const [ivestis, setIvestis] = useState('')
+export function UzdavinioKortele({
+  uzdavinys,
+  numeris,
+  rodytiAtsakyma,
+  ivestis,
+  onIvestis,
+}: Props) {
   const [klaviatura, setKlaviatura] = useState(false)
 
   const kazkasIvesta = ivestis.trim() !== ''
   const teisinga = kazkasIvesta && arTeisingas(ivestis, uzdavinys.atsakymas)
+  const vertinama = rodytiAtsakyma && kazkasIvesta
 
   return (
     <li className="spausdinimo-blokas rounded-[8px] border border-line bg-paper p-5 md:p-6">
@@ -57,17 +69,17 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
                 inputMode={klaviatura ? 'none' : 'decimal'}
                 autoComplete="off"
                 value={ivestis}
-                onChange={(e) => setIvestis(e.target.value)}
-                placeholder="?"
-                aria-describedby={
-                  rodytiAtsakyma && kazkasIvesta ? `vertinimas-${uzdavinys.id}` : undefined
-                }
-                className={`w-28 rounded-[6px] border bg-paper px-3 py-2 text-center font-mono text-[1.0625rem] text-ink placeholder:text-muted/50 print:h-9 print:w-32 ${
-                  rodytiAtsakyma && kazkasIvesta
+                onChange={(e) => onIvestis(e.target.value)}
+                placeholder=""
+                aria-describedby={vertinama ? `vertinimas-${uzdavinys.id}` : undefined}
+                // Fono klasė tik viena — `bg-paper` bazėje konkuruotų su būsenos
+                // spalva ir laimėtų atsitiktinai, pagal CSS eilės tvarką.
+                className={`w-28 rounded-[6px] border px-3 py-2 text-center font-mono text-[1.0625rem] text-ink placeholder:text-muted/50 print:h-9 print:w-32 print:border-line print:bg-paper ${
+                  vertinama
                     ? teisinga
-                      ? 'border-green'
-                      : 'border-red bg-red-soft'
-                    : 'border-line'
+                      ? 'border-teisinga bg-teisinga-soft'
+                      : 'border-klaidinga bg-klaidinga-soft'
+                    : 'border-line bg-paper'
                 }`}
               />
 
@@ -87,14 +99,14 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
 
               {/* Vertinimas rodomas tik atskleidus atsakymus — kitaip langelis
                   virstų viktorina ir uždaviniai nustotų būti darbo lapu. */}
-              {rodytiAtsakyma && kazkasIvesta && (
+              {vertinama && (
                 <span
                   id={`vertinimas-${uzdavinys.id}`}
                   className={`be-spausdinimo t-small font-semibold ${
-                    teisinga ? 'text-green' : 'text-red'
+                    teisinga ? 'text-teisinga' : 'text-klaidinga'
                   }`}
                 >
-                  {teisinga ? 'Teisingai' : 'Neteisingai'}
+                  {teisinga ? 'TEISINGAI' : 'NETEISINGAI'}
                 </span>
               )}
             </span>
@@ -104,7 +116,7 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
             <div id={`klaviatura-${uzdavinys.id}`}>
               <Klaviatura
                 reiksme={ivestis}
-                onKeisti={setIvestis}
+                onKeisti={onIvestis}
                 onUzdaryti={() => setKlaviatura(false)}
               />
             </div>

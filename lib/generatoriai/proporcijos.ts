@@ -1,3 +1,4 @@
+import { skaitvardzioForma } from '../lietuviu'
 import { atsitiktinis, pasirink } from '../matematika'
 import { suBandymais, uzdavinys } from './bendra'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
@@ -8,22 +9,8 @@ import type { Generatorius, Lygis, Uzdavinys } from './tipai'
  * ir uždavinys nustoja tikrinti proporcingumą, o pradeda tikrinti dalybą.
  */
 
-/**
- * Daiktavardžio forma pagal skaitvardį:
- *   1, 21, 31…            → vienaskaita   (1 sąsiuvinis)
- *   2–9, 22–29…           → daugiskaita   (6 sąsiuviniai)
- *   0, 10, 11–19, 20, 30… → kilmininkas   (12 sąsiuvinių)
- */
-type Forma = 'vns' | 'dgs' | 'kilm'
-
-function forma(n: number): Forma {
-  const desimtys = n % 100
-  if (desimtys >= 11 && desimtys <= 19) return 'kilm'
-  const paskutinis = n % 10
-  if (paskutinis === 0) return 'kilm'
-  if (paskutinis === 1) return 'vns'
-  return 'dgs'
-}
+// Daiktavardžio forma pagal skaitvardį — bendra taisyklė gyvena `lib/lietuviu.ts`.
+const forma = skaitvardzioForma
 
 // Visi kontekstų daiktavardžiai vyriškosios giminės, tad įvardžiai bendri.
 const TOKS = {

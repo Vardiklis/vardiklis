@@ -29,6 +29,7 @@ function laikas(sekundes: number): string {
 
 export function PasiruosimoRinkinys({ ikiKlases, minutes, kiek, id }: Props) {
   const [uzdaviniai, setUzdaviniai] = useState<Uzdavinys[]>([])
+  const [atsakymai, setAtsakymai] = useState<Record<string, string>>({})
   const [rodytiAtsakymus, setRodytiAtsakymus] = useState(false)
   const [liko, setLiko] = useState<number | null>(null)
   const [eina, setEina] = useState(false)
@@ -63,6 +64,7 @@ export function PasiruosimoRinkinys({ ikiKlases, minutes, kiek, id }: Props) {
     }
 
     setUzdaviniai(nauji)
+    setAtsakymai({})
     setRodytiAtsakymus(false)
     setLiko(minutes * 60)
     setEina(true)
@@ -118,6 +120,8 @@ export function PasiruosimoRinkinys({ ikiKlases, minutes, kiek, id }: Props) {
                 uzdavinys={u}
                 numeris={i + 1}
                 rodytiAtsakyma={rodytiAtsakymus}
+                ivestis={atsakymai[u.id] ?? ''}
+                onIvestis={(nauja) => setAtsakymai((esami) => ({ ...esami, [u.id]: nauja }))}
               />
             ))}
           </ol>

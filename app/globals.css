@@ -10,6 +10,13 @@
   --line: #e4ded2;
   --orange: #ff5c00;
   --orange-soft: #ffe9da;
+
+  /* Teisinga / klaidinga. Abi patikrintos ant dramblio kaulo fono:
+     žalia 4,8:1, raudona 6,2:1 — praeina WCAG AA. */
+  --teisinga: #15803d;
+  --teisinga-soft: #e7f5ec;
+  --klaidinga: #b91c1c;
+  --klaidinga-soft: #fbe9e9;
 }
 
 @theme inline {
@@ -20,6 +27,10 @@
   --color-line: var(--line);
   --color-orange: var(--orange);
   --color-orange-soft: var(--orange-soft);
+  --color-teisinga: var(--teisinga);
+  --color-teisinga-soft: var(--teisinga-soft);
+  --color-klaidinga: var(--klaidinga);
+  --color-klaidinga-soft: var(--klaidinga-soft);
 
   --font-display: var(--font-bricolage), system-ui, sans-serif;
   --font-sans: var(--font-instrument), system-ui, sans-serif;
@@ -192,6 +203,10 @@
     --line: #999999;
     --orange: #000000;
     --orange-soft: #ffffff;
+    --teisinga: #000000;
+    --teisinga-soft: #ffffff;
+    --klaidinga: #000000;
+    --klaidinga-soft: #ffffff;
   }
 
   .be-spausdinimo {
