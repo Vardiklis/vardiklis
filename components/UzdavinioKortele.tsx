@@ -5,6 +5,7 @@ import type { Uzdavinys } from '@/lib/generatoriai'
 import { arTeisingas } from '@/lib/matematika'
 import Brezinys from './Brezinys'
 import Formule from './Formule'
+import Klaviatura from './Klaviatura'
 
 type Props = {
   uzdavinys: Uzdavinys
@@ -21,6 +22,7 @@ type Props = {
  */
 export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) {
   const [ivestis, setIvestis] = useState('')
+  const [klaviatura, setKlaviatura] = useState(false)
 
   const kazkasIvesta = ivestis.trim() !== ''
   const teisinga = kazkasIvesta && arTeisingas(ivestis, uzdavinys.atsakymas)
@@ -51,7 +53,8 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
               <input
                 id={`atsakymas-${uzdavinys.id}`}
                 type="text"
-                inputMode="decimal"
+                // Atidarius savą klaviatūrą, telefono klaviatūros nekviečiam.
+                inputMode={klaviatura ? 'none' : 'decimal'}
                 autoComplete="off"
                 value={ivestis}
                 onChange={(e) => setIvestis(e.target.value)}
@@ -68,6 +71,20 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
                 }`}
               />
 
+              <button
+                type="button"
+                onClick={() => setKlaviatura((v) => !v)}
+                aria-expanded={klaviatura}
+                aria-controls={`klaviatura-${uzdavinys.id}`}
+                aria-label={
+                  klaviatura ? 'Slėpti matematikos klaviatūrą' : 'Rodyti matematikos klaviatūrą'
+                }
+                title="Matematikos klaviatūra su trupmenomis"
+                className="be-spausdinimo flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] border border-line bg-paper font-mono text-base leading-none transition-colors hover:border-ink"
+              >
+                <span aria-hidden="true">⌨</span>
+              </button>
+
               {/* Vertinimas rodomas tik atskleidus atsakymus — kitaip langelis
                   virstų viktorina ir uždaviniai nustotų būti darbo lapu. */}
               {rodytiAtsakyma && kazkasIvesta && (
@@ -82,6 +99,16 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
               )}
             </span>
           </div>
+
+          {klaviatura && (
+            <div id={`klaviatura-${uzdavinys.id}`}>
+              <Klaviatura
+                reiksme={ivestis}
+                onKeisti={setIvestis}
+                onUzdaryti={() => setKlaviatura(false)}
+              />
+            </div>
+          )}
 
           {rodytiAtsakyma && (
             <div className="mt-4 border-t border-line pt-3">

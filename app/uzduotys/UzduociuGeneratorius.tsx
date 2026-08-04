@@ -111,22 +111,35 @@ export function UzduociuGeneratorius() {
       <div className="be-spausdinimo mt-10">
         <h2 className="t-h3">{klase} klasės temos</h2>
         <p className="mt-2 t-small text-muted">
-          Spustelėkite temą — ji išsiskleis į potemes. Paspaudus potemę, iš karto
-          sugeneruojami jos uždaviniai.
+          {klasesTemos.some((t) => potemes(t).length > 0)
+            ? 'Spustelėkite temą — ji išsiskleis į potemes. Paspaudus potemę, iš karto sugeneruojami jos uždaviniai.'
+            : 'Šios klasės programoje temos į potemes neskirstomos, tad spustelėjus temą uždaviniai sugeneruojami iš karto.'}
         </p>
 
         <ol className="mt-6 divide-y divide-line rounded-[8px] border border-line">
           {klasesTemos.map((tema) => {
-            const atidaryta = isskleista === tema.numeris
             const sarasas = potemes(tema)
+            const skirstoma = sarasas.length > 0
+            const atidaryta = skirstoma && isskleista === tema.numeris
+            // 5–7 klasių programoje potemių nėra — ten stambusis punktas ir yra
+            // smulkiausias dalykas, tad paspaudus iškart generuojami uždaviniai.
+            const aktyviTema = !skirstoma && pasirinkta?.tema.numeris === tema.numeris &&
+              pasirinkta.klase === klase
 
             return (
               <li key={tema.numeris}>
                 <button
                   type="button"
-                  onClick={() => setIsskleista(atidaryta ? null : tema.numeris)}
-                  aria-expanded={atidaryta}
-                  className="flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors hover:bg-paper-2"
+                  onClick={() =>
+                    skirstoma
+                      ? setIsskleista(atidaryta ? null : tema.numeris)
+                      : pasirinkTema(tema)
+                  }
+                  aria-expanded={skirstoma ? atidaryta : undefined}
+                  aria-current={aktyviTema ? 'true' : undefined}
+                  className={`flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors hover:bg-paper-2 ${
+                    aktyviTema ? 'bg-orange-soft' : ''
+                  }`}
                 >
                   {/* Stambieji punktai paryškinti — tai programos skyriai. */}
                   <span className="shrink-0 font-mono text-[0.9375rem] font-semibold tabular-nums">
@@ -137,14 +150,13 @@ export function UzduociuGeneratorius() {
                     className="shrink-0 font-mono text-[0.9375rem] text-muted"
                     aria-hidden="true"
                   >
-                    {atidaryta ? '–' : '+'}
+                    {skirstoma ? (atidaryta ? '–' : '+') : '→'}
                   </span>
                 </button>
 
                 {atidaryta && (
                   <div className="border-t border-line bg-paper-2 px-5 py-3">
-                    {sarasas.length > 0 ? (
-                      <ol className="flex flex-col">
+                    <ol className="flex flex-col">
                         {sarasas.map((p) => {
                           const aktyvi = pasirinkta?.potema?.numeris === p.numeris
                           return (
@@ -175,12 +187,7 @@ export function UzduociuGeneratorius() {
                             </li>
                           )
                         })}
-                      </ol>
-                    ) : (
-                      <p className="px-3 py-2 t-small text-muted">
-                        Ši tema neskirstoma į potemes.
-                      </p>
-                    )}
+                    </ol>
 
                     <div className="mt-2 border-t border-line px-3 pt-3">
                       <button
