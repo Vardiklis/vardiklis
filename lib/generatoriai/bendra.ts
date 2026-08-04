@@ -30,6 +30,20 @@ export function uzdavinys(temaId: string, j: Juodrastis): Uzdavinys {
 }
 
 /**
+ * Viena atsitiktinė variacija iš sąrašo.
+ *
+ * Vien keisti skaičius neužtenka: dešimt uždavinių pavidalu `a + b` atrodo
+ * kaip vienas uždavinys, perrašytas dešimt kartų. Todėl kiekvienas lygis turi
+ * po kelias skirtingo pavidalo variacijas — trūkstamą dėmenį, tekstinį
+ * uždavinį, kelis veiksmus — o skaičiai keičiami jau jų viduje.
+ */
+export function variacija(
+  variantai: readonly (() => Uzdavinys | null)[],
+): Uzdavinys | null {
+  return variantai[Math.floor(Math.random() * variantai.length)]()
+}
+
+/**
  * Bando kurti uždavinį, kol pavyksta. `kurk` grąžina `null`, jei rezultatas
  * bjaurus — tada bandoma iš naujo. Po 50 bandymų grąžinamas atsarginis
  * uždavinys iš fiksuoto sąrašo (7.1).

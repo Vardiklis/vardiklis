@@ -1,5 +1,5 @@
 import { atsitiktinis, pasirink } from '../matematika'
-import { suBandymais, uzdavinys } from './bendra'
+import { suBandymais, uzdavinys, variacija } from './bendra'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -52,56 +52,88 @@ function dalimis(p: number): string {
   }
 }
 
+/**
+ * Septynios skirtingo pavidalo variacijos. Lygis lemia, kiek jų prieinama:
+ * pirmame lygyje tik tiesioginiai klausimai, trečiame — ir atvirkštiniai.
+ */
 function kurk(lygis: Lygis): Uzdavinys | null {
   const p = pasirink(PROCENTAI)
-  const visuma = atsitiktinis(1, 20) * 20 // 20..400, visada dalus iš 20
+  const visuma = atsitiktinis(1, 20) * 20
   if ((visuma * p) % 100 !== 0) return null
   const dalis = (visuma * p) / 100
   if (dalis < 2) return null
 
-  if (lygis === 1) {
-    // Dalies radimas — gryna forma, be konteksto.
-    return uzdavinys('procentai', {
-      klausimas: `Kiek yra ${p} % nuo ${visuma}?`,
-      atsakymas: String(dalis),
-      atsakymasRodymui: `$${dalis}$`,
-      sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
-    })
-  }
+  const visos = [
+    // 1. Dalies radimas
+    () =>
+      uzdavinys('procentai', {
+        klausimas: `Kiek yra ${p} % nuo ${visuma}?`,
+        atsakymas: String(dalis),
+        atsakymasRodymui: `$${dalis}$`,
+        sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
+      }),
 
-  if (lygis === 2) {
-    // Visumos radimas — atvirkštinis veiksmas.
-    if (Math.random() < 0.5) {
-      return uzdavinys('procentai', {
+    // 2. Visumos radimas
+    () =>
+      uzdavinys('procentai', {
         klausimas: `${p} % skaičiaus yra ${dalis}. Koks tas skaičius?`,
         atsakymas: String(visuma),
         atsakymasRodymui: `$${visuma}$`,
         sprendimas: `${p} % yra ${dalimis(p)}. Visas skaičius: $${dalis} : ${p} \\cdot 100 = ${visuma}$.`,
+      }),
+
+    // 3. Kiek procentų sudaro
+    () =>
+      uzdavinys('procentai', {
+        klausimas: `Kiek procentų skaičius ${dalis} sudaro nuo ${visuma}?`,
+        atsakymas: String(p),
+        atsakymasRodymui: `$${p}$ %`,
+        sprendimas: `$${dalis} : ${visuma} \\cdot 100 = ${p}$ %.`,
+      }),
+
+    // 4. Nuolaida
+    () => {
+      const liko = visuma - dalis
+      if (liko <= 0) return null
+      return uzdavinys('procentai', {
+        klausimas: `Prekė kainavo ${visuma} €. Jai taikoma ${p} % nuolaida. Kiek ji kainuoja dabar?`,
+        atsakymas: String(liko),
+        atsakymasRodymui: `$${liko}$ €`,
+        sprendimas: `${p} % nuo ${visuma} yra ${dalis}, tad $${visuma} - ${dalis} = ${liko}$ €.`,
       })
-    }
+    },
 
-    const k = pasirink(KONTEKSTAI)
-    return uzdavinys('procentai', {
-      klausimas: `${k.daiktas} ${visuma} ${k.vienetas}. ${p} % iš jų nuvyko į ekskursiją. Kiek ${k.dalis} nuvyko?`,
-      atsakymas: String(dalis),
-      atsakymasRodymui: `$${dalis}$`,
-      sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
-    })
-  }
+    // 5. Pabrangimas
+    () =>
+      uzdavinys('procentai', {
+        klausimas: `Prekė kainavo ${visuma} €. Ji pabrango ${p} %. Kiek ji kainuoja dabar?`,
+        atsakymas: String(visuma + dalis),
+        atsakymasRodymui: `$${visuma + dalis}$ €`,
+        sprendimas: `${p} % nuo ${visuma} yra ${dalis}, tad $${visuma} + ${dalis} = ${visuma + dalis}$ €.`,
+      }),
 
-  // 3 lygis — nuolaida arba pabrangimas, du veiksmai iš eilės.
-  const pabrango = Math.random() < 0.4
-  const rezultatas = pabrango ? visuma + dalis : visuma - dalis
-  if (rezultatas <= 0) return null
+    // 6. Tekstinis su kontekstu
+    () => {
+      const k = pasirink(KONTEKSTAI)
+      return uzdavinys('procentai', {
+        klausimas: `${k.daiktas} ${visuma} ${k.vienetas}. ${p} % iš jų nuvyko į ekskursiją. Kiek ${k.dalis} nuvyko?`,
+        atsakymas: String(dalis),
+        atsakymasRodymui: `$${dalis}$`,
+        sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
+      })
+    },
 
-  return uzdavinys('procentai', {
-    klausimas: pabrango
-      ? `Prekė kainavo ${visuma} €. Ji pabrango ${p} %. Kiek ji kainuoja dabar?`
-      : `Prekė kainavo ${visuma} €. Jai taikoma ${p} % nuolaida. Kiek ji kainuoja dabar?`,
-    atsakymas: String(rezultatas),
-    atsakymasRodymui: `$${rezultatas}$`,
-    sprendimas: `${p} % nuo ${visuma} yra ${dalis}, tad ${visuma} ${
-      pabrango ? '+' : '-'
-    } ${dalis} = ${rezultatas}.`,
-  })
+    // 7. Kiek liko procentais
+    () => {
+      if (p >= 100) return null
+      return uzdavinys('procentai', {
+        klausimas: `Iš ${visuma} mokinių ${p} % išvyko. Kiek mokinių liko?`,
+        atsakymas: String(visuma - dalis),
+        atsakymasRodymui: `$${visuma - dalis}$`,
+        sprendimas: `Išvyko ${dalis}, tad liko $${visuma} - ${dalis} = ${visuma - dalis}$.`,
+      })
+    },
+  ]
+
+  return variacija(lygis === 1 ? visos.slice(0, 3) : lygis === 2 ? visos.slice(0, 5) : visos)
 }

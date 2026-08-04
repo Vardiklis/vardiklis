@@ -44,6 +44,8 @@ export function UzduociuGeneratorius() {
   const [rinkiniai, setRinkiniai] = useState<Record<string, Rinkinys>>({})
   /** Atsakymai pagal uždavinio id. Uždavinio id nesikeičia, kol negeneruojama iš naujo. */
   const [atsakymai, setAtsakymai] = useState<Record<string, string>>({})
+  /** Kuris rinkinys šiuo metu matomas. Vienu metu atidarytas tik vienas. */
+  const [atidarytas, setAtidarytas] = useState<string | null>(null)
 
   // Potemės išskleidžiamos kartą pakeitus klasę, o ne kiekvieno perpiešimo metu —
   // kiekvienas paspaudimas sąraše perpiešia visą akordeoną.
@@ -85,43 +87,44 @@ export function UzduociuGeneratorius() {
     }))
   }
 
-  /** Paspaudus temą ar potemę sąrašas susiskleidžia — uždaviniai lieka matomi. */
+  /**
+   * Paspaudus temą ar potemę uždaviniai atsidaro, o temų sąrašas susiskleidžia.
+   * Paspaudus tą pačią dar kartą — uždaviniai užsidaro. Vienu metu matomas tik
+   * vienas rinkinys, bet uždaryti rinkiniai lieka atmintyje kartu su atsakymais.
+   */
+  function perjunk(
+    key: string,
+    pagrindas: Omit<Rinkinys, 'uzdaviniai' | 'rodytiAtsakymus'>,
+  ) {
+    if (atidarytas === key) {
+      setAtidarytas(null)
+      return
+    }
+    if (!rinkiniai[key]) sukurk(key, pagrindas, false)
+    setAtidarytas(key)
+    setIsskleista(null)
+  }
+
   function pasirinkTema(tema: ProgramosTema) {
     if (!tema.generatorius) return
-    const key = raktas(tema.numeris, null)
-    if (!rinkiniai[key]) {
-      sukurk(
-        key,
-        {
-          antraste: `${tema.numeris}. ${tema.pavadinimas}`,
-          temosPavadinimas: tema.pavadinimas,
-          generatorius: tema.generatorius,
-          lygis: tema.lygis ?? 2,
-          kiekis: 10,
-        },
-        false,
-      )
-    }
-    setIsskleista(null)
+    perjunk(raktas(tema.numeris, null), {
+      antraste: `${tema.numeris}. ${tema.pavadinimas}`,
+      temosPavadinimas: tema.pavadinimas,
+      generatorius: tema.generatorius,
+      lygis: tema.lygis ?? 2,
+      kiekis: 10,
+    })
   }
 
   function pasirinkPotema(tema: ProgramosTema, p: IsskleistaPotema) {
     if (!p.generatorius) return
-    const key = raktas(tema.numeris, p.numeris)
-    if (!rinkiniai[key]) {
-      sukurk(
-        key,
-        {
-          antraste: `${p.numeris}. ${p.pavadinimas}`,
-          temosPavadinimas: tema.pavadinimas,
-          generatorius: p.generatorius,
-          lygis: p.lygis,
-          kiekis: 10,
-        },
-        false,
-      )
-    }
-    setIsskleista(null)
+    perjunk(raktas(tema.numeris, p.numeris), {
+      antraste: `${p.numeris}. ${p.pavadinimas}`,
+      temosPavadinimas: tema.pavadinimas,
+      generatorius: p.generatorius,
+      lygis: p.lygis,
+      kiekis: 10,
+    })
   }
 
   function keiskKlase(nauja: number) {
@@ -129,10 +132,13 @@ export function UzduociuGeneratorius() {
     setIsskleista(null)
   }
 
-  /** Visi šios temos rinkiniai — ir pačios temos, ir jos potemių. */
-  function temosRinkiniai(temosNumeris: number, sarasas: IsskleistaPotema[]) {
+  /** Ar atidarytas rinkinys priklauso šiai temai. */
+  function temosRinkinys(temosNumeris: number, sarasas: IsskleistaPotema[]) {
+    if (!atidarytas) return null
     const raktai = [raktas(temosNumeris, null), ...sarasas.map((p) => raktas(temosNumeris, p.numeris))]
-    return raktai.filter((k) => rinkiniai[k]).map((k) => [k, rinkiniai[k]] as const)
+    if (!raktai.includes(atidarytas)) return null
+    const r = rinkiniai[atidarytas]
+    return r ? ([atidarytas, r] as const) : null
   }
 
   /**
@@ -296,8 +302,7 @@ export function UzduociuGeneratorius() {
           {klasesTemos.map(({ tema, sarasas }) => {
             const skirstoma = sarasas.length > 0
             const atidaryta = skirstoma && isskleista === tema.numeris
-            const sirinkiniai = temosRinkiniai(tema.numeris, sarasas)
-            const turiRinkiniu = sirinkiniai.length > 0
+            const atidarytasRinkinys = temosRinkinys(tema.numeris, sarasas)
 
             return (
               <li key={tema.numeris}>
@@ -310,7 +315,7 @@ export function UzduociuGeneratorius() {
                   }
                   aria-expanded={skirstoma ? atidaryta : undefined}
                   className={`be-spausdinimo flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors ${
-                    turiRinkiniu ? 'bg-orange-soft' : 'hover:bg-paper-2'
+                    atidarytasRinkinys ? 'bg-orange-soft' : 'hover:bg-paper-2'
                   }`}
                 >
                   {/* Stambieji punktai paryškinti — tai programos skyriai. */}
@@ -322,7 +327,7 @@ export function UzduociuGeneratorius() {
                     className="shrink-0 font-mono text-[0.9375rem] text-muted"
                     aria-hidden="true"
                   >
-                    {skirstoma ? (atidaryta ? '–' : '+') : '→'}
+                    {skirstoma ? (atidaryta ? '–' : '+') : atidarytasRinkinys ? '–' : '+'}
                   </span>
                 </button>
 
@@ -330,7 +335,7 @@ export function UzduociuGeneratorius() {
                   <div className="be-spausdinimo border-t border-line bg-paper-2 px-5 py-3">
                     <ol className="flex flex-col">
                       {sarasas.map((p) => {
-                        const turi = Boolean(rinkiniai[raktas(tema.numeris, p.numeris)])
+                        const turi = atidarytas === raktas(tema.numeris, p.numeris)
                         return (
                           <li key={p.numeris}>
                             <button
@@ -376,10 +381,10 @@ export function UzduociuGeneratorius() {
                   </div>
                 )}
 
-                {/* Rinkiniai lieka matomi ir susiskleidus sąrašui. */}
-                {turiRinkiniu && (
+                {/* Atidarytas rinkinys lieka matomas ir susiskleidus temų sąrašui. */}
+                {atidarytasRinkinys && (
                   <div className="border-t border-line bg-paper-2 px-5 py-4 print:border-0 print:bg-transparent print:p-0">
-                    {sirinkiniai.map(([key, r]) => rinkinioBlokas(key, r))}
+                    {rinkinioBlokas(atidarytasRinkinys[0], atidarytasRinkinys[1])}
                   </div>
                 )}
               </li>

@@ -1,5 +1,6 @@
-import { atsitiktinis } from '../matematika'
-import { suBandymais, uzdavinys } from './bendra'
+import { derink } from '../lietuviu'
+import { atsitiktinis, pasirink } from '../matematika'
+import { suBandymais, uzdavinys, variacija } from './bendra'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -28,75 +29,120 @@ const ATSARGINIAI = [
   },
 ] as const
 
+/** Galininko formos: „po 1 obuolį", „po 5 obuolius", „po 20 obuolių". */
+const DAIKTAI = [
+  { vns: 'obuolį', dgs: 'obuolius', kilm: 'obuolių' },
+  { vns: 'sąsiuvinį', dgs: 'sąsiuvinius', kilm: 'sąsiuvinių' },
+  { vns: 'pieštuką', dgs: 'pieštukus', kilm: 'pieštukų' },
+  { vns: 'saldainį', dgs: 'saldainius', kilm: 'saldainių' },
+] as const
+
 export const sveikieji: Generatorius = (lygis) =>
   suBandymais(() => kurk(lygis), ATSARGINIAI, 'daugyba-dalyba')
 
+/** Septynios skirtingo pavidalo variacijos — ne vien kiti skaičiai. */
 function kurk(lygis: Lygis): Uzdavinys | null {
-  const dalyba = Math.random() < 0.5
+  const a = () => (lygis === 1 ? atsitiktinis(2, 9) : atsitiktinis(11, lygis === 2 ? 40 : 99))
+  const b = () => atsitiktinis(2, 9)
 
-  if (lygis === 1) {
-    const a = atsitiktinis(2, 9)
-    const b = atsitiktinis(2, 9)
-    const sandauga = a * b
-    if (a === b && a === 2) return null
-
-    if (dalyba) {
+  return variacija([
+    // 1. Daugyba
+    () => {
+      const x = a()
+      const y = b()
+      if (x * y > (lygis === 1 ? 81 : 900)) return null
       return uzdavinys('daugyba-dalyba', {
-        klausimas: `Apskaičiuok: $${sandauga} : ${a}$`,
-        atsakymas: String(b),
-        atsakymasRodymui: `$${b}$`,
-        sprendimas: `$${a} \\cdot ${b} = ${sandauga}$, tad $${sandauga} : ${a} = ${b}$.`,
+        klausimas: `Apskaičiuok: $${x} \\cdot ${y}$`,
+        atsakymas: String(x * y),
+        atsakymasRodymui: `$${x * y}$`,
+        sprendimas: `$${x} \\cdot ${y} = ${x * y}$.`,
       })
-    }
+    },
 
-    return uzdavinys('daugyba-dalyba', {
-      klausimas: `Apskaičiuok: $${a} \\cdot ${b}$`,
-      atsakymas: String(sandauga),
-      atsakymasRodymui: `$${sandauga}$`,
-      sprendimas: `${a} kartus po ${b} — ${sandauga}.`,
-    })
-  }
-
-  if (lygis === 2) {
-    // Dviženklis kart vienženklis.
-    const a = atsitiktinis(12, 40)
-    const b = atsitiktinis(3, 9)
-    const sandauga = a * b
-    if (sandauga > 360) return null
-
-    if (dalyba) {
+    // 2. Dalyba be liekanos
+    () => {
+      const x = a()
+      const y = b()
+      const sandauga = x * y
+      if (sandauga > 900) return null
       return uzdavinys('daugyba-dalyba', {
-        klausimas: `Apskaičiuok: $${sandauga} : ${b}$`,
-        atsakymas: String(a),
-        atsakymasRodymui: `$${a}$`,
-        sprendimas: `$${b} \\cdot ${a} = ${sandauga}$, tad $${sandauga} : ${b} = ${a}$.`,
+        klausimas: `Apskaičiuok: $${sandauga} : ${y}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$${x}$`,
+        sprendimas: `$${y} \\cdot ${x} = ${sandauga}$, tad $${sandauga} : ${y} = ${x}$.`,
       })
-    }
+    },
 
-    return uzdavinys('daugyba-dalyba', {
-      klausimas: `Apskaičiuok: $${a} \\cdot ${b}$`,
-      atsakymas: String(sandauga),
-      atsakymasRodymui: `$${sandauga}$`,
-      sprendimas: `$${a} \\cdot ${b} = ${Math.floor(a / 10) * 10} \\cdot ${b} + ${
-        a % 10
-      } \\cdot ${b} = ${Math.floor(a / 10) * 10 * b} + ${(a % 10) * b} = ${sandauga}$.`,
-    })
-  }
+    // 3. Trūkstamas daugiklis
+    () => {
+      const x = a()
+      const y = b()
+      if (x * y > 900) return null
+      return uzdavinys('daugyba-dalyba', {
+        klausimas: `Koks skaičius turi būti vietoj langelio? $${y} \\cdot \\square = ${x * y}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$${x}$`,
+        sprendimas: `$${x * y} : ${y} = ${x}$.`,
+      })
+    },
 
-  // 3 lygis — du veiksmai, veiksmų eiliškumas.
-  const a = atsitiktinis(3, 12)
-  const b = atsitiktinis(2, 9)
-  const c = atsitiktinis(2, 9)
-  const d = atsitiktinis(2, 9)
-  const rez = a * b + c * d
-  if (rez > 200) return null
+    // 4. Tekstinis: vienodos dėžės
+    () => {
+      const dezes = atsitiktinis(3, 9)
+      const kiekvienoje = lygis === 1 ? atsitiktinis(2, 9) : atsitiktinis(6, 25)
+      // „po 24 saldainius", bet „po 20 saldainių" — galininkas derinamas su skaičiumi.
+      const daiktas = pasirink(DAIKTAI)
+      return uzdavinys('daugyba-dalyba', {
+        klausimas: `${dezes} dėžėse yra po ${kiekvienoje} ${derink(kiekvienoje, daiktas)}. Kiek ${daiktas.kilm} iš viso?`,
+        atsakymas: String(dezes * kiekvienoje),
+        atsakymasRodymui: `$${dezes * kiekvienoje}$`,
+        sprendimas: `$${dezes} \\cdot ${kiekvienoje} = ${dezes * kiekvienoje}$.`,
+      })
+    },
 
-  return uzdavinys('daugyba-dalyba', {
-    klausimas: `Apskaičiuok: $${a} \\cdot ${b} + ${c} \\cdot ${d}$`,
-    atsakymas: String(rez),
-    atsakymasRodymui: `$${rez}$`,
-    sprendimas: `Pirma daugyba: $${a * b}$ ir $${c * d}$. Tada suma: $${a * b} + ${
-      c * d
-    } = ${rez}$.`,
-  })
+    // 5. Dalyba su liekana
+    () => {
+      if (lygis === 1) return null
+      const daliklis = atsitiktinis(3, 9)
+      const dalmuo = atsitiktinis(4, 20)
+      const liekana = atsitiktinis(1, daliklis - 1)
+      const dalinys = daliklis * dalmuo + liekana
+      return uzdavinys('daugyba-dalyba', {
+        klausimas: `Kokia liekana gaunama dalijant ${dalinys} iš ${daliklis}?`,
+        atsakymas: String(liekana),
+        atsakymasRodymui: `$${liekana}$`,
+        sprendimas: `$${daliklis} \\cdot ${dalmuo} = ${daliklis * dalmuo}$, o $${dalinys} - ${daliklis * dalmuo} = ${liekana}$.`,
+      })
+    },
+
+    // 6. Du veiksmai
+    () => {
+      const x = atsitiktinis(3, 12)
+      const y = b()
+      const z = atsitiktinis(2, 9)
+      const w = b()
+      const rez = x * y + z * w
+      if (rez > 400) return null
+      return uzdavinys('daugyba-dalyba', {
+        klausimas: `Apskaičiuok: $${x} \\cdot ${y} + ${z} \\cdot ${w}$`,
+        atsakymas: String(rez),
+        atsakymasRodymui: `$${rez}$`,
+        sprendimas: `Pirma daugyba: $${x * y}$ ir $${z * w}$. Tada $${x * y} + ${z * w} = ${rez}$.`,
+      })
+    },
+
+    // 7. Kiek kartų didesnis
+    () => {
+      const kartai = atsitiktinis(2, 9)
+      const mazas = lygis === 1 ? atsitiktinis(2, 9) : atsitiktinis(6, 30)
+      const didelis = mazas * kartai
+      if (didelis > 900) return null
+      return uzdavinys('daugyba-dalyba', {
+        klausimas: `Kiek kartų ${didelis} didesnis už ${mazas}?`,
+        atsakymas: String(kartai),
+        atsakymasRodymui: `$${kartai}$`,
+        sprendimas: `$${didelis} : ${mazas} = ${kartai}$.`,
+      })
+    },
+  ])
 }

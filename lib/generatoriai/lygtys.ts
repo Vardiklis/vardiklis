@@ -1,5 +1,5 @@
 import { atsitiktinis, atsitiktinisBe, pasirink } from '../matematika'
-import { suBandymais, uzdavinys } from './bendra'
+import { suBandymais, uzdavinys, variacija } from './bendra'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -44,64 +44,124 @@ const ATSARGINIAI_TIESINES = [
 export const tiesinesLygtys: Generatorius = (lygis) =>
   suBandymais(() => kurkTiesine(lygis), ATSARGINIAI_TIESINES, 'tiesines-lygtys')
 
+/** Aštuonios skirtingo pavidalo variacijos; sprendinys visada parenkamas pirma. */
 function kurkTiesine(lygis: Lygis): Uzdavinys | null {
   const x = sprendinys(lygis)
 
-  if (lygis === 1) {
-    // Vieno veiksmo lygtis: `ax = b` arba `x + b = c`.
-    if (Math.random() < 0.5) {
+  return variacija([
+    // 1. ax = b
+    () => {
       const a = atsitiktinis(2, 9)
       const b = a * x
-      if (b > 90) return null
+      if (Math.abs(b) > 120) return null
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Išspręsk lygtį: $${a}x = ${b}$`,
         atsakymas: String(x),
         atsakymasRodymui: `$x = ${x}$`,
         sprendimas: `$x = ${b} : ${a} = ${x}$.`,
       })
-    }
-    const b = atsitiktinis(2, 30)
-    const c = x + b
-    return uzdavinys('tiesines-lygtys', {
-      klausimas: `Išspręsk lygtį: $x + ${b} = ${c}$`,
-      atsakymas: String(x),
-      atsakymasRodymui: `$x = ${x}$`,
-      sprendimas: `$x = ${c} - ${b} = ${x}$.`,
-    })
-  }
+    },
 
-  if (lygis === 2) {
-    // Dviejų veiksmų lygtis: `ax + b = c`, `c` išvedamas.
-    const a = atsitiktinis(2, 9)
-    const b = atsitiktinisBe(-20, 20, [0])
-    const c = a * x + b
-    if (Math.abs(c) > 80) return null
+    // 2. x + b = c
+    () => {
+      const b = atsitiktinisBe(-30, 30, [0])
+      const c = x + b
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Išspręsk lygtį: $${tiesinisNaris(1, b)} = ${c}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$x = ${x}$`,
+        sprendimas: `$x = ${c} ${b > 0 ? '-' : '+'} ${Math.abs(b)} = ${x}$.`,
+      })
+    },
 
-    return uzdavinys('tiesines-lygtys', {
-      klausimas: `Išspręsk lygtį: $${tiesinisNaris(a, b)} = ${c}$`,
-      atsakymas: String(x),
-      atsakymasRodymui: `$x = ${x}$`,
-      sprendimas: `$${a}x = ${c} ${b > 0 ? '-' : '+'} ${Math.abs(b)} = ${
-        a * x
-      }$, tad $x = ${a * x} : ${a} = ${x}$.`,
-    })
-  }
+    // 3. ax + b = c
+    () => {
+      const a = atsitiktinis(2, 9)
+      const b = atsitiktinisBe(-20, 20, [0])
+      const c = a * x + b
+      if (Math.abs(c) > 90) return null
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Išspręsk lygtį: $${tiesinisNaris(a, b)} = ${c}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$x = ${x}$`,
+        sprendimas: `$${a}x = ${c} ${b > 0 ? '-' : '+'} ${Math.abs(b)} = ${a * x}$, tad $x = ${x}$.`,
+      })
+    },
 
-  // 3 lygis — kintamasis abiejose pusėse: `ax + b = cx + d`.
-  const a = atsitiktinis(3, 9)
-  const c = atsitiktinisBe(-5, 5, [0, a])
-  const b = atsitiktinisBe(-15, 15, [0])
-  const d = (a - c) * x + b
-  if (Math.abs(d) > 80) return null
+    // 4. a(x + b) = c
+    () => {
+      if (lygis === 1) return null
+      const a = atsitiktinis(2, 7)
+      const b = atsitiktinisBe(-9, 9, [0])
+      const c = a * (x + b)
+      if (Math.abs(c) > 120) return null
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Išspręsk lygtį: $${a}(${tiesinisNaris(1, b)}) = ${c}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$x = ${x}$`,
+        sprendimas: `Padalijus abi puses iš ${a}: $${tiesinisNaris(1, b)} = ${c / a}$, tad $x = ${x}$.`,
+      })
+    },
 
-  return uzdavinys('tiesines-lygtys', {
-    klausimas: `Išspręsk lygtį: $${tiesinisNaris(a, b)} = ${tiesinisNaris(c, d)}$`,
-    atsakymas: String(x),
-    atsakymasRodymui: `$x = ${x}$`,
-    sprendimas: `Perkeliame kintamuosius į kairę, skaičius į dešinę: $${
-      a - c
-    }x = ${d - b}$, tad $x = ${x}$.`,
-  })
+    // 5. Kintamasis abiejose pusėse
+    () => {
+      if (lygis === 1) return null
+      const a = atsitiktinis(3, 9)
+      const c = atsitiktinisBe(-5, 5, [0, a])
+      const b = atsitiktinisBe(-15, 15, [0])
+      const d = (a - c) * x + b
+      if (Math.abs(d) > 90) return null
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Išspręsk lygtį: $${tiesinisNaris(a, b)} = ${tiesinisNaris(c, d)}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$x = ${x}$`,
+        sprendimas: `Kintamuosius perkeliame į kairę: $${a - c}x = ${d - b}$, tad $x = ${x}$.`,
+      })
+    },
+
+    // 6. Trupmeninė lygtis
+    () => {
+      if (lygis === 1) return null
+      const b = atsitiktinis(2, 6)
+      const a = atsitiktinisBe(-12, 12, [0])
+      const c = (x + a) / b
+      if (!Number.isInteger(c)) return null
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Išspręsk lygtį: $\\dfrac{${tiesinisNaris(1, a)}}{${b}} = ${c}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$x = ${x}$`,
+        sprendimas: `Padauginus abi puses iš ${b}: $${tiesinisNaris(1, a)} = ${c * b}$, tad $x = ${x}$.`,
+      })
+    },
+
+    // 7. Tekstinis: sugalvotas skaičius
+    () => {
+      if (x <= 0) return null
+      const a = atsitiktinis(2, 9)
+      const b = atsitiktinis(3, 30)
+      const c = a * x + b
+      if (Math.abs(c) > 150) return null
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Sugalvotą skaičių padauginome iš ${a} ir prie sandaugos pridėjome ${b}. Gavome ${c}. Koks buvo sugalvotas skaičius?`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$x = ${x}$`,
+        sprendimas: `Sudarome lygtį $${a}x + ${b} = ${c}$. Iš jos $${a}x = ${a * x}$, tad $x = ${x}$.`,
+      })
+    },
+
+    // 8. Tekstinis: perimetras
+    () => {
+      if (x <= 1) return null
+      const kita = atsitiktinis(2, 15)
+      const p = 2 * (x + kita)
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Stačiakampio perimetras ${p} cm, viena kraštinė ${kita} cm. Kokio ilgio kita kraštinė?`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$${x}$ cm`,
+        sprendimas: `Sudarome lygtį $2(x + ${kita}) = ${p}$. Iš jos $x + ${kita} = ${p / 2}$, tad $x = ${x}$ cm.`,
+      })
+    },
+  ])
 }
 
 // ---------------------------------------------------------------------------

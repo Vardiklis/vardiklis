@@ -1,5 +1,5 @@
 import { atsitiktinis, pasirink, suprastink, trupmenaTeX } from '../matematika'
-import { suBandymais, uzdavinys } from './bendra'
+import { suBandymais, uzdavinys, variacija } from './bendra'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -25,48 +25,112 @@ const A_SUDETIS = [
 export const sudetisAtimtis: Generatorius = (lygis) =>
   suBandymais(() => kurkSudeti(lygis), A_SUDETIS, 'sudetis-atimtis')
 
+/**
+ * Sudėtis ir atimtis — septynios skirtingo pavidalo variacijos.
+ * Skaičių ribos priklauso nuo lygio, o pavidalą kaskart parenka `variacija`.
+ */
 function kurkSudeti(lygis: Lygis): Uzdavinys | null {
-  const riba = lygis === 1 ? 100 : 1000
+  const riba = lygis === 1 ? 100 : lygis === 2 ? 1000 : 10000
+  const mazas = () => atsitiktinis(2, lygis === 1 ? 40 : lygis === 2 ? 300 : 900)
+  const didelis = () => atsitiktinis(lygis === 1 ? 11 : 101, Math.floor(riba * 0.9))
 
-  if (lygis === 3) {
-    // Trys nariai su skliaustais — tikrinama ir veiksmų tvarka.
-    const a = atsitiktinis(20, 300)
-    const b = atsitiktinis(10, 200)
-    const c = atsitiktinis(10, 200)
-    const rez = a - (b + c)
-    if (rez <= 0) return null
+  return variacija([
+    // 1. Grynoji sudėtis
+    () => {
+      const a = didelis()
+      const b = mazas()
+      if (a + b > riba) return null
+      return uzdavinys('sudetis-atimtis', {
+        klausimas: `Apskaičiuok: $${a} + ${b}$`,
+        atsakymas: String(a + b),
+        atsakymasRodymui: `$${a + b}$`,
+        sprendimas: `$${a} + ${b} = ${a + b}$.`,
+      })
+    },
 
-    return uzdavinys('sudetis-atimtis', {
-      klausimas: `Apskaičiuok: $${a} - (${b} + ${c})$`,
-      atsakymas: String(rez),
-      atsakymasRodymui: `$${rez}$`,
-      sprendimas: `Pirma skliaustai: $${b} + ${c} = ${b + c}$. Tada $${a} - ${b + c} = ${rez}$.`,
-    })
-  }
+    // 2. Grynoji atimtis
+    () => {
+      const a = didelis()
+      const b = mazas()
+      if (a - b <= 0) return null
+      return uzdavinys('sudetis-atimtis', {
+        klausimas: `Apskaičiuok: $${a} - ${b}$`,
+        atsakymas: String(a - b),
+        atsakymasRodymui: `$${a - b}$`,
+        sprendimas: `$${a} - ${b} = ${a - b}$.`,
+      })
+    },
 
-  const atimtis = Math.random() < 0.5
-  const a = atsitiktinis(lygis === 1 ? 11 : 101, riba - 1)
-  const b = atsitiktinis(lygis === 1 ? 2 : 11, lygis === 1 ? 60 : 600)
+    // 3. Trūkstamas dėmuo
+    () => {
+      const a = didelis()
+      const b = mazas()
+      if (a + b > riba) return null
+      return uzdavinys('sudetis-atimtis', {
+        klausimas: `Koks skaičius turi būti vietoj langelio? $${a} + \\square = ${a + b}$`,
+        atsakymas: String(b),
+        atsakymasRodymui: `$${b}$`,
+        sprendimas: `Iš sumos atimame žinomą dėmenį: $${a + b} - ${a} = ${b}$.`,
+      })
+    },
 
-  if (atimtis) {
-    const rez = a - b
-    if (rez <= 0) return null
-    return uzdavinys('sudetis-atimtis', {
-      klausimas: `Apskaičiuok: $${a} - ${b}$`,
-      atsakymas: String(rez),
-      atsakymasRodymui: `$${rez}$`,
-      sprendimas: `$${a} - ${b} = ${rez}$.`,
-    })
-  }
+    // 4. Trūkstamas turinys
+    () => {
+      const b = mazas()
+      const rez = didelis()
+      if (rez + b > riba) return null
+      return uzdavinys('sudetis-atimtis', {
+        klausimas: `Koks skaičius turi būti vietoj langelio? $\\square - ${b} = ${rez}$`,
+        atsakymas: String(rez + b),
+        atsakymasRodymui: `$${rez + b}$`,
+        sprendimas: `Prie skirtumo pridedame atėminį: $${rez} + ${b} = ${rez + b}$.`,
+      })
+    },
 
-  const rez = a + b
-  if (rez > riba) return null
-  return uzdavinys('sudetis-atimtis', {
-    klausimas: `Apskaičiuok: $${a} + ${b}$`,
-    atsakymas: String(rez),
-    atsakymasRodymui: `$${rez}$`,
-    sprendimas: `$${a} + ${b} = ${rez}$.`,
-  })
+    // 5. Trys nariai
+    () => {
+      const a = didelis()
+      const b = mazas()
+      const c = mazas()
+      const rez = a + b - c
+      if (rez <= 0 || a + b > riba) return null
+      return uzdavinys('sudetis-atimtis', {
+        klausimas: `Apskaičiuok: $${a} + ${b} - ${c}$`,
+        atsakymas: String(rez),
+        atsakymasRodymui: `$${rez}$`,
+        sprendimas: `Iš eilės: $${a} + ${b} = ${a + b}$, tada $${a + b} - ${c} = ${rez}$.`,
+      })
+    },
+
+    // 6. Tekstinis uždavinys
+    () => {
+      const pradzia = didelis()
+      const isejo = mazas()
+      const iejo = mazas()
+      const rez = pradzia - isejo + iejo
+      if (isejo >= pradzia || rez > riba) return null
+      return uzdavinys('sudetis-atimtis', {
+        klausimas: `Autobuse važiavo ${pradzia} keleiviai. Stotelėje išlipo ${isejo}, o įlipo ${iejo}. Kiek keleivių liko autobuse?`,
+        atsakymas: String(rez),
+        atsakymasRodymui: `$${rez}$`,
+        sprendimas: `$${pradzia} - ${isejo} = ${pradzia - isejo}$, tada $${pradzia - isejo} + ${iejo} = ${rez}$.`,
+      })
+    },
+
+    // 7. Kiek daugiau
+    () => {
+      const a = didelis()
+      const b = didelis()
+      if (a === b) return null
+      const [d, m] = a > b ? [a, b] : [b, a]
+      return uzdavinys('sudetis-atimtis', {
+        klausimas: `Kiek ${d} didesnis už ${m}?`,
+        atsakymas: String(d - m),
+        atsakymasRodymui: `$${d - m}$`,
+        sprendimas: `$${d} - ${m} = ${d - m}$.`,
+      })
+    },
+  ])
 }
 
 // ── Skaičių palyginimas ─────────────────────────────────────────────────────
