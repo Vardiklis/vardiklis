@@ -9,6 +9,8 @@ type Juodrastis = {
   atsakymas: string
   atsakymasRodymui: string
   sprendimas?: string
+  /** SVG brėžinys, jei uždavinys be jo neaiškus. */
+  brezinys?: string
 }
 
 /**
@@ -23,6 +25,7 @@ export function uzdavinys(temaId: string, j: Juodrastis): Uzdavinys {
     atsakymas: normalizuok(j.atsakymas),
     atsakymasRodymui: j.atsakymasRodymui,
     sprendimas: j.sprendimas,
+    brezinys: j.brezinys,
   }
 }
 

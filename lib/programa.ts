@@ -10,19 +10,60 @@
  * kur biblioteką verta pildyti toliau.
  */
 
+export type Lygis = 1 | 2 | 3
+
+/**
+ * Potemė. Paprasčiausiu atveju tai tik pavadinimas — tada ji paveldi savo
+ * temos generatorių. Objekto forma naudojama tada, kai potemei tinka kitas
+ * generatorius nei visai temai (pvz. 8 kl. „Kvadratinė ir kubinė šaknys"
+ * temoje „Skaičiai ir skaičiavimai").
+ */
+export type Potema =
+  | string
+  | {
+      pavadinimas: string
+      generatorius?: string
+      lygis?: Lygis
+    }
+
 export type ProgramosTema = {
   /** Stambiojo punkto numeris klasėje: 1., 2., 3. */
   numeris: number
   pavadinimas: string
-  potemes?: string[]
+  potemes?: Potema[]
   generatorius?: string
   /** Sunkumo lygis, kuriuo tema generuojama pagal nutylėjimą. */
-  lygis?: 1 | 2 | 3
+  lygis?: Lygis
 }
 
 export type ProgramosKlase = {
   klase: number
   temos: ProgramosTema[]
+}
+
+/** Potemė su galutiniu numeriu ir generatoriumi — jau paveldėtu iš temos. */
+export type IsskleistaPotema = {
+  /** „3.2" pavidalu. */
+  numeris: string
+  pavadinimas: string
+  generatorius?: string
+  lygis: Lygis
+}
+
+/**
+ * Potemės su numeriais ir generatoriais. Potemė be savo generatoriaus
+ * paveldi temos generatorių, tad paspaudus bet kurią gaunami uždaviniai.
+ */
+export function potemes(tema: ProgramosTema): IsskleistaPotema[] {
+  return (tema.potemes ?? []).map((p, i) => {
+    const objektas = typeof p === 'string' ? { pavadinimas: p } : p
+    return {
+      numeris: `${tema.numeris}.${i + 1}`,
+      pavadinimas: objektas.pavadinimas,
+      generatorius: objektas.generatorius ?? tema.generatorius,
+      lygis: objektas.lygis ?? tema.lygis ?? 2,
+    }
+  })
 }
 
 export const programa: ProgramosKlase[] = [
@@ -36,7 +77,7 @@ export const programa: ProgramosKlase[] = [
           'Skaičiai nuo 0 iki 100, skaičių palyginimas',
           'Sudėtis, skliaustai',
           'Atimtis',
-          'Finansiniai skaičiavimai. Eurai ir centai',
+          { pavadinimas: 'Finansiniai skaičiavimai. Eurai ir centai', generatorius: 'pinigai', lygis: 1 },
         ],
         generatorius: 'sudetis-atimtis',
         lygis: 1,
@@ -44,7 +85,10 @@ export const programa: ProgramosKlase[] = [
       {
         numeris: 2,
         pavadinimas: 'Modeliai ir sąryšiai',
-        potemes: ['Dėsningumai. Sekos', 'Algoritmai ir programavimas'],
+        potemes: [
+          'Dėsningumai. Sekos',
+          { pavadinimas: 'Algoritmai ir programavimas', generatorius: 'algoritmai', lygis: 1 },
+        ],
         generatorius: 'sekos',
         lygis: 1,
       },
@@ -52,11 +96,11 @@ export const programa: ProgramosKlase[] = [
         numeris: 3,
         pavadinimas: 'Matavimų skalės ir vienetai',
         potemes: [
-          'Masė, laikas',
+          { pavadinimas: 'Masė, laikas', generatorius: 'laikas', lygis: 1 },
           'Ilgis, atstumas',
-          'Konstravimas, transformacijos',
-          'Plokštumos figūros',
-          'Erdvės figūros',
+          { pavadinimas: 'Konstravimas, transformacijos', generatorius: 'simetrija', lygis: 1 },
+          { pavadinimas: 'Plokštumos figūros', generatorius: 'figuros', lygis: 1 },
+          { pavadinimas: 'Erdvės figūros', generatorius: 'erdvines-figuros', lygis: 1 },
         ],
         generatorius: 'matavimo-vienetai',
         lygis: 1,
@@ -65,6 +109,8 @@ export const programa: ProgramosKlase[] = [
         numeris: 4,
         pavadinimas: 'Duomenys ir tikimybės',
         potemes: ['Duomenys ir jų interpretavimas'],
+        generatorius: 'diagramos',
+        lygis: 1,
       },
     ],
   },
@@ -106,7 +152,7 @@ export const programa: ProgramosKlase[] = [
           'Kas yra dalyba',
           'Lyginiai ir nelyginiai skaičiai',
           'Kaip spręsti uždavinius',
-          'Veiksmų tvarka skaitiniame reiškinyje',
+          { pavadinimas: 'Veiksmų tvarka skaitiniame reiškinyje', generatorius: 'veiksmu-tvarka', lygis: 1 },
         ],
         generatorius: 'sveikieji',
         lygis: 1,
@@ -148,6 +194,8 @@ export const programa: ProgramosKlase[] = [
         numeris: 7,
         pavadinimas: 'Algoritmai ir programavimas',
         potemes: ['Kas yra komanda', 'Komandos (nurodymai)', 'Pasirinkimo komanda'],
+        generatorius: 'algoritmai',
+        lygis: 1,
       },
       {
         numeris: 8,
@@ -174,16 +222,27 @@ export const programa: ProgramosKlase[] = [
         numeris: 11,
         pavadinimas: 'Konstravimas. Transformacijos',
         potemes: ['Kaip rasti kelią plane pagal komandas', 'Simetriškos figūros'],
+        generatorius: 'simetrija',
+        lygis: 1,
       },
       {
         numeris: 12,
         pavadinimas: 'Figūros. Plokščiosios figūros',
-        potemes: ['Plokščiosios figūros', 'Kraštinės, kampai, viršūnės', 'Laužės', 'Simetriškos figūros'],
+        potemes: [
+          'Plokščiosios figūros',
+          'Kraštinės, kampai, viršūnės',
+          { pavadinimas: 'Laužės', generatorius: 'lauzes', lygis: 1 },
+          { pavadinimas: 'Simetriškos figūros', generatorius: 'simetrija', lygis: 1 },
+        ],
+        generatorius: 'figuros',
+        lygis: 1,
       },
       {
         numeris: 13,
         pavadinimas: 'Erdvinės figūros',
         potemes: ['Erdvinės figūros', 'Ryšiai tarp dvimačių ir trimačių figūrų'],
+        generatorius: 'erdvines-figuros',
+        lygis: 1,
       },
       {
         numeris: 14,
@@ -194,6 +253,8 @@ export const programa: ProgramosKlase[] = [
           'Stulpelinė diagrama',
           'Piktogramos',
         ],
+        generatorius: 'diagramos',
+        lygis: 2,
       },
     ],
   },
@@ -205,12 +266,12 @@ export const programa: ProgramosKlase[] = [
         numeris: 1,
         pavadinimas: 'Natūralieji skaičiai iki 10 000',
         potemes: [
-          'Skaičių nuo 0 iki 10 000 skaitymas, rašymas, palyginimas, apvalinimas',
-          'Sudėtis ir atimtis',
+          { pavadinimas: 'Skaičių skaitymas, rašymas, palyginimas, apvalinimas', generatorius: 'apvalinimas', lygis: 2 },
+          { pavadinimas: 'Sudėtis ir atimtis', generatorius: 'sudetis-atimtis', lygis: 2 },
           'Daugyba iš vienaženklio skaičiaus',
           'Dalyba iš vienaženklio skaičiaus. Dalyba su liekana',
-          'Skaitiniai reiškiniai',
-          'Sekos, algoritmai',
+          { pavadinimas: 'Skaitiniai reiškiniai', generatorius: 'veiksmu-tvarka', lygis: 2 },
+          { pavadinimas: 'Sekos, algoritmai', generatorius: 'sekos', lygis: 2 },
         ],
         generatorius: 'sveikieji',
         lygis: 2,
@@ -229,9 +290,9 @@ export const programa: ProgramosKlase[] = [
         numeris: 3,
         pavadinimas: 'Matavimai',
         potemes: [
-          'Ilgio matavimo vienetas decimetras. Vienetų cm, dm ir m sąryšiai',
+          { pavadinimas: 'Ilgio vienetai: cm, dm, m', generatorius: 'matavimo-vienetai', lygis: 1 },
           'Perimetro sąvoka. Daugiakampio perimetro skaičiavimas',
-          'Laiko matavimo vienetas sekundė. Vienetų sek., min., val. sąryšiai',
+          { pavadinimas: 'Laiko vienetai: sek., min., val.', generatorius: 'laikas', lygis: 2 },
         ],
         generatorius: 'perimetras',
         lygis: 1,
@@ -258,11 +319,11 @@ export const programa: ProgramosKlase[] = [
         numeris: 6,
         pavadinimas: 'Plokštumos figūros',
         potemes: [
-          'Tiesės ir atkarpos',
-          'Kampai',
+          { pavadinimas: 'Tiesės ir atkarpos', generatorius: 'lauzes', lygis: 2 },
+          { pavadinimas: 'Kampai', generatorius: 'kampai', lygis: 1 },
           'Stačiakampis, kvadratas',
-          'Apskritimas ir skritulys',
-          'Tiesės atžvilgiu simetriškos figūros',
+          { pavadinimas: 'Apskritimas ir skritulys', generatorius: 'apskritimas', lygis: 1 },
+          { pavadinimas: 'Tiesės atžvilgiu simetriškos figūros', generatorius: 'simetrija', lygis: 1 },
         ],
         generatorius: 'perimetras',
         lygis: 2,
@@ -271,11 +332,15 @@ export const programa: ProgramosKlase[] = [
         numeris: 7,
         pavadinimas: 'Erdvės figūros',
         potemes: ['Stačiakampis gretasienis ir kubas', 'Prizmės', 'Piramidės'],
+        generatorius: 'erdvines-figuros',
+        lygis: 2,
       },
       {
         numeris: 8,
         pavadinimas: 'Duomenys ir jų interpretavimas. Tikėtinumas',
         potemes: ['Duomenų rinkimas', 'Duomenų vaizdavimas. Stulpelinės diagramos', 'Tikėtinumas'],
+        generatorius: 'diagramos',
+        lygis: 2,
       },
     ],
   },
@@ -288,10 +353,10 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Natūralieji ir sveikieji skaičiai. Skaičiai nuo 0 iki 1 000 000',
         potemes: [
           'Skaičiai. Jų svarba kasdieniame gyvenime',
-          'Skirtingų skaičių dydžių ir reikšmių palyginimas',
+          { pavadinimas: 'Skirtingų skaičių dydžių palyginimas', generatorius: 'skaiciu-palyginimas', lygis: 3 },
           'Didelių skaičių trumpinimo žymėjimas',
           'Natūralieji skaičiai',
-          'Skaičių suapvalinimas',
+          { pavadinimas: 'Skaičių suapvalinimas', generatorius: 'apvalinimas', lygis: 3 },
           'Natūralieji ir sveikieji skaičiai',
         ],
         generatorius: 'apvalinimas',
@@ -328,11 +393,11 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Veiksmai su trupmenomis',
         potemes: [
           'Mišriųjų skaičių apvalinimas iki sveikųjų',
-          'Trupmenų, kurių vardiklyje 10, 100, 1000, rašymas dešimtainiais skaičiais',
-          'Trupmenos su vienodais vardikliais',
-          'Mišriosios trupmenos',
+          { pavadinimas: 'Trupmenos su vardikliu 10, 100, 1000 dešimtainiais', generatorius: 'desimtaines', lygis: 3 },
+          { pavadinimas: 'Trupmenos su vienodais vardikliais', generatorius: 'trupmenu-sudetis', lygis: 1 },
+          { pavadinimas: 'Mišriosios trupmenos', generatorius: 'trupmenu-sudetis', lygis: 3 },
           'Dešimtainės trupmenos',
-          'Dešimtainiai skaičiai kainose',
+          { pavadinimas: 'Dešimtainiai skaičiai kainose', generatorius: 'pinigai', lygis: 1 },
         ],
         generatorius: 'desimtaines',
         lygis: 1,
@@ -364,6 +429,8 @@ export const programa: ProgramosKlase[] = [
         numeris: 7,
         pavadinimas: 'Algoritmai ir programavimas',
         potemes: ['Kartojimo komandos', 'Komandų sekos'],
+        generatorius: 'algoritmai',
+        lygis: 2,
       },
       {
         numeris: 8,
@@ -389,7 +456,7 @@ export const programa: ProgramosKlase[] = [
         numeris: 10,
         pavadinimas: 'Matavimo skalės ir vienetai. Masė, laikas, temperatūra, greitis',
         potemes: [
-          'Įvairių matavimo prietaisų rodmenys',
+          { pavadinimas: 'Įvairių matavimo prietaisų rodmenys', generatorius: 'matavimo-vienetai', lygis: 2 },
           'Kelio ir greičio sąvokos',
           'Kelio, laiko, greičio sąryšis',
           'Kelio, laiko, greičio apskaičiavimas',
@@ -400,7 +467,10 @@ export const programa: ProgramosKlase[] = [
       {
         numeris: 11,
         pavadinimas: 'Plotas, tūris',
-        potemes: ['Figūros plotas ir ploto vienetai', 'Tūris'],
+        potemes: [
+          { pavadinimas: 'Figūros plotas ir ploto vienetai', generatorius: 'plotas-turis', lygis: 1 },
+          { pavadinimas: 'Tūris', generatorius: 'plotas-turis', lygis: 2 },
+        ],
         generatorius: 'plotas-turis',
         lygis: 1,
       },
@@ -409,18 +479,20 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Konstravimas. Transformacijos',
         potemes: [
           'Objektų padėties plokštumoje nusakymas',
-          'Objektų judėjimas plokštumoje',
-          'Ornamentai',
-          'Objekto posūkis apie duotą tašką',
+          { pavadinimas: 'Objektų judėjimas plokštumoje', generatorius: 'simetrija', lygis: 3 },
+          { pavadinimas: 'Ornamentai', generatorius: 'ornamentai', lygis: 1 },
+          { pavadinimas: 'Objekto posūkis apie duotą tašką', generatorius: 'simetrija', lygis: 2 },
         ],
+        generatorius: 'koordinates',
+        lygis: 1,
       },
       {
         numeris: 13,
         pavadinimas: 'Figūros. Plokščiosios figūros',
         potemes: [
-          'Trikampiai pagal kraštinių ilgius',
+          { pavadinimas: 'Trikampiai pagal kraštinių ilgius', generatorius: 'figuros', lygis: 1 },
           'Trikampiai pagal kampus',
-          'Lygios geometrinės figūros',
+          { pavadinimas: 'Lygios geometrinės figūros', generatorius: 'figuros', lygis: 2 },
         ],
         generatorius: 'kampai',
         lygis: 1,
@@ -429,9 +501,9 @@ export const programa: ProgramosKlase[] = [
         numeris: 14,
         pavadinimas: 'Erdvinės figūros',
         potemes: [
-          'Kubas ir stačiakampis gretasienis',
-          'Erdvinės figūros',
-          'Erdvinės figūros iš įvairių pusių',
+          { pavadinimas: 'Kubas ir stačiakampis gretasienis', generatorius: 'erdvines-figuros', lygis: 1 },
+          { pavadinimas: 'Erdvinės figūros', generatorius: 'erdvines-figuros', lygis: 2 },
+          { pavadinimas: 'Erdvinės figūros iš įvairių pusių', generatorius: 'plotas-turis', lygis: 2 },
         ],
         generatorius: 'plotas-turis',
         lygis: 2,
@@ -439,7 +511,10 @@ export const programa: ProgramosKlase[] = [
       {
         numeris: 15,
         pavadinimas: 'Duomenys ir interpretavimas',
-        potemes: ['Statistinis tyrimas', 'Diagramų skaitymas'],
+        potemes: [
+          'Statistinis tyrimas',
+          { pavadinimas: 'Diagramų skaitymas', generatorius: 'diagramos', lygis: 2 },
+        ],
         generatorius: 'vidurkis',
         lygis: 1,
       },
@@ -481,9 +556,9 @@ export const programa: ProgramosKlase[] = [
       },
       { numeris: 9, pavadinimas: 'Kelias, laikas, greitis', generatorius: 'greitis', lygis: 2 },
       { numeris: 10, pavadinimas: 'Ilgis, plotas, tūris', generatorius: 'plotas-turis', lygis: 2 },
-      { numeris: 11, pavadinimas: 'Transformacijos' },
+      { numeris: 11, pavadinimas: 'Transformacijos', generatorius: 'simetrija', lygis: 2 },
       { numeris: 12, pavadinimas: 'Plokščios figūros', generatorius: 'kampai', lygis: 2 },
-      { numeris: 13, pavadinimas: 'Erdvės figūros' },
+      { numeris: 13, pavadinimas: 'Erdvės figūros', generatorius: 'erdvines-figuros', lygis: 2 },
       {
         numeris: 14,
         pavadinimas: 'Ploto, tūrio skaičiavimai',
@@ -519,8 +594,8 @@ export const programa: ProgramosKlase[] = [
         generatorius: 'proporcijos',
         lygis: 2,
       },
-      { numeris: 7, pavadinimas: 'Transformacijos' },
-      { numeris: 8, pavadinimas: 'Braižymas' },
+      { numeris: 7, pavadinimas: 'Transformacijos', generatorius: 'simetrija', lygis: 3 },
+      { numeris: 8, pavadinimas: 'Braižymas', generatorius: 'konstravimas', lygis: 1 },
       { numeris: 9, pavadinimas: 'Plokščiosios figūros', generatorius: 'kampai', lygis: 3 },
       { numeris: 10, pavadinimas: 'Duomenys ir interpretavimas', generatorius: 'vidurkis', lygis: 3 },
       { numeris: 11, pavadinimas: 'Tikimybės ir interpretavimas', generatorius: 'tikimybe', lygis: 3 },
@@ -544,8 +619,8 @@ export const programa: ProgramosKlase[] = [
         generatorius: 'atvirkstinis',
         lygis: 1,
       },
-      { numeris: 5, pavadinimas: 'Transformacijos' },
-      { numeris: 6, pavadinimas: 'Braižymas' },
+      { numeris: 5, pavadinimas: 'Transformacijos', generatorius: 'koordinates', lygis: 3 },
+      { numeris: 6, pavadinimas: 'Braižymas', generatorius: 'konstravimas', lygis: 2 },
       { numeris: 7, pavadinimas: 'Plokščiosios figūros', generatorius: 'kampai', lygis: 3 },
       { numeris: 8, pavadinimas: 'Erdvės figūros', generatorius: 'plotas-turis', lygis: 3 },
       {
@@ -567,9 +642,9 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Skaičiai ir skaičiavimai',
         potemes: [
           'Racionaliųjų skaičių aibės samprata',
-          'Kvadratinė ir kubinė šaknys',
-          'Realiųjų skaičių aibė. Veiksmai su realiaisiais skaičiais',
-          'Paprastosios ir sudėtinės palūkanos',
+          { pavadinimas: 'Kvadratinė ir kubinė šaknys', generatorius: 'saknys', lygis: 1 },
+          { pavadinimas: 'Realiųjų skaičių aibė. Veiksmai su realiaisiais skaičiais', generatorius: 'saknys', lygis: 3 },
+          { pavadinimas: 'Paprastosios ir sudėtinės palūkanos', generatorius: 'palukanos', lygis: 3 },
         ],
         generatorius: 'saknys',
         lygis: 1,
@@ -603,8 +678,8 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Plokštumos figūros. Trikampiai',
         potemes: [
           'Trikampio vidurio linija',
-          'Statusis trikampis',
-          'Lygiašonis ir lygiakraštis trikampiai',
+          { pavadinimas: 'Statusis trikampis', generatorius: 'pitagoras', lygis: 1 },
+          { pavadinimas: 'Lygiašonis ir lygiakraštis trikampiai', generatorius: 'kampai', lygis: 1 },
           'Įrodymai',
         ],
         generatorius: 'pitagoras',
@@ -613,7 +688,13 @@ export const programa: ProgramosKlase[] = [
       {
         numeris: 5,
         pavadinimas: 'Erdvės figūros',
-        potemes: ['Stačioji prizmė', 'Taisyklingoji piramidė', 'Ritinys', 'Kūgis', 'Sfera ir rutulys'],
+        potemes: [
+          { pavadinimas: 'Stačioji prizmė', generatorius: 'erdvines-figuros', lygis: 2 },
+          { pavadinimas: 'Taisyklingoji piramidė', generatorius: 'erdvines-figuros', lygis: 1 },
+          'Ritinys',
+          'Kūgis',
+          'Sfera ir rutulys',
+        ],
         generatorius: 'plotas-turis',
         lygis: 3,
       },
@@ -621,13 +702,15 @@ export const programa: ProgramosKlase[] = [
         numeris: 6,
         pavadinimas: 'Konstravimas, transformacijos. Vektoriai',
         potemes: ['Vektoriaus samprata', 'Veiksmai su vektoriais'],
+        generatorius: 'vektoriai',
+        lygis: 1,
       },
       {
         numeris: 7,
         pavadinimas: 'Duomenys ir jų interpretavimas',
         potemes: [
           'Duomenų rinkimas ir grupavimas',
-          'Duomenų vaizdavimas',
+          { pavadinimas: 'Duomenų vaizdavimas', generatorius: 'diagramos', lygis: 3 },
           'Duomenų skaitinės charakteristikos',
         ],
         generatorius: 'vidurkis',
@@ -642,7 +725,11 @@ export const programa: ProgramosKlase[] = [
       {
         numeris: 1,
         pavadinimas: 'Funkcijos ir sekos',
-        potemes: ['Funkcijos samprata', 'Funkcijos savybės', 'Sekos'],
+        potemes: [
+          'Funkcijos samprata',
+          'Funkcijos savybės',
+          { pavadinimas: 'Sekos', generatorius: 'sekos', lygis: 3 },
+        ],
         generatorius: 'funkcijos',
         lygis: 1,
       },
@@ -689,9 +776,9 @@ export const programa: ProgramosKlase[] = [
         numeris: 6,
         pavadinimas: 'Įvadas į trigonometriją',
         potemes: [
-          'Panašieji trikampiai',
+          { pavadinimas: 'Panašieji trikampiai', generatorius: 'figuros', lygis: 3 },
           'Smailiojo kampo sinusas, kosinusas ir tangentas',
-          'Stačiojo trikampio sprendimas',
+          { pavadinimas: 'Stačiojo trikampio sprendimas', generatorius: 'pitagoras', lygis: 2 },
         ],
         generatorius: 'trigonometrija',
         lygis: 1,
@@ -699,7 +786,10 @@ export const programa: ProgramosKlase[] = [
       {
         numeris: 7,
         pavadinimas: 'Apskritimas ir skritulys',
-        potemes: ['Apskritimas ir tiesė', 'Apskritimas ir kampas'],
+        potemes: [
+          'Apskritimas ir tiesė',
+          { pavadinimas: 'Apskritimas ir kampas', generatorius: 'kampai', lygis: 2 },
+        ],
         generatorius: 'apskritimas',
         lygis: 1,
       },
@@ -721,9 +811,9 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Trupmeninės racionaliosios lygtys',
         potemes: [
           'Trupmeninės racionaliosios lygties samprata',
-          'Algebrinis sprendimas',
+          { pavadinimas: 'Algebrinis sprendimas', generatorius: 'tiesines-lygtys', lygis: 3 },
           'Judėjimo uždaviniai',
-          'Darbo uždaviniai',
+          { pavadinimas: 'Darbo uždaviniai', generatorius: 'atvirkstinis', lygis: 3 },
         ],
         generatorius: 'greitis',
         lygis: 3,
@@ -797,8 +887,8 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Kombinatorika ir tikimybės',
         potemes: [
           'Kombinatorikos sudėties ir daugybos taisyklės',
-          'Rinkiniai, kuriuose elementų tvarka svarbi ir nesvarbi',
-          'Santykinis dažnis ir klasikinė tikimybė',
+          { pavadinimas: 'Rinkiniai, kuriuose elementų tvarka svarbi ir nesvarbi', generatorius: 'kombinatorika', lygis: 3 },
+          { pavadinimas: 'Santykinis dažnis ir klasikinė tikimybė', generatorius: 'tikimybe', lygis: 2 },
         ],
         generatorius: 'kombinatorika',
         lygis: 1,
@@ -806,7 +896,11 @@ export const programa: ProgramosKlase[] = [
       {
         numeris: 9,
         pavadinimas: 'Duomenys ir jų interpretavimas',
-        potemes: ['Dispersija ir standartinis nuokrypis', 'Skirstiniai', 'Duomenų skaitinės charakteristikos'],
+        potemes: [
+          'Dispersija ir standartinis nuokrypis',
+          { pavadinimas: 'Skirstiniai', generatorius: 'diagramos', lygis: 3 },
+          { pavadinimas: 'Duomenų skaitinės charakteristikos', generatorius: 'vidurkis', lygis: 2 },
+        ],
         generatorius: 'vidurkis',
         lygis: 3,
       },

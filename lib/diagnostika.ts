@@ -162,15 +162,28 @@ export function atsakyk(b: Busena, teisinga: boolean): Busena {
   return uzkraukTema(kitas)
 }
 
-/** Progresas 0..1. Bendras uždavinių skaičius iš anksto nežinomas, tad vertinamas. */
-export function progresas(b: Busena): number {
-  if (b.baigta) return 1
+/**
+ * Kiek uždavinių atlikta ir kiek jų numatoma iš viso.
+ *
+ * Tikslus skaičius iš anksto nežinomas — testas adaptyvus, ir kiekviena
+ * neišlaikyta tema prideda naujų. Todėl `numatoma` skaičiuojama iš to, kas jau
+ * eilėje. Jis niekada nemažėja: temą paėmus iš eilės ji tiesiog persikelia į
+ * „tikrinama", o suma lieka ta pati.
+ */
+export function progresoSkaiciai(b: Busena): { atlikta: number; numatoma: number } {
   const laukia = b.eile.filter((id) => !b.rezultatai[id]).length
   const numatoma = Math.min(
     MAKS_UZDAVINIU,
     (Object.keys(b.rezultatai).length + laukia + (b.dabartine ? 1 : 0)) * UZDAVINIU_TEMAI,
   )
-  return Math.min(1, b.isVisoUzdaviniu / Math.max(numatoma, 1))
+  return { atlikta: b.isVisoUzdaviniu, numatoma: Math.max(numatoma, b.isVisoUzdaviniu) }
+}
+
+/** Progresas 0..1. */
+export function progresas(b: Busena): number {
+  if (b.baigta) return 1
+  const { atlikta, numatoma } = progresoSkaiciai(b)
+  return Math.min(1, atlikta / Math.max(numatoma, 1))
 }
 
 // ---------------------------------------------------------------------------

@@ -6,6 +6,18 @@ import {
   raidiniaiReiskiniai,
   saknys,
 } from './algebra'
+import {
+  algoritmai,
+  diagramos,
+  erdvinesFiguros,
+  figuros,
+  konstravimas,
+  koordinates,
+  lauzes,
+  ornamentai,
+  simetrija,
+  vektoriai,
+} from './braizymas'
 import { dalumas } from './dalumas'
 import {
   apskritimas,
@@ -99,10 +111,22 @@ export const generatoriai: Record<string, Generatorius> = {
   apskritimas,
   trigonometrija,
 
+  // Braižymas, transformacijos ir figūros — su savais SVG brėžiniais
+  koordinates,
+  simetrija,
+  figuros,
+  lauzes,
+  'erdvines-figuros': erdvinesFiguros,
+  vektoriai,
+  konstravimas,
+  ornamentai,
+  algoritmai,
+
   // Duomenys ir tikimybės
   vidurkis,
   tikimybe,
   kombinatorika,
+  diagramos,
 }
 
 /**
@@ -158,8 +182,11 @@ export function generuokRinkini(vardas: string, lygis: Lygis, kiek: number): Uzd
   while (rinkinys.length < kiek && bandymai < kiek * 20) {
     bandymai += 1
     const u = generuok(vardas, lygis)
-    if (matyti.has(u.klausimas)) continue
-    matyti.add(u.klausimas)
+    // Brėžininiuose uždaviniuose klausimo tekstas dažnai vienodas („Kokia taško A
+    // abscisė?"), o skiriasi tik piešinys — tad tapatybė yra abu kartu.
+    const raktas = u.klausimas + (u.brezinys ?? '')
+    if (matyti.has(raktas)) continue
+    matyti.add(raktas)
     rinkinys.push(u)
   }
 

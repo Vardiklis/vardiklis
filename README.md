@@ -63,9 +63,20 @@ yra tai, ką vaikas mokosi mokykloje, o grafas — tai, kuo tema remiasi.
 }
 ```
 
-Tema be `generatorius` lauko svetainėje rodoma pilka su žyme „netrukus". Taip matyti,
-kur biblioteką verta pildyti toliau — geometrijos braižymas, algoritmai ir duomenų
-interpretavimas kol kas be uždavinių, nes jiems reikia brėžinio ar duomenų rinkinio.
+Potemė, kuri parašyta tik eilute, paveldi savo temos generatorių. Jei jai tinka kitas —
+rašoma objektu:
+
+```ts
+potemes: [
+  'Racionaliųjų skaičių aibės samprata',
+  { pavadinimas: 'Kvadratinė ir kubinė šaknys', generatorius: 'saknys', lygis: 1 },
+]
+```
+
+Visos 104 temos turi generatorius. Braižymo, transformacijų, figūrų ir duomenų temos
+naudoja `lib/generatoriai/braizymas.ts` — jis piešia savo SVG brėžinius, be jokios
+geometrijos bibliotekos. Brėžinio spalvos nurodytos kintamaisiais (`var(--ink)`,
+`var(--orange)`), tad spausdinant jis pats virsta juodu ant balto.
 
 ### Prielaidų grafas — `lib/temos.ts`
 

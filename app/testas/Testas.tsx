@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import Brezinys from '@/components/Brezinys'
 import Klaviatura from '@/components/Klaviatura'
 import Mygtukas from '@/components/Mygtukas'
 import Trupmena from '@/components/Trupmena'
@@ -11,12 +12,18 @@ import {
   dabartinisUzdavinys,
   pradek,
   progresas,
+  progresoSkaiciai,
   type Busena,
 } from '@/lib/diagnostika'
 import { arTeisingas } from '@/lib/matematika'
 import { irasykSeansa, isvalykSeansa } from '@/lib/seansas'
 
-const Formule = dynamic(() => import('@/components/Formule'), { ssr: false })
+// KaTeX užkraunamas tik pradėjus testą — įvado ekranui jo nereikia.
+// `loading` rezervuoja eilutės aukštį, kad uždaviniui atsiradus nešoktų maketas.
+const Formule = dynamic(() => import('@/components/Formule'), {
+  ssr: false,
+  loading: () => <span className="block h-8 md:h-9" aria-hidden="true" />,
+})
 
 const KLASES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
 
@@ -117,16 +124,27 @@ export function Testas() {
   if (!uzdavinys) return null
 
   const dalis = Math.round(progresas(busena) * 100)
+  const { atlikta, numatoma } = progresoSkaiciai(busena)
+  const dabartinis = atlikta + 1
 
   return (
     <div className="mt-8 max-w-2xl">
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="t-small text-muted">Testo eiga</p>
+        {/* Vardiklis gali paaugti: neišlaikius temos, testas prideda naujų. */}
+        <p className="font-mono text-[0.9375rem] tabular-nums">
+          <span className="font-semibold">{dabartinis}</span>
+          <span className="text-muted"> / {Math.max(numatoma, dabartinis)}</span>
+        </p>
+      </div>
+
       <div
-        className="h-0.5 w-full bg-line"
+        className="mt-2 h-0.5 w-full bg-line"
         role="progressbar"
         aria-valuenow={dalis}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Testo eiga"
+        aria-label={`Testo eiga: ${dabartinis} uždavinys iš ${Math.max(numatoma, dabartinis)}`}
       >
         <div
           className="h-full bg-orange transition-[width] duration-300"
@@ -134,11 +152,9 @@ export function Testas() {
         />
       </div>
 
-      <p className="mt-3 t-small text-muted">
-        {busena.isVisoUzdaviniu + 1} uždavinys
-      </p>
-
       <form onSubmit={tikrink} className="mt-8">
+        {uzdavinys.brezinys && <Brezinys svg={uzdavinys.brezinys} className="mb-6" />}
+
         <Formule
           tekstas={uzdavinys.klausimas}
           className="block font-mono text-xl leading-relaxed md:text-2xl"

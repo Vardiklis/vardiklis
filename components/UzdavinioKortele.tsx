@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Uzdavinys } from '@/lib/generatoriai'
 import { arTeisingas } from '@/lib/matematika'
+import Brezinys from './Brezinys'
 import Formule from './Formule'
 
 type Props = {
@@ -35,6 +36,8 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
         </span>
 
         <div className="min-w-0 grow">
+          {uzdavinys.brezinys && <Brezinys svg={uzdavinys.brezinys} className="mb-4" />}
+
           <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
             <Formule
               tekstas={uzdavinys.klausimas}

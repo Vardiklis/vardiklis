@@ -101,12 +101,14 @@ function patikrinkUzdavini(u: Uzdavinys, vardas: string, lygis: Lygis): void {
     ['klausimas', u.klausimas],
     ['atsakymasRodymui', u.atsakymasRodymui],
     ['sprendimas', u.sprendimas ?? ''],
+    ['brezinys', u.brezinys ?? ''],
   ] as const) {
     if (/undefined|NaN|Infinity/.test(reiksme)) {
       klaidos.push(`${kur}: ${laukas} turi šiukšlių — "${reiksme}"`)
     }
     // „- -", „+ -" be skliaustų skaitosi kaip klaida rinkinyje.
-    if (/[+\-]\s+-\d/.test(reiksme)) {
+    // Brėžinyje neigiami skaičiai yra ašių padalos — jiems ši taisyklė netaikoma.
+    if (laukas !== 'brezinys' && /[+\-]\s+-\d/.test(reiksme)) {
       klaidos.push(`${kur}: ${laukas} turi nesutvarkytą ženklų porą — "${reiksme}"`)
     }
   }
@@ -137,6 +139,10 @@ function patikrinkUzdavini(u: Uzdavinys, vardas: string, lygis: Lygis): void {
     perspejimai.push(`${kur}: atsakymas nėra skaičius — "${u.atsakymas}"`)
   }
 
+  if (u.brezinys && !(u.brezinys.startsWith('<svg') && u.brezinys.endsWith('</svg>'))) {
+    klaidos.push(`${kur}: brėžinys nėra pilnas SVG`)
+  }
+
   // KaTeX turi surinkti visus $...$ fragmentus be klaidų.
   for (const tekstas of [u.klausimas, u.atsakymasRodymui, u.sprendimas ?? '']) {
     const dalys = tekstas.split('$')
@@ -165,7 +171,7 @@ for (const [vardas, generatorius] of Object.entries(generatoriai)) {
     for (let i = 0; i < KIEK; i += 1) uzdaviniai.push(generatorius(lygis))
     for (const u of uzdaviniai) patikrinkUzdavini(u, vardas, lygis)
 
-    const unikalus = new Set(uzdaviniai.map((u) => u.klausimas)).size
+    const unikalus = new Set(uzdaviniai.map((u) => u.klausimas + (u.brezinys ?? ''))).size
     const dalis = Math.round((unikalus / KIEK) * 100)
     if (dalis < 25) {
       perspejimai.push(

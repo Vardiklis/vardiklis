@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import Mygtukas from '@/components/Mygtukas'
 import { generuokRinkini, type Lygis, type Uzdavinys } from '@/lib/generatoriai'
-import { programa, type ProgramosTema } from '@/lib/programa'
+import { potemes, programa, type IsskleistaPotema, type ProgramosTema } from '@/lib/programa'
 
 // KaTeX (JS + CSS) užkraunamas tik tada, kai uždaviniai iš tikrųjų sugeneruoti —
 // kitaip jis blokuotų tuščio puslapio piešimą.
@@ -23,31 +23,64 @@ const LYGIAI: { reiksme: Lygis; etikete: string }[] = [
 type Pasirinkta = {
   klase: number
   tema: ProgramosTema
+  potema: IsskleistaPotema | null
+  generatorius: string
+  antraste: string
 }
 
 export function UzduociuGeneratorius() {
   const [klase, setKlase] = useState(6)
+  const [isskleista, setIsskleista] = useState<number | null>(null)
   const [pasirinkta, setPasirinkta] = useState<Pasirinkta | null>(null)
-  const [lygis, setLygis] = useState<Lygis | null>(null)
+  const [lygis, setLygis] = useState<Lygis>(2)
   const [kiekis, setKiekis] = useState<number>(10)
   const [uzdaviniai, setUzdaviniai] = useState<Uzdavinys[]>([])
   const [rodytiAtsakymus, setRodytiAtsakymus] = useState(false)
 
   const klasesTemos = programa.find((k) => k.klase === klase)?.temos ?? []
-  const galiojantisLygis = lygis ?? pasirinkta?.tema.lygis ?? 2
 
-  function pasirink(tema: ProgramosTema) {
-    if (!tema.generatorius) return
-    setPasirinkta({ klase, tema })
-    setLygis(tema.lygis ?? 2)
-    setUzdaviniai(generuokRinkini(tema.generatorius, tema.lygis ?? 2, kiekis))
+  function keiskKlase(nauja: number) {
+    setKlase(nauja)
+    setIsskleista(null)
+  }
+
+  function generuok(p: Pasirinkta, naujasLygis: Lygis, naujasKiekis: number) {
+    setPasirinkta(p)
+    setLygis(naujasLygis)
+    setKiekis(naujasKiekis)
+    setUzdaviniai(generuokRinkini(p.generatorius, naujasLygis, naujasKiekis))
     setRodytiAtsakymus(false)
   }
 
-  function pergeneruok(naujasLygis = galiojantisLygis, naujasKiekis = kiekis) {
-    if (!pasirinkta?.tema.generatorius) return
-    setUzdaviniai(generuokRinkini(pasirinkta.tema.generatorius, naujasLygis, naujasKiekis))
-    setRodytiAtsakymus(false)
+  /** Visos temos uždaviniai — kai norima ne vienos potemės, o viso skyriaus. */
+  function pasirinkTema(tema: ProgramosTema) {
+    if (!tema.generatorius) return
+    generuok(
+      {
+        klase,
+        tema,
+        potema: null,
+        generatorius: tema.generatorius,
+        antraste: `${tema.numeris}. ${tema.pavadinimas}`,
+      },
+      tema.lygis ?? 2,
+      kiekis,
+    )
+  }
+
+  function pasirinkPotema(tema: ProgramosTema, p: IsskleistaPotema) {
+    if (!p.generatorius) return
+    generuok(
+      {
+        klase,
+        tema,
+        potema: p,
+        generatorius: p.generatorius,
+        antraste: `${p.numeris}. ${p.pavadinimas}`,
+      },
+      p.lygis,
+      kiekis,
+    )
   }
 
   return (
@@ -60,7 +93,7 @@ export function UzduociuGeneratorius() {
             <button
               key={k.klase}
               type="button"
-              onClick={() => setKlase(k.klase)}
+              onClick={() => keiskKlase(k.klase)}
               aria-pressed={k.klase === klase}
               className={`h-11 w-11 rounded-[6px] border font-mono text-[0.9375rem] transition-colors ${
                 k.klase === klase
@@ -74,63 +107,92 @@ export function UzduociuGeneratorius() {
         </div>
       </div>
 
-      {/* ── Temų sąrašas ────────────────────────────────────────────────── */}
+      {/* ── Temų akordeonas ─────────────────────────────────────────────── */}
       <div className="be-spausdinimo mt-10">
         <h2 className="t-h3">{klase} klasės temos</h2>
         <p className="mt-2 t-small text-muted">
-          Spustelėkite temą — uždaviniai sugeneruojami iš karto. Pilkos temos kol kas be
-          uždavinių: jos yra programoje, bet jų neįmanoma sugeneruoti be brėžinio ar
-          duomenų rinkinio.
+          Spustelėkite temą — ji išsiskleis į potemes. Paspaudus potemę, iš karto
+          sugeneruojami jos uždaviniai.
         </p>
 
         <ol className="mt-6 divide-y divide-line rounded-[8px] border border-line">
           {klasesTemos.map((tema) => {
-            const yra = Boolean(tema.generatorius)
-            const aktyvi = pasirinkta?.klase === klase && pasirinkta.tema.numeris === tema.numeris
+            const atidaryta = isskleista === tema.numeris
+            const sarasas = potemes(tema)
 
             return (
               <li key={tema.numeris}>
                 <button
                   type="button"
-                  onClick={() => pasirink(tema)}
-                  disabled={!yra}
-                  aria-current={aktyvi ? 'true' : undefined}
-                  className={`flex w-full gap-4 px-5 py-4 text-left transition-colors ${
-                    yra ? 'hover:bg-paper-2' : 'cursor-default'
-                  } ${aktyvi ? 'bg-orange-soft' : ''}`}
+                  onClick={() => setIsskleista(atidaryta ? null : tema.numeris)}
+                  aria-expanded={atidaryta}
+                  className="flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors hover:bg-paper-2"
                 >
                   {/* Stambieji punktai paryškinti — tai programos skyriai. */}
-                  <span
-                    className={`shrink-0 font-mono text-[0.9375rem] font-semibold tabular-nums ${
-                      yra ? 'text-ink' : 'text-muted'
-                    }`}
-                  >
+                  <span className="shrink-0 font-mono text-[0.9375rem] font-semibold tabular-nums">
                     {tema.numeris}.
                   </span>
-
-                  <span className="min-w-0 grow">
-                    <span
-                      className={`block t-body font-semibold ${yra ? 'text-ink' : 'text-muted'}`}
-                    >
-                      {tema.pavadinimas}
-                    </span>
-
-                    {tema.potemes && tema.potemes.length > 0 && (
-                      <span className="mt-1 block t-small text-muted">
-                        {tema.potemes.map((p, i) => (
-                          <span key={p}>
-                            {tema.numeris}.{i + 1}. {p}
-                            {i < tema.potemes!.length - 1 ? ' · ' : ''}
-                          </span>
-                        ))}
-                      </span>
-                    )}
+                  <span className="grow t-body font-semibold">{tema.pavadinimas}</span>
+                  <span
+                    className="shrink-0 font-mono text-[0.9375rem] text-muted"
+                    aria-hidden="true"
+                  >
+                    {atidaryta ? '–' : '+'}
                   </span>
-
-                  {!yra && (
-                    <span className="shrink-0 self-start t-small text-muted">netrukus</span>
-                  )}
                 </button>
+
+                {atidaryta && (
+                  <div className="border-t border-line bg-paper-2 px-5 py-3">
+                    {sarasas.length > 0 ? (
+                      <ol className="flex flex-col">
+                        {sarasas.map((p) => {
+                          const aktyvi = pasirinkta?.potema?.numeris === p.numeris
+                          return (
+                            <li key={p.numeris}>
+                              <button
+                                type="button"
+                                onClick={() => pasirinkPotema(tema, p)}
+                                disabled={!p.generatorius}
+                                aria-current={aktyvi ? 'true' : undefined}
+                                className={`flex w-full items-baseline gap-3 rounded-[6px] px-3 py-2.5 text-left transition-colors ${
+                                  p.generatorius ? 'hover:bg-paper' : 'cursor-default'
+                                } ${aktyvi ? 'bg-orange-soft' : ''}`}
+                              >
+                                <span className="shrink-0 font-mono t-small tabular-nums text-muted">
+                                  {p.numeris}.
+                                </span>
+                                <span
+                                  className={`grow t-body ${
+                                    p.generatorius ? 'text-ink' : 'text-muted'
+                                  }`}
+                                >
+                                  {p.pavadinimas}
+                                </span>
+                                {!p.generatorius && (
+                                  <span className="shrink-0 t-small text-muted">netrukus</span>
+                                )}
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ol>
+                    ) : (
+                      <p className="px-3 py-2 t-small text-muted">
+                        Ši tema neskirstoma į potemes.
+                      </p>
+                    )}
+
+                    <div className="mt-2 border-t border-line px-3 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => pasirinkTema(tema)}
+                        className="t-small font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange"
+                      >
+                        Uždaviniai iš visos temos
+                      </button>
+                    </div>
+                  </div>
+                )}
               </li>
             )
           })}
@@ -143,7 +205,7 @@ export function UzduociuGeneratorius() {
           {/* Antraštė lapui — matoma tik spausdinant. */}
           <div className="hidden print:block">
             <h2 className="t-h2">
-              {pasirinkta.klase} kl. · {pasirinkta.tema.pavadinimas}
+              {pasirinkta.klase} kl. · {pasirinkta.antraste}
             </h2>
             <p className="mt-6 t-small">
               Vardas, pavardė: ______________________ Data: ____________
@@ -152,10 +214,12 @@ export function UzduociuGeneratorius() {
 
           <div className="be-spausdinimo">
             <h2 id="rinkinys" className="t-h2">
-              {pasirinkta.tema.pavadinimas}
+              {pasirinkta.antraste}
             </h2>
             <p className="mt-2 t-small text-muted">
-              {pasirinkta.klase} klasė · {uzdaviniai.length} uždaviniai
+              {pasirinkta.klase} klasė
+              {pasirinkta.potema && ` · ${pasirinkta.tema.pavadinimas}`} ·{' '}
+              {uzdaviniai.length} uždaviniai
             </p>
 
             <div className="mt-6 flex flex-wrap items-end gap-x-8 gap-y-5">
@@ -166,13 +230,10 @@ export function UzduociuGeneratorius() {
                     <button
                       key={l.reiksme}
                       type="button"
-                      onClick={() => {
-                        setLygis(l.reiksme)
-                        pergeneruok(l.reiksme)
-                      }}
-                      aria-pressed={l.reiksme === galiojantisLygis}
+                      onClick={() => generuok(pasirinkta, l.reiksme, kiekis)}
+                      aria-pressed={l.reiksme === lygis}
                       className={`rounded-[6px] border px-4 py-2 t-small transition-colors ${
-                        l.reiksme === galiojantisLygis
+                        l.reiksme === lygis
                           ? 'border-ink bg-paper font-semibold'
                           : 'border-line bg-paper text-muted hover:border-ink'
                       }`}
@@ -190,10 +251,7 @@ export function UzduociuGeneratorius() {
                     <button
                       key={k}
                       type="button"
-                      onClick={() => {
-                        setKiekis(k)
-                        pergeneruok(galiojantisLygis, k)
-                      }}
+                      onClick={() => generuok(pasirinkta, lygis, k)}
                       aria-pressed={k === kiekis}
                       className={`rounded-[6px] border px-4 py-2 font-mono t-small transition-colors ${
                         k === kiekis
@@ -209,7 +267,9 @@ export function UzduociuGeneratorius() {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Mygtukas onClick={() => pergeneruok()}>Nauji uždaviniai</Mygtukas>
+              <Mygtukas onClick={() => generuok(pasirinkta, lygis, kiekis)}>
+                Nauji uždaviniai
+              </Mygtukas>
               <Mygtukas variantas="konturas" onClick={() => setRodytiAtsakymus((v) => !v)}>
                 {rodytiAtsakymus ? 'Slėpti atsakymus' : 'Rodyti atsakymus'}
               </Mygtukas>

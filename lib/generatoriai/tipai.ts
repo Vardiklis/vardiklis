@@ -14,6 +14,11 @@ export type Uzdavinys = {
   atsakymasRodymui: string
   /** Trumpas paaiškinimas, kodėl atsakymas toks. */
   sprendimas?: string
+  /**
+   * Brėžinys — grynas SVG be išorinių bibliotekų. Spalvos rašomos
+   * `var(--ink)`, `var(--orange)`, `var(--line)`, kad veiktų ir spausdinant.
+   */
+  brezinys?: string
 }
 
 export type Lygis = 1 | 2 | 3
