@@ -41,7 +41,7 @@ function pravaziuok(klase: number, arTeisingai: (temaId: string) => boolean): Bu
 function spausdink(pavadinimas: string, b: Busena): void {
   const a = ataskaita(b)
   console.log(`\n─────────── ${pavadinimas} ───────────`)
-  console.log(`Uždavinių duota: ${a.isVisoUzdaviniu} (riba 24)`)
+  console.log(`Uždavinių duota: ${a.isVisoUzdaviniu} (turi būti 25)`)
   console.log(`Išlaikyta:    ${a.islaikytos.map((t) => t.id).join(', ') || '—'}`)
   console.log(`Neišlaikyta:  ${a.neislaikytos.map((t) => t.id).join(', ') || '—'}`)
   console.log(`ŠAKNINĖS:     ${a.saknines.map((t) => `${t.id} (${t.klase} kl.)`).join(', ') || '—'}`)
@@ -58,7 +58,8 @@ function spausdink(pavadinimas: string, b: Busena): void {
 
   // Sveiko proto patikros
   const klaidos: string[] = []
-  if (a.isVisoUzdaviniu > 24) klaidos.push('viršyta 24 uždavinių riba')
+  // Uždavinių skaičius fiksuotas: kiekvienas testas duoda lygiai tiek pat.
+  if (a.isVisoUzdaviniu !== 25) klaidos.push(`duota ${a.isVisoUzdaviniu} uždavinių, o turi būti 25`)
   if (a.neislaikytos.length > 0 && a.saknines.length === 0) {
     klaidos.push('yra neišlaikytų temų, bet nerasta nė vienos šaknies')
   }

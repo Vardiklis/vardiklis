@@ -9,6 +9,7 @@ import Trupmena from '@/components/Trupmena'
 import { ataskaita } from '@/lib/diagnostika'
 import { kontaktai } from '@/lib/kontaktai'
 import { prenumeruokSeansa, skaitykSeansa } from '@/lib/seansas'
+import AtaskaitosVeiksmai from './AtaskaitosVeiksmai'
 
 /** Pirmą raidę į mažąją — pavadinimas eina po dvitaškio. */
 function mazaja(tekstas: string): string {
@@ -58,6 +59,7 @@ export function Rezultatas() {
           Patikrinta temų: {a.islaikytos.length}. Duota uždavinių: {a.isVisoUzdaviniu}.
         </p>
 
+        <AtaskaitosVeiksmai ataskaita={a} />
         <Kontaktai savaites={null} />
       </>
     )
@@ -145,6 +147,7 @@ export function Rezultatas() {
         </p>
       </section>
 
+      <AtaskaitosVeiksmai ataskaita={a} />
       <Kontaktai savaites={a.savaites} />
     </>
   )
@@ -152,7 +155,7 @@ export function Rezultatas() {
 
 function Kontaktai({ savaites }: { savaites: number | null }) {
   return (
-    <section className="mt-20">
+    <section className="be-spausdinimo mt-20">
       <BruksnysDivider className="mb-10" />
       <h2 className="display-l max-w-[20ch]">Aptarti ataskaitą su Modesta</h2>
       <p className="tekstas mt-6 t-body text-muted">

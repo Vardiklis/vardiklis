@@ -11,7 +11,13 @@ import { temos, type Tema } from './temos'
 const UZDAVINIU_TEMAI = 3
 const REIKIA_TEISINGU = 2
 const MAKS_GYLIS = 4
-const MAKS_UZDAVINIU = 24
+/**
+ * Testas visada duoda lygiai tiek uždavinių. Anksčiau skaičius buvo vertinamas
+ * ir augdavo eigos metu (18 → 21 → 24), o tėvui tai atrodė kaip klaida.
+ * Dabar jis fiksuotas: jei adaptyvi eilė išsemiama anksčiau, ji papildoma
+ * dar nepatikrintomis temomis.
+ */
+const IS_VISO_UZDAVINIU = 25
 
 /** Diagnostikoje visos temos tikrinamos vidutiniu lygiu — kitaip nepalyginama. */
 const TIKRINIMO_LYGIS = 2
@@ -59,8 +65,23 @@ function pradinesTemos(klase: number): string[] {
   return temos.filter((t) => t.klase === zemiausia).map((t) => t.id)
 }
 
+/**
+ * Papildo eilę dar nepatikrintomis temomis, artimiausiomis vaiko klasei.
+ * Reikalinga tam, kad testas pasiektų fiksuotą uždavinių skaičių net tada,
+ * kai adaptyvus nusileidimas baigiasi anksčiau.
+ */
+function papildykEile(b: Busena, eile: string[]): string[] {
+  const jau = new Set([...eile, ...Object.keys(b.rezultatai)])
+  const papildomos = temos
+    .filter((t) => !jau.has(t.id))
+    .sort((a, c) => Math.abs(a.klase - b.klase) - Math.abs(c.klase - b.klase))
+    .map((t) => t.id)
+  return [...eile, ...papildomos]
+}
+
 function uzkraukTema(b: Busena): Busena {
-  const eile = [...b.eile]
+  let eile = [...b.eile]
+  if (eile.every((id) => b.rezultatai[id])) eile = papildykEile(b, eile)
 
   while (eile.length > 0) {
     const temaId = eile.shift() as string
@@ -112,6 +133,12 @@ export function atsakyk(b: Busena, teisinga: boolean): Busena {
   const indeksas = b.dabartine.indeksas + 1
   const isVisoUzdaviniu = b.isVisoUzdaviniu + 1
 
+  // Riba pasiekta — testas baigiamas net vidury temos. Nebaigta tema tiesiog
+  // negauna rezultato, nes trijų atsakymų reikalavimas neįvykdytas.
+  if (isVisoUzdaviniu >= IS_VISO_UZDAVINIU && indeksas < UZDAVINIU_TEMAI) {
+    return { ...b, isVisoUzdaviniu, dabartine: null, baigta: true }
+  }
+
   // Tema dar nebaigta — rodom kitą jos uždavinį.
   if (indeksas < UZDAVINIU_TEMAI) {
     return {
@@ -154,29 +181,16 @@ export function atsakyk(b: Busena, teisinga: boolean): Busena {
     dabartine: null,
   }
 
-  // Riba tikrinama tik baigus temą — pusiau ištirta tema ataskaitai netinka.
-  if (isVisoUzdaviniu >= MAKS_UZDAVINIU) {
+  if (isVisoUzdaviniu >= IS_VISO_UZDAVINIU) {
     return { ...kitas, baigta: true }
   }
 
   return uzkraukTema(kitas)
 }
 
-/**
- * Kiek uždavinių atlikta ir kiek jų numatoma iš viso.
- *
- * Tikslus skaičius iš anksto nežinomas — testas adaptyvus, ir kiekviena
- * neišlaikyta tema prideda naujų. Todėl `numatoma` skaičiuojama iš to, kas jau
- * eilėje. Jis niekada nemažėja: temą paėmus iš eilės ji tiesiog persikelia į
- * „tikrinama", o suma lieka ta pati.
- */
+/** Kiek uždavinių atlikta ir kiek jų bus iš viso. Antrasis skaičius fiksuotas. */
 export function progresoSkaiciai(b: Busena): { atlikta: number; numatoma: number } {
-  const laukia = b.eile.filter((id) => !b.rezultatai[id]).length
-  const numatoma = Math.min(
-    MAKS_UZDAVINIU,
-    (Object.keys(b.rezultatai).length + laukia + (b.dabartine ? 1 : 0)) * UZDAVINIU_TEMAI,
-  )
-  return { atlikta: b.isVisoUzdaviniu, numatoma: Math.max(numatoma, b.isVisoUzdaviniu) }
+  return { atlikta: b.isVisoUzdaviniu, numatoma: IS_VISO_UZDAVINIU }
 }
 
 /** Progresas 0..1. */
