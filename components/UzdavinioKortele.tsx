@@ -65,8 +65,8 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
                 className={`w-28 rounded-[6px] border bg-paper px-3 py-2 text-center font-mono text-[1.0625rem] text-ink placeholder:text-muted/50 print:h-9 print:w-32 ${
                   rodytiAtsakyma && kazkasIvesta
                     ? teisinga
-                      ? 'border-ink'
-                      : 'border-orange bg-orange-soft'
+                      ? 'border-green'
+                      : 'border-red bg-red-soft'
                     : 'border-line'
                 }`}
               />
@@ -91,10 +91,10 @@ export function UzdavinioKortele({ uzdavinys, numeris, rodytiAtsakyma }: Props) 
                 <span
                   id={`vertinimas-${uzdavinys.id}`}
                   className={`be-spausdinimo t-small font-semibold ${
-                    teisinga ? 'text-ink' : 'text-orange'
+                    teisinga ? 'text-green' : 'text-red'
                   }`}
                 >
-                  {teisinga ? 'gerai' : 'ne'}
+                  {teisinga ? 'Teisingai' : 'Neteisingai'}
                 </span>
               )}
             </span>

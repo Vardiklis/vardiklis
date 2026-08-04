@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Mygtukas from '@/components/Mygtukas'
 import { generuokRinkini, type Lygis, type Uzdavinys } from '@/lib/generatoriai'
 import { potemes, programa, type IsskleistaPotema, type ProgramosTema } from '@/lib/programa'
@@ -22,8 +22,9 @@ const LYGIAI: { reiksme: Lygis; etikete: string }[] = [
 
 type Pasirinkta = {
   klase: number
-  tema: ProgramosTema
-  potema: IsskleistaPotema | null
+  temosNumeris: number
+  potemesNumeris: string | null
+  temosPavadinimas: string
   generatorius: string
   antraste: string
 }
@@ -37,11 +38,23 @@ export function UzduociuGeneratorius() {
   const [uzdaviniai, setUzdaviniai] = useState<Uzdavinys[]>([])
   const [rodytiAtsakymus, setRodytiAtsakymus] = useState(false)
 
-  const klasesTemos = programa.find((k) => k.klase === klase)?.temos ?? []
+  // Potemės išskleidžiamos kartą pakeitus klasę, o ne kiekvieno perpiešimo metu —
+  // kiekvienas paspaudimas sąraše perpiešia visą akordeoną.
+  const klasesTemos = useMemo(
+    () =>
+      (programa.find((k) => k.klase === klase)?.temos ?? []).map((tema) => ({
+        tema,
+        sarasas: potemes(tema),
+      })),
+    [klase],
+  )
+  const skirstomaIPotemes = klasesTemos.some((t) => t.sarasas.length > 0)
 
   function keiskKlase(nauja: number) {
     setKlase(nauja)
     setIsskleista(null)
+    setPasirinkta(null)
+    setUzdaviniai([])
   }
 
   function generuok(p: Pasirinkta, naujasLygis: Lygis, naujasKiekis: number) {
@@ -58,8 +71,9 @@ export function UzduociuGeneratorius() {
     generuok(
       {
         klase,
-        tema,
-        potema: null,
+        temosNumeris: tema.numeris,
+        potemesNumeris: null,
+        temosPavadinimas: tema.pavadinimas,
         generatorius: tema.generatorius,
         antraste: `${tema.numeris}. ${tema.pavadinimas}`,
       },
@@ -73,13 +87,121 @@ export function UzduociuGeneratorius() {
     generuok(
       {
         klase,
-        tema,
-        potema: p,
+        temosNumeris: tema.numeris,
+        potemesNumeris: p.numeris,
+        temosPavadinimas: tema.pavadinimas,
         generatorius: p.generatorius,
         antraste: `${p.numeris}. ${p.pavadinimas}`,
       },
       p.lygis,
       kiekis,
+    )
+  }
+
+  /** Ar rinkinys priklauso būtent šiai vietai sąraše. */
+  function cia(temosNumeris: number, potemesNumeris: string | null): boolean {
+    return (
+      pasirinkta !== null &&
+      uzdaviniai.length > 0 &&
+      pasirinkta.klase === klase &&
+      pasirinkta.temosNumeris === temosNumeris &&
+      pasirinkta.potemesNumeris === potemesNumeris
+    )
+  }
+
+  /**
+   * Sugeneruotas rinkinys. Rodomas iškart po pasirinkta tema ar poteme —
+   * taip matyti, iš kur uždaviniai atsirado, ir nereikia slinkti į puslapio galą.
+   */
+  function rinkinys() {
+    if (!pasirinkta) return null
+
+    return (
+      <div className="mt-3 rounded-[8px] border border-line bg-paper p-4 md:p-5 print:border-0 print:p-0">
+        {/* Antraštė lapui — matoma tik spausdinant. */}
+        <div className="hidden print:block">
+          <h3 className="t-h2">
+            {pasirinkta.klase} kl. · {pasirinkta.antraste}
+          </h3>
+          <p className="mt-6 t-small">
+            Vardas, pavardė: ______________________ Data: ____________
+          </p>
+        </div>
+
+        <div className="be-spausdinimo">
+          <h3 className="t-h3">{pasirinkta.antraste}</h3>
+          <p className="mt-1 t-small text-muted">
+            {pasirinkta.klase} klasė · {uzdaviniai.length} uždaviniai
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-5">
+            <div>
+              <span className="block t-small font-semibold">Sunkumas</span>
+              <div className="mt-2 flex gap-2">
+                {LYGIAI.map((l) => (
+                  <button
+                    key={l.reiksme}
+                    type="button"
+                    onClick={() => generuok(pasirinkta, l.reiksme, kiekis)}
+                    aria-pressed={l.reiksme === lygis}
+                    className={`rounded-[6px] border px-4 py-2 t-small transition-colors ${
+                      l.reiksme === lygis
+                        ? 'border-ink bg-paper font-semibold'
+                        : 'border-line bg-paper text-muted hover:border-ink'
+                    }`}
+                  >
+                    {l.etikete}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="block t-small font-semibold">Kiek uždavinių</span>
+              <div className="mt-2 flex gap-2">
+                {KIEKIAI.map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => generuok(pasirinkta, lygis, k)}
+                    aria-pressed={k === kiekis}
+                    className={`rounded-[6px] border px-4 py-2 font-mono t-small transition-colors ${
+                      k === kiekis
+                        ? 'border-ink bg-paper font-semibold'
+                        : 'border-line bg-paper text-muted hover:border-ink'
+                    }`}
+                  >
+                    {k}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Mygtukas onClick={() => generuok(pasirinkta, lygis, kiekis)}>
+              Nauji uždaviniai
+            </Mygtukas>
+            <Mygtukas variantas="konturas" onClick={() => setRodytiAtsakymus((v) => !v)}>
+              {rodytiAtsakymus ? 'Slėpti atsakymus' : 'Rodyti atsakymus'}
+            </Mygtukas>
+            <Mygtukas variantas="konturas" onClick={() => window.print()}>
+              Spausdinti
+            </Mygtukas>
+          </div>
+        </div>
+
+        <ol className="mt-6 flex flex-col gap-4 print:gap-3">
+          {uzdaviniai.map((u, i) => (
+            <UzdavinioKortele
+              key={u.id}
+              uzdavinys={u}
+              numeris={i + 1}
+              rodytiAtsakyma={rodytiAtsakymus}
+            />
+          ))}
+        </ol>
+      </div>
     )
   }
 
@@ -108,23 +230,23 @@ export function UzduociuGeneratorius() {
       </div>
 
       {/* ── Temų akordeonas ─────────────────────────────────────────────── */}
-      <div className="be-spausdinimo mt-10">
-        <h2 className="t-h3">{klase} klasės temos</h2>
-        <p className="mt-2 t-small text-muted">
-          {klasesTemos.some((t) => potemes(t).length > 0)
-            ? 'Spustelėkite temą — ji išsiskleis į potemes. Paspaudus potemę, iš karto sugeneruojami jos uždaviniai.'
-            : 'Šios klasės programoje temos į potemes neskirstomos, tad spustelėjus temą uždaviniai sugeneruojami iš karto.'}
-        </p>
+      <div className="mt-10">
+        <div className="be-spausdinimo">
+          <h2 className="t-h3">{klase} klasės temos</h2>
+          <p className="mt-2 t-small text-muted">
+            {skirstomaIPotemes
+              ? 'Spustelėkite temą — ji išsiskleis į potemes. Paspaudus potemę, uždaviniai atsiranda čia pat, po ja.'
+              : 'Šios klasės programoje temos į potemes neskirstomos, tad spustelėjus temą uždaviniai atsiranda čia pat, po ja.'}
+          </p>
+        </div>
 
-        <ol className="mt-6 divide-y divide-line rounded-[8px] border border-line">
-          {klasesTemos.map((tema) => {
-            const sarasas = potemes(tema)
+        <ol className="mt-6 divide-y divide-line rounded-[8px] border border-line print:divide-y-0 print:rounded-none print:border-0">
+          {klasesTemos.map(({ tema, sarasas }) => {
             const skirstoma = sarasas.length > 0
             const atidaryta = skirstoma && isskleista === tema.numeris
             // 5–7 klasių programoje potemių nėra — ten stambusis punktas ir yra
             // smulkiausias dalykas, tad paspaudus iškart generuojami uždaviniai.
-            const aktyviTema = !skirstoma && pasirinkta?.tema.numeris === tema.numeris &&
-              pasirinkta.klase === klase
+            const rinkinysCia = cia(tema.numeris, null)
 
             return (
               <li key={tema.numeris}>
@@ -136,9 +258,9 @@ export function UzduociuGeneratorius() {
                       : pasirinkTema(tema)
                   }
                   aria-expanded={skirstoma ? atidaryta : undefined}
-                  aria-current={aktyviTema ? 'true' : undefined}
-                  className={`flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors hover:bg-paper-2 ${
-                    aktyviTema ? 'bg-orange-soft' : ''
+                  aria-current={rinkinysCia ? 'true' : undefined}
+                  className={`be-spausdinimo flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors ${
+                    rinkinysCia ? 'bg-orange-soft' : 'hover:bg-paper-2'
                   }`}
                 >
                   {/* Stambieji punktai paryškinti — tai programos skyriai. */}
@@ -154,42 +276,59 @@ export function UzduociuGeneratorius() {
                   </span>
                 </button>
 
+                {/* Tema be potemių — rinkinys tiesiai po ja. */}
+                {!skirstoma && rinkinysCia && (
+                  <div className="border-t border-line bg-paper-2 px-5 py-4 print:border-0 print:bg-transparent print:p-0">
+                    {rinkinys()}
+                  </div>
+                )}
+
                 {atidaryta && (
-                  <div className="border-t border-line bg-paper-2 px-5 py-3">
+                  <div className="border-t border-line bg-paper-2 px-5 py-3 print:border-0 print:bg-transparent print:p-0">
                     <ol className="flex flex-col">
-                        {sarasas.map((p) => {
-                          const aktyvi = pasirinkta?.potema?.numeris === p.numeris
-                          return (
-                            <li key={p.numeris}>
-                              <button
-                                type="button"
-                                onClick={() => pasirinkPotema(tema, p)}
-                                disabled={!p.generatorius}
-                                aria-current={aktyvi ? 'true' : undefined}
-                                className={`flex w-full items-baseline gap-3 rounded-[6px] px-3 py-2.5 text-left transition-colors ${
-                                  p.generatorius ? 'hover:bg-paper' : 'cursor-default'
-                                } ${aktyvi ? 'bg-orange-soft' : ''}`}
+                      {sarasas.map((p) => {
+                        const aktyvi = cia(tema.numeris, p.numeris)
+                        return (
+                          <li key={p.numeris}>
+                            <button
+                              type="button"
+                              onClick={() => pasirinkPotema(tema, p)}
+                              disabled={!p.generatorius}
+                              aria-current={aktyvi ? 'true' : undefined}
+                              // Užvedus pelę ant jau pasirinktos potemės oranžinis
+                              // pažymėjimas turi likti — kitaip dingsta nuoroda,
+                              // iš kur uždaviniai atsirado.
+                              className={`be-spausdinimo flex w-full items-baseline gap-3 rounded-[6px] px-3 py-2.5 text-left transition-colors ${
+                                aktyvi
+                                  ? 'bg-orange-soft'
+                                  : p.generatorius
+                                    ? 'hover:bg-paper'
+                                    : 'cursor-default'
+                              }`}
+                            >
+                              <span className="shrink-0 font-mono t-small tabular-nums text-muted">
+                                {p.numeris}.
+                              </span>
+                              <span
+                                className={`grow t-body ${
+                                  p.generatorius ? 'text-ink' : 'text-muted'
+                                }`}
                               >
-                                <span className="shrink-0 font-mono t-small tabular-nums text-muted">
-                                  {p.numeris}.
-                                </span>
-                                <span
-                                  className={`grow t-body ${
-                                    p.generatorius ? 'text-ink' : 'text-muted'
-                                  }`}
-                                >
-                                  {p.pavadinimas}
-                                </span>
-                                {!p.generatorius && (
-                                  <span className="shrink-0 t-small text-muted">netrukus</span>
-                                )}
-                              </button>
-                            </li>
-                          )
-                        })}
+                                {p.pavadinimas}
+                              </span>
+                              {!p.generatorius && (
+                                <span className="shrink-0 t-small text-muted">netrukus</span>
+                              )}
+                            </button>
+
+                            {/* Rinkinys išsiskleidžia po ta poteme, kurią paspaudė. */}
+                            {aktyvi && rinkinys()}
+                          </li>
+                        )
+                      })}
                     </ol>
 
-                    <div className="mt-2 border-t border-line px-3 pt-3">
+                    <div className="be-spausdinimo mt-2 border-t border-line px-3 pt-3">
                       <button
                         type="button"
                         onClick={() => pasirinkTema(tema)}
@@ -198,6 +337,9 @@ export function UzduociuGeneratorius() {
                         Uždaviniai iš visos temos
                       </button>
                     </div>
+
+                    {/* Visos temos rinkinys — po nuoroda, kuri jį iškvietė. */}
+                    {rinkinysCia && rinkinys()}
                   </div>
                 )}
               </li>
@@ -205,105 +347,6 @@ export function UzduociuGeneratorius() {
           })}
         </ol>
       </div>
-
-      {/* ── Sugeneruotas rinkinys ───────────────────────────────────────── */}
-      {pasirinkta && uzdaviniai.length > 0 && (
-        <section className="mt-14" aria-labelledby="rinkinys">
-          {/* Antraštė lapui — matoma tik spausdinant. */}
-          <div className="hidden print:block">
-            <h2 className="t-h2">
-              {pasirinkta.klase} kl. · {pasirinkta.antraste}
-            </h2>
-            <p className="mt-6 t-small">
-              Vardas, pavardė: ______________________ Data: ____________
-            </p>
-          </div>
-
-          <div className="be-spausdinimo">
-            <h2 id="rinkinys" className="t-h2">
-              {pasirinkta.antraste}
-            </h2>
-            <p className="mt-2 t-small text-muted">
-              {pasirinkta.klase} klasė
-              {pasirinkta.potema && ` · ${pasirinkta.tema.pavadinimas}`} ·{' '}
-              {uzdaviniai.length} uždaviniai
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-end gap-x-8 gap-y-5">
-              <div>
-                <span className="block t-small font-semibold">Sunkumas</span>
-                <div className="mt-2 flex gap-2">
-                  {LYGIAI.map((l) => (
-                    <button
-                      key={l.reiksme}
-                      type="button"
-                      onClick={() => generuok(pasirinkta, l.reiksme, kiekis)}
-                      aria-pressed={l.reiksme === lygis}
-                      className={`rounded-[6px] border px-4 py-2 t-small transition-colors ${
-                        l.reiksme === lygis
-                          ? 'border-ink bg-paper font-semibold'
-                          : 'border-line bg-paper text-muted hover:border-ink'
-                      }`}
-                    >
-                      {l.etikete}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <span className="block t-small font-semibold">Kiek uždavinių</span>
-                <div className="mt-2 flex gap-2">
-                  {KIEKIAI.map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => generuok(pasirinkta, lygis, k)}
-                      aria-pressed={k === kiekis}
-                      className={`rounded-[6px] border px-4 py-2 font-mono t-small transition-colors ${
-                        k === kiekis
-                          ? 'border-ink bg-paper font-semibold'
-                          : 'border-line bg-paper text-muted hover:border-ink'
-                      }`}
-                    >
-                      {k}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Mygtukas onClick={() => generuok(pasirinkta, lygis, kiekis)}>
-                Nauji uždaviniai
-              </Mygtukas>
-              <Mygtukas variantas="konturas" onClick={() => setRodytiAtsakymus((v) => !v)}>
-                {rodytiAtsakymus ? 'Slėpti atsakymus' : 'Rodyti atsakymus'}
-              </Mygtukas>
-              <Mygtukas variantas="konturas" onClick={() => window.print()}>
-                Spausdinti
-              </Mygtukas>
-            </div>
-          </div>
-
-          <ol className="mt-8 flex flex-col gap-4 print:gap-3">
-            {uzdaviniai.map((u, i) => (
-              <UzdavinioKortele
-                key={u.id}
-                uzdavinys={u}
-                numeris={i + 1}
-                rodytiAtsakyma={rodytiAtsakymus}
-              />
-            ))}
-          </ol>
-        </section>
-      )}
-
-      {!pasirinkta && (
-        <p className="be-spausdinimo mt-10 rounded-[8px] border border-dashed border-line px-6 py-10 text-center t-body text-muted">
-          Pasirinkite temą iš sąrašo.
-        </p>
-      )}
     </>
   )
 }

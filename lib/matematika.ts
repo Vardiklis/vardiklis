@@ -125,6 +125,27 @@ export function normalizuok(ivestis: string): string {
   s = s.replace(/[−–—]/g, '-') // − – — → -
   s = s.replace(/,/g, '.')
   s = s.replace(/%/g, '')
+
+  // „x = 5" — vaikai natūraliai užrašo ir nežinomąjį. Priešdėlį nurašom.
+  s = s.replace(/^[a-z]\s*=\s*/, '')
+
+  // Kvadratinė šaknis ir laipsnis suskaičiuojami, jei rezultatas sveikas —
+  // kitaip klaviatūros √ ir x² klavišai duotų atsakymus, žymimus klaidingais.
+  s = s.replace(/√\s*(\d+)/g, (visas, n: string) => {
+    const saknis = Math.sqrt(Number(n))
+    return Number.isInteger(saknis) ? String(saknis) : visas
+  })
+  s = s.replace(/(\d+)\s*\^\s*(\d+)/g, (visas, pagrindas: string, rodiklis: string) => {
+    if (Number(rodiklis) > 8) return visas
+    const reiksme = Number(pagrindas) ** Number(rodiklis)
+    return Number.isSafeInteger(reiksme) ? String(reiksme) : visas
+  })
+
+  // Vieno sandaugos veiksmo pakanka: „2*3" yra 6, o ne atsakymas „2*3".
+  s = s.replace(/^(-?\d+)\s*\*\s*(\d+)$/, (visas, a: string, b: string) =>
+    String(Number(a) * Number(b)),
+  )
+
   s = s.replace(/\s*\/\s*/g, '/')
   s = s.replace(/\s+/g, ' ').trim()
 

@@ -144,7 +144,7 @@ export default function Pradzia() {
               <li key={d.antraste} className="md:grid md:grid-cols-[16rem_1fr] md:gap-10">
                 <h3 className="t-h3">{d.antraste}</h3>
                 <p className="mt-3 border-l-2 border-orange pl-5 t-body md:mt-0">
-                  „{d.pavyzdys}“
+                  {d.pavyzdys}
                 </p>
               </li>
             ))}

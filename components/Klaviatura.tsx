@@ -16,11 +16,10 @@ type Klavisas = {
   iraso?: string
   veiksmas?: 'trinti' | 'valyti'
   akcentas?: boolean
-  platus?: boolean
   aprasas?: string
 }
 
-const EILUTES: Klavisas[][] = [
+const SKAICIAI: Klavisas[][] = [
   [
     { zenklas: '7' },
     { zenklas: '8' },
@@ -48,8 +47,31 @@ const EILUTES: Klavisas[][] = [
   ],
 ]
 
+const SIMBOLIAI: Klavisas[][] = [
+  [
+    { zenklas: '√', aprasas: 'Kvadratinė šaknis' },
+    { zenklas: 'x²', iraso: '^2', aprasas: 'Kėlimas kvadratu' },
+    { zenklas: '(', aprasas: 'Skliaustas atidaromas' },
+    { zenklas: ')', aprasas: 'Skliaustas uždaromas' },
+  ],
+  [
+    { zenklas: 'x' },
+    { zenklas: 'y' },
+    { zenklas: 'a' },
+    { zenklas: 'b' },
+  ],
+  [
+    { zenklas: 'c' },
+    { zenklas: 'd' },
+    { zenklas: '=', aprasas: 'Lygybės ženklas' },
+    { zenklas: '·', iraso: '*', aprasas: 'Daugybos ženklas' },
+  ],
+]
+
 /** Ką rodyti peržiūroje: trupmeną, mišrųjį skaičių ar tiesiog tekstą. */
-function perziura(reiksme: string): { skaitiklis: string; vardiklis: string; sveikas?: string } | null {
+function perziura(
+  reiksme: string,
+): { skaitiklis: string; vardiklis: string; sveikas?: string } | null {
   const svarus = reiksme.trim()
   const misrus = svarus.match(/^(-?\d+)\s+(\d+)\/(\d*)$/)
   if (misrus) {
@@ -63,9 +85,14 @@ function perziura(reiksme: string): { skaitiklis: string; vardiklis: string; sve
 }
 
 /**
- * Matematikos klaviatūra. Pagrindinė priežastis, kodėl ji reikalinga —
- * trupmenos: telefone `/` yra paslėptas, o vaikas neranda, kaip įvesti `3/4`.
- * Peržiūra viršuje iškart parodo įvestį stackuota trupmena.
+ * Matematikos klaviatūra.
+ *
+ * Pagrindinė priežastis, kodėl ji reikalinga — trupmenos: telefone `/` yra
+ * paslėptas, o vaikas neranda, kaip įvesti `3/4`. Antra eilė skirta tam, ko
+ * nėra nė vienoje skaičių klaviatūroje: šaknies, kvadrato, skliaustų ir raidžių.
+ *
+ * Įvestis normalizuojama prieš lyginant, tad `x = 5`, `√16` ir `2^3` skaitomi
+ * teisingai — žr. `normalizuok` faile `lib/matematika.ts`.
  */
 export function Klaviatura({ reiksme, onKeisti, onUzdaryti, isjungta = false }: Props) {
   const p = perziura(reiksme)
@@ -75,6 +102,25 @@ export function Klaviatura({ reiksme, onKeisti, onUzdaryti, isjungta = false }: 
     if (k.veiksmas === 'valyti') return onKeisti('')
     if (k.veiksmas === 'trinti') return onKeisti(reiksme.slice(0, -1))
     onKeisti(reiksme + (k.iraso ?? k.zenklas))
+  }
+
+  function mygtukas(k: Klavisas, aukstis: string) {
+    return (
+      <button
+        key={k.zenklas}
+        type="button"
+        disabled={isjungta}
+        onClick={() => spausk(k)}
+        aria-label={k.aprasas ?? k.zenklas}
+        className={`${aukstis} rounded-[6px] border font-mono text-lg transition-colors disabled:opacity-40 ${
+          k.akcentas
+            ? 'border-orange bg-orange font-semibold text-ink'
+            : 'border-line bg-paper text-ink hover:border-ink'
+        } ${k.zenklas.length > 2 ? 'text-[0.8125rem]' : ''}`}
+      >
+        {k.zenklas}
+      </button>
+    )
   }
 
   return (
@@ -110,32 +156,28 @@ export function Klaviatura({ reiksme, onKeisti, onUzdaryti, isjungta = false }: 
       </div>
 
       <div className="flex flex-col gap-2">
-        {EILUTES.map((eilute, i) => (
+        {SKAICIAI.map((eilute, i) => (
           <div key={i} className="grid grid-cols-4 gap-2">
-            {eilute.map((k) => (
-              <button
-                key={k.zenklas}
-                type="button"
-                disabled={isjungta}
-                onClick={() => spausk(k)}
-                aria-label={k.aprasas ?? k.zenklas}
-                className={`h-12 rounded-[6px] border font-mono text-lg transition-colors disabled:opacity-40 ${
-                  k.akcentas
-                    ? 'border-orange bg-orange text-ink font-semibold'
-                    : 'border-line bg-paper text-ink hover:border-ink'
-                } ${k.zenklas.length > 2 ? 'text-[0.8125rem]' : ''}`}
-              >
-                {k.zenklas}
-              </button>
-            ))}
+            {eilute.map((k) => mygtukas(k, 'h-12'))}
           </div>
         ))}
+      </div>
+
+      <div className="mt-3 border-t border-line pt-3">
+        <div className="flex flex-col gap-2">
+          {SIMBOLIAI.map((eilute, i) => (
+            <div key={i} className="grid grid-cols-4 gap-2">
+              {eilute.map((k) => mygtukas(k, 'h-11'))}
+            </div>
+          ))}
+        </div>
       </div>
 
       <p className="mt-3 px-2 t-small text-muted">
         Trupmena rašoma su brūkšniu:{' '}
         <span className="font-mono whitespace-nowrap text-ink">3/4</span>. Mišrusis skaičius —
         su tarpu: <span className="font-mono whitespace-nowrap text-ink">1&nbsp;1/2</span>.
+        Galima rašyti ir <span className="font-mono whitespace-nowrap text-ink">x&nbsp;=&nbsp;5</span>.
       </p>
     </div>
   )
