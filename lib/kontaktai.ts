@@ -11,7 +11,7 @@ export const kontaktai = {
   // TODO(Modesta): jei dirbama ir gyvai konkrečiame mieste — įrašyk jį čia,
   // tada jis atsiras poraštėje, „Apie" puslapyje ir struktūriniuose duomenyse.
   miestas: '',
-  vietove: 'Nuotoliu ir gyvai',
+  vietove: 'Pamokos vyksta nuotoliniu būdu',
 } as const
 
 export const svetaine = {
