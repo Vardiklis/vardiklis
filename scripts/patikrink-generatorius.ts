@@ -11,7 +11,7 @@ import katex from 'katex'
 import { generatoriai } from '../lib/generatoriai/index'
 import type { Lygis, Uzdavinys } from '../lib/generatoriai/tipai'
 import { normalizuok } from '../lib/matematika'
-import { programa } from '../lib/programa'
+import { potemes, programa } from '../lib/programa'
 import { temos } from '../lib/temos'
 
 const KIEK = Number(process.argv[2] ?? 100)
@@ -60,8 +60,14 @@ function patikrinkGrafa(): void {
   for (const t of temos) zemyn(t.id, [])
 
   // Generatorius naudojamas arba diagnostikos grafe, arba uždavinių bibliotekoje.
+  // Generatorius gali būti naudojamas ir tik potemėje — tada jis irgi naudojamas.
   const programosGeneratoriai = new Set(
-    programa.flatMap((k) => k.temos.map((t) => t.generatorius).filter(Boolean)),
+    programa.flatMap((k) =>
+      k.temos.flatMap((t) => [
+        t.generatorius,
+        ...potemes(t).map((p) => p.generatorius),
+      ]),
+    ),
   )
   const nenaudojami = Object.keys(generatoriai).filter(
     (g) => !temos.some((t) => t.generatorius === g) && !programosGeneratoriai.has(g),
@@ -73,10 +79,12 @@ function patikrinkGrafa(): void {
   // Programa negali rodyti temos su neegzistuojančiu generatoriumi.
   for (const k of programa) {
     for (const t of k.temos) {
-      if (t.generatorius && !(t.generatorius in generatoriai)) {
-        klaidos.push(
-          `Programa: ${k.klase} kl. tema „${t.pavadinimas}" nurodo nežinomą generatorių "${t.generatorius}"`,
-        )
+      for (const g of [t.generatorius, ...potemes(t).map((p) => p.generatorius)]) {
+        if (g && !(g in generatoriai)) {
+          klaidos.push(
+            `Programa: ${k.klase} kl. tema „${t.pavadinimas}" nurodo nežinomą generatorių "${g}"`,
+          )
+        }
       }
     }
   }

@@ -31,6 +31,15 @@ import { kvadratinesLygtys, tiesinesLygtys } from './lygtys'
 import { laipsniai } from './laipsniai'
 import { neigiami } from './neigiami'
 import {
+  dalumoPozymiai,
+  misiniai,
+  rekurenciosSekos,
+  saknuIvertinimas,
+  skaitmenys,
+  sklaida,
+  vijeto,
+} from './papildomi'
+import {
   apvalinimas,
   dalisIrVisuma,
   desimtaines,
@@ -121,6 +130,15 @@ export const generatoriai: Record<string, Generatorius> = {
   konstravimas,
   ornamentai,
   algoritmai,
+
+  // 5–10 klasių turinio aprašo reikalaujami gebėjimai
+  'dalumo-pozymiai': dalumoPozymiai,
+  skaitmenys,
+  'saknu-ivertinimas': saknuIvertinimas,
+  sklaida,
+  vijeto,
+  misiniai,
+  'rekurencios-sekos': rekurenciosSekos,
 
   // Duomenys ir tikimybės
   vidurkis,
