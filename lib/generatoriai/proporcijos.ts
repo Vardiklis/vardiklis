@@ -1,6 +1,7 @@
 import { skaitvardzioForma } from '../lietuviu'
 import { atsitiktinis, pasirink } from '../matematika'
 import { suBandymais, uzdavinys } from './bendra'
+import { didink } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -105,14 +106,14 @@ const ATSARGINIAI = [
   },
 ] as const
 
-export const proporcijos: Generatorius = (lygis) =>
-  suBandymais(() => kurk(lygis), ATSARGINIAI, 'proporcijos')
+export const proporcijos: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurk(lygis, klase), ATSARGINIAI, 'proporcijos')
 
-function kurk(lygis: Lygis): Uzdavinys | null {
+function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
   const k = pasirink(KONTEKSTAI)
-  const vienetoKaina = atsitiktinis(k.kainaNuo, k.kainaIki)
-  const kiekis1 = atsitiktinis(2, 9)
-  const kiekis2 = atsitiktinis(2, 12)
+  const vienetoKaina = atsitiktinis(k.kainaNuo, didink(k.kainaIki, klase))
+  const kiekis1 = atsitiktinis(2, didink(9, klase))
+  const kiekis2 = atsitiktinis(2, didink(12, klase))
   if (kiekis1 === kiekis2) return null
 
   const kaina1 = vienetoKaina * kiekis1
@@ -144,7 +145,7 @@ function kurk(lygis: Lygis): Uzdavinys | null {
   }
 
   // 3 lygis — proporcija be akivaizdaus vieneto, per santykį.
-  const daugiklis = atsitiktinis(2, 5)
+  const daugiklis = atsitiktinis(2, didink(5, klase))
   const kiekis3 = kiekis1 * daugiklis
   const kaina3 = kaina1 * daugiklis
   if (kaina3 > 400) return null

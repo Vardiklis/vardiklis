@@ -60,3 +60,11 @@ export function suBandymais(
   const atsarginis = atsarginiai[Math.floor(Math.random() * atsarginiai.length)]
   return uzdavinys(temaId, atsarginis)
 }
+
+/**
+ * Skaičius sprendimo tekstui: neigiamas rašomas skliaustuose, kad neatsirastų
+ * poros tipo „5 - -3“, kurios mokykloje niekada nerašomos.
+ */
+export function sk(n: number): string {
+  return n < 0 ? `(${n})` : String(n)
+}

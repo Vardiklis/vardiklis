@@ -7,6 +7,7 @@ import {
   type Trupmena,
 } from '../matematika'
 import { suBandymais, uzdavinys } from './bendra'
+import { vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -54,10 +55,33 @@ const POROS_PLATESNES: readonly (readonly [number, number])[] = [
   [8, 12],
 ]
 
-const VARDIKLIAI = [2, 3, 4, 5, 6, 8, 9, 10, 12] as const
+/**
+ * 8–10 klasei — poros, kurių bendrą vardiklį jau reikia suskaičiuoti, bet
+ * atsakymo vardiklis lieka ne didesnis nei 20 (7.1 reikalavimas tvarkingiems
+ * atsakymams galioja ir vyresnėse klasėse).
+ */
+const POROS_SUNKIOS: readonly (readonly [number, number])[] = [
+  ...POROS_PLATESNES,
+  [3, 5],
+  [4, 5],
+  [3, 15],
+  [5, 15],
+  [4, 10],
+  [4, 20],
+  [5, 20],
+  [2, 20],
+  [10, 20],
+  [5, 4],
+]
 
-function ribaVardiklio(lygis: Lygis): number {
-  return lygis === 1 ? 10 : lygis === 2 ? 12 : 20
+const VARDIKLIAI = [2, 3, 4, 5, 6, 8, 9, 10, 12] as const
+const VARDIKLIAI_SUNKUS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 18, 20] as const
+
+function ribaVardiklio(lygis: Lygis, klase?: number): number {
+  const bazinis = lygis === 1 ? 10 : lygis === 2 ? 12 : 20
+  // Vyresniems leidžiamas platesnis vardiklis, bet niekada virš 20 — kitaip
+  // atsakymai nustoja būti mokykliniai.
+  return vyresne(klase) ? 20 : bazinis
 }
 
 function tex(t: Trupmena): string {
@@ -88,16 +112,21 @@ const ATSARGINIAI_SUDETIS = [
   },
 ] as const
 
-export const trupmenuSudetis: Generatorius = (lygis) =>
-  suBandymais(() => kurkSudeti(lygis), ATSARGINIAI_SUDETIS, 'trupmenu-sudetis')
+export const trupmenuSudetis: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkSudeti(lygis, klase), ATSARGINIAI_SUDETIS, 'trupmenu-sudetis')
 
-function kurkSudeti(lygis: Lygis): Uzdavinys | null {
+function kurkSudeti(lygis: Lygis, klase?: number): Uzdavinys | null {
   // 3 lygis — kombinuoti veiksmai: mišrusis skaičius ir trupmena.
   if (lygis === 3 && Math.random() < 0.45) return kurkMisru()
 
-  const poros =
-    lygis === 1 ? POROS_LENGVOS : lygis === 2 ? POROS_KURUOTOS : POROS_PLATESNES
-  const riba = ribaVardiklio(lygis)
+  const poros = vyresne(klase)
+    ? POROS_SUNKIOS
+    : lygis === 1
+      ? POROS_LENGVOS
+      : lygis === 2
+        ? POROS_KURUOTOS
+        : POROS_PLATESNES
+  const riba = ribaVardiklio(lygis, klase)
   const [d1, d2] = pasirink(poros)
 
   let n1 = atsitiktinis(1, d1 - 1)
@@ -223,15 +252,16 @@ const ATSARGINIAI_DAUGYBA = [
   },
 ] as const
 
-export const trupmenuDaugyba: Generatorius = (lygis) =>
-  suBandymais(() => kurkDaugyba(lygis), ATSARGINIAI_DAUGYBA, 'trupmenu-daugyba')
+export const trupmenuDaugyba: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkDaugyba(lygis, klase), ATSARGINIAI_DAUGYBA, 'trupmenu-daugyba')
 
-function kurkDaugyba(lygis: Lygis): Uzdavinys | null {
-  const riba = ribaVardiklio(lygis)
+function kurkDaugyba(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const riba = ribaVardiklio(lygis, klase)
+  const vardikliai = vyresne(klase) ? VARDIKLIAI_SUNKUS : VARDIKLIAI
 
   // 1 lygyje pusė uždavinių — trupmena kart sveikas skaičius.
   if (lygis === 1 && Math.random() < 0.5) {
-    const d = pasirink(VARDIKLIAI)
+    const d = pasirink(vardikliai)
     const n = atsitiktinis(1, d - 1)
     const k = atsitiktinis(2, 9)
     const rez = suprastink(n * k, d)
@@ -248,8 +278,8 @@ function kurkDaugyba(lygis: Lygis): Uzdavinys | null {
     })
   }
 
-  const d1 = pasirink(VARDIKLIAI)
-  const d2 = pasirink(VARDIKLIAI)
+  const d1 = pasirink(vardikliai)
+  const d2 = pasirink(vardikliai)
   const n1 = atsitiktinis(1, d1 - 1)
   const n2 = atsitiktinis(1, d2 - 1)
   const dalyba = lygis >= 2 && Math.random() < 0.45
@@ -298,20 +328,38 @@ const ATSARGINIAI_BENDRAVARDIKLINIMAS = [
   },
 ] as const
 
-export const bendravardiklinimas: Generatorius = (lygis) =>
+export const bendravardiklinimas: Generatorius = (lygis, klase) =>
   suBandymais(
-    () => kurkBendravardiklinima(lygis),
+    () => kurkBendravardiklinima(lygis, klase),
     ATSARGINIAI_BENDRAVARDIKLINIMAS,
     'bendravardiklinimas',
   )
 
-function kurkBendravardiklinima(lygis: Lygis): Uzdavinys | null {
+/**
+ * Poros vien bendrajam vardikliui ieškoti. Čia atsakymas yra sveikas MBK, tad
+ * vardikliai gali būti didesni nei tie, kuriuos leidžia tvarkingo atsakymo
+ * taisyklė sudėčiai.
+ */
+const POROS_MBK: readonly (readonly [number, number])[] = [
+  [7, 9],
+  [8, 12],
+  [9, 15],
+  [10, 14],
+  [12, 18],
+  [11, 6],
+  [14, 21],
+  [15, 20],
+  [16, 24],
+  [13, 5],
+]
+
+function kurkBendravardiklinima(lygis: Lygis, klase?: number): Uzdavinys | null {
   if (lygis === 1) {
     // Mažiausias bendrasis vardiklis.
-    const [d1, d2] = pasirink(POROS_KURUOTOS)
+    const [d1, d2] = pasirink(vyresne(klase) ? POROS_MBK : POROS_KURUOTOS)
     if (d1 === d2) return null
     const m = mbk(d1, d2)
-    if (m > 36) return null
+    if (m > (vyresne(klase) ? 120 : 36)) return null
     const n1 = atsitiktinis(1, d1 - 1)
     const n2 = atsitiktinis(1, d2 - 1)
 
@@ -325,10 +373,12 @@ function kurkBendravardiklinima(lygis: Lygis): Uzdavinys | null {
 
   if (lygis === 2) {
     // Trupmenos plėtimas iki nurodyto vardiklio.
-    const d = pasirink([2, 3, 4, 5, 6, 8] as const)
-    const k = atsitiktinis(2, 5)
+    const d = vyresne(klase)
+      ? pasirink([2, 3, 4, 5, 6, 7, 8, 9, 10, 12] as const)
+      : pasirink([2, 3, 4, 5, 6, 8] as const)
+    const k = atsitiktinis(2, vyresne(klase) ? 9 : 5)
     const naujas = d * k
-    if (naujas > 24) return null
+    if (naujas > (vyresne(klase) ? 90 : 24)) return null
     const n = atsitiktinis(1, d - 1)
 
     return uzdavinys('bendravardiklinimas', {
@@ -342,7 +392,7 @@ function kurkBendravardiklinima(lygis: Lygis): Uzdavinys | null {
   }
 
   // 3 lygis — palyginimas, kuriam bendravardiklinti būtina.
-  const [d1, d2] = pasirink(POROS_PLATESNES)
+  const [d1, d2] = pasirink(vyresne(klase) ? POROS_SUNKIOS : POROS_PLATESNES)
   if (d1 === d2) return null
   const n1 = atsitiktinis(1, d1 - 1)
   const n2 = atsitiktinis(1, d2 - 1)

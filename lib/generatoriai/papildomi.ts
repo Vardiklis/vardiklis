@@ -1,5 +1,6 @@
 import { atsitiktinis, nsd, pasirink, suprastink, trupmenaTeX } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
+import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -30,8 +31,8 @@ const A_DALUMO_POZYMIAI = [
   },
 ] as const
 
-export const dalumoPozymiai: Generatorius = (lygis) =>
-  suBandymais(() => kurkPozymi(lygis), A_DALUMO_POZYMIAI, 'dalumo-pozymiai')
+export const dalumoPozymiai: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkPozymi(lygis, klase), A_DALUMO_POZYMIAI, 'dalumo-pozymiai')
 
 /** Pirminiai dauginamieji didėjančia tvarka. */
 function pirminiai(n: number): number[] {
@@ -47,12 +48,12 @@ function pirminiai(n: number): number[] {
   return rez
 }
 
-function kurkPozymi(lygis: Lygis): Uzdavinys | null {
+function kurkPozymi(lygis: Lygis, klase?: number): Uzdavinys | null {
   return variacija([
     // 1. Kuris iš trijų daliklių tinka
     () => {
       const teisingas = pasirink(POZYMIAI)
-      const kartotinis = teisingas.d * atsitiktinis(4, 40)
+      const kartotinis = teisingas.d * atsitiktinis(4, didink(40, klase))
       const kiti = POZYMIAI.filter((p) => p.d !== teisingas.d && kartotinis % p.d !== 0)
       if (kiti.length < 2) return null
       const [a, b] = kiti.slice(0, 2)
@@ -90,7 +91,7 @@ function kurkPozymi(lygis: Lygis): Uzdavinys | null {
 
     // 3. Kiek daliklių turi skaičius
     () => {
-      const n = atsitiktinis(12, 60)
+      const n = atsitiktinis(12, didink(60, klase))
       const kiek = Array.from({ length: n }, (_, i) => i + 1).filter((d) => n % d === 0).length
       return uzdavinys('dalumo-pozymiai', {
         klausimas: `Kiek daliklių turi skaičius ${n}?`,
@@ -105,7 +106,7 @@ function kurkPozymi(lygis: Lygis): Uzdavinys | null {
     // 4. Skaidymas pirminiais — didžiausias pirminis dauginamasis
     () => {
       if (lygis === 1) return null
-      const n = atsitiktinis(30, 300)
+      const n = atsitiktinis(30, didink(300, klase))
       const p = pirminiai(n)
       if (p.length < 2) return null
       const didziausias = p[p.length - 1]
@@ -120,7 +121,7 @@ function kurkPozymi(lygis: Lygis): Uzdavinys | null {
     // 5. Kiek pirminių dauginamųjų
     () => {
       if (lygis === 1) return null
-      const n = atsitiktinis(24, 250)
+      const n = atsitiktinis(24, didink(250, klase))
       const p = pirminiai(n)
       if (p.length < 2) return null
       return uzdavinys('dalumo-pozymiai', {
@@ -133,7 +134,7 @@ function kurkPozymi(lygis: Lygis): Uzdavinys | null {
 
     // 6. Ar skaičius pirminis
     () => {
-      const n = atsitiktinis(11, 60)
+      const n = atsitiktinis(11, didink(60, klase))
       const p = pirminiai(n)
       const arPirminis = p.length === 1
       return uzdavinys('dalumo-pozymiai', {
@@ -283,14 +284,14 @@ const A_SAKNU_IVERTINIMAS = [
   },
 ] as const
 
-export const saknuIvertinimas: Generatorius = (lygis) =>
-  suBandymais(() => kurkIvertinima(lygis), A_SAKNU_IVERTINIMAS, 'saknu-ivertinimas')
+export const saknuIvertinimas: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkIvertinima(lygis, klase), A_SAKNU_IVERTINIMAS, 'saknu-ivertinimas')
 
-function kurkIvertinima(lygis: Lygis): Uzdavinys | null {
+function kurkIvertinima(lygis: Lygis, klase?: number): Uzdavinys | null {
   return variacija([
     // 1. Tarp kurių sveikųjų
     () => {
-      const k = atsitiktinis(3, 15)
+      const k = atsitiktinis(3, didink(15, klase))
       const n = atsitiktinis(k * k + 1, (k + 1) * (k + 1) - 1)
       return uzdavinys('saknu-ivertinimas', {
         klausimas: `Tarp kurių dviejų gretimų sveikųjų skaičių yra $\\sqrt{${n}}$? Įrašyk mažesnįjį.`,
@@ -304,7 +305,7 @@ function kurkIvertinima(lygis: Lygis): Uzdavinys | null {
 
     // 2. Artimiausias sveikasis
     () => {
-      const k = atsitiktinis(3, 15)
+      const k = atsitiktinis(3, didink(15, klase))
       const n = atsitiktinis(k * k + 1, (k + 1) * (k + 1) - 1)
       const artimiausias = Math.abs(n - k * k) < Math.abs(n - (k + 1) * (k + 1)) ? k : k + 1
       return uzdavinys('saknu-ivertinimas', {
@@ -319,8 +320,8 @@ function kurkIvertinima(lygis: Lygis): Uzdavinys | null {
 
     // 3. Šaknis iš sandaugos
     () => {
-      const a = atsitiktinis(2, 12)
-      const b = atsitiktinis(2, 12)
+      const a = atsitiktinis(2, didink(12, klase))
+      const b = atsitiktinis(2, didink(12, klase))
       return uzdavinys('saknu-ivertinimas', {
         klausimas: `Apskaičiuok: $\\sqrt{${a * a}} \\cdot \\sqrt{${b * b}}$`,
         atsakymas: String(a * b),
@@ -332,8 +333,8 @@ function kurkIvertinima(lygis: Lygis): Uzdavinys | null {
     // 4. Šaknis iš trupmenos
     () => {
       if (lygis === 1) return null
-      const a = atsitiktinis(2, 10)
-      const b = atsitiktinis(2, 10)
+      const a = atsitiktinis(2, didink(10, klase))
+      const b = atsitiktinis(2, didink(10, klase))
       if (a === b) return null
       const t = suprastink(a, b)
       if (t.vardiklis > 20) return null
@@ -350,8 +351,8 @@ function kurkIvertinima(lygis: Lygis): Uzdavinys | null {
     // 5. Iškėlimas prieš šaknies ženklą
     () => {
       if (lygis !== 3) return null
-      const a = atsitiktinis(2, 9)
-      const b = pasirink([2, 3, 5, 6, 7, 10] as const)
+      const a = atsitiktinis(2, didink(9, klase))
+      const b = pasirink([2, 3, 5, 6, 7, 10, 11, 13, 15] as const)
       return uzdavinys('saknu-ivertinimas', {
         klausimas: `Iškelk dauginamąjį prieš šaknies ženklą: $\\sqrt{${a * a * b}} = \\square\\sqrt{${b}}$. Koks skaičius vietoj langelio?`,
         atsakymas: String(a),
@@ -373,12 +374,12 @@ const A_SKLAIDA = [
   },
 ] as const
 
-export const sklaida: Generatorius = (lygis) =>
-  suBandymais(() => kurkSklaida(lygis), A_SKLAIDA, 'sklaida')
+export const sklaida: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkSklaida(lygis, klase), A_SKLAIDA, 'sklaida')
 
-function kurkSklaida(lygis: Lygis): Uzdavinys | null {
+function kurkSklaida(lygis: Lygis, klase?: number): Uzdavinys | null {
   const kiek = lygis === 1 ? 5 : 7
-  const nariai = Array.from({ length: kiek }, () => atsitiktinis(2, 30)).sort((a, b) => a - b)
+  const nariai = Array.from({ length: kiek }, () => atsitiktinis(2, didink(30, klase))).sort((a, b) => a - b)
   if (new Set(nariai).size < kiek) return null
 
   return variacija([
@@ -451,12 +452,13 @@ const A_VIJETO = [
   },
 ] as const
 
-export const vijeto: Generatorius = (lygis) =>
-  suBandymais(() => kurkVijeto(lygis), A_VIJETO, 'vijeto')
+export const vijeto: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkVijeto(lygis, klase), A_VIJETO, 'vijeto')
 
-function kurkVijeto(lygis: Lygis): Uzdavinys | null {
-  const p = atsitiktinis(-8, 8)
-  const q = atsitiktinis(-8, 8)
+function kurkVijeto(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const riba = vyresne(klase) ? 15 : 8
+  const p = atsitiktinis(-riba, riba)
+  const q = atsitiktinis(-riba, riba)
   if (p === q || p === 0 || q === 0) return null
   const suma = p + q
   const sandauga = p * q
@@ -534,12 +536,14 @@ const A_MISINIAI = [
   },
 ] as const
 
-export const misiniai: Generatorius = (lygis) =>
-  suBandymais(() => kurkMisini(lygis), A_MISINIAI, 'misiniai')
+export const misiniai: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkMisini(lygis, klase), A_MISINIAI, 'misiniai')
 
-function kurkMisini(lygis: Lygis): Uzdavinys | null {
-  const procentai = pasirink([10, 20, 25, 40, 50] as const)
-  const tirpalas = atsitiktinis(2, 10) * 100
+function kurkMisini(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const procentai = vyresne(klase)
+    ? pasirink([5, 10, 15, 20, 25, 30, 40, 50, 60] as const)
+    : pasirink([10, 20, 25, 40, 50] as const)
+  const tirpalas = atsitiktinis(2, didink(10, klase)) * 100
   const medziaga = (tirpalas * procentai) / 100
   if (!Number.isInteger(medziaga)) return null
 
@@ -593,8 +597,8 @@ function kurkMisini(lygis: Lygis): Uzdavinys | null {
     // 5. Lydinys iš dviejų dalių
     () => {
       if (lygis !== 3) return null
-      const a = atsitiktinis(2, 8) * 10
-      const b = atsitiktinis(2, 8) * 10
+      const a = atsitiktinis(2, didink(8, klase)) * 10
+      const b = atsitiktinis(2, didink(8, klase)) * 10
       const d = nsd(a, b)
       return uzdavinys('misiniai', {
         klausimas: `Lydinį sudaro ${a} g vario ir ${b} g cinko. Kokiu santykiu jie sumaišyti? Įrašyk suprastintą trupmeną vario ir cinko santykiui.`,
@@ -617,10 +621,10 @@ const A_REKURENCIOS = [
   },
 ] as const
 
-export const rekurenciosSekos: Generatorius = (lygis) =>
-  suBandymais(() => kurkRekurencia(lygis), A_REKURENCIOS, 'rekurencios-sekos')
+export const rekurenciosSekos: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkRekurencia(lygis, klase), A_REKURENCIOS, 'rekurencios-sekos')
 
-function kurkRekurencia(lygis: Lygis): Uzdavinys | null {
+function kurkRekurencia(lygis: Lygis, klase?: number): Uzdavinys | null {
   return variacija([
     // 1. Fibonačio tipo seka
     () => {
@@ -642,9 +646,9 @@ function kurkRekurencia(lygis: Lygis): Uzdavinys | null {
 
     // 2. n-tasis narys pagal formulę
     () => {
-      const k = atsitiktinis(2, 9)
-      const b = atsitiktinis(-10, 10)
-      const n = atsitiktinis(4, 12)
+      const k = atsitiktinis(2, didink(9, klase))
+      const b = atsitiktinis(-didink(10, klase), didink(10, klase))
+      const n = atsitiktinis(4, vyresne(klase) ? 25 : 12)
       const rez = k * n + b
       return uzdavinys('rekurencios-sekos', {
         klausimas: `Sekos $n$-tasis narys $a_n = ${k}n ${b >= 0 ? '+' : '-'} ${Math.abs(
@@ -660,9 +664,9 @@ function kurkRekurencia(lygis: Lygis): Uzdavinys | null {
 
     // 3. Kelintas narys lygus duotai reikšmei
     () => {
-      const k = atsitiktinis(2, 9)
-      const b = atsitiktinis(-8, 8)
-      const n = atsitiktinis(4, 15)
+      const k = atsitiktinis(2, didink(9, klase))
+      const b = atsitiktinis(-didink(8, klase), didink(8, klase))
+      const n = atsitiktinis(4, vyresne(klase) ? 30 : 15)
       const reiksme = k * n + b
       return uzdavinys('rekurencios-sekos', {
         klausimas: `Sekos $n$-tasis narys $a_n = ${k}n ${b >= 0 ? '+' : '-'} ${Math.abs(
@@ -679,8 +683,8 @@ function kurkRekurencia(lygis: Lygis): Uzdavinys | null {
     // 4. Kas antras narys — skirtumas
     () => {
       if (lygis === 1) return null
-      const pradzia = atsitiktinis(2, 20)
-      const zingsnis = atsitiktinis(3, 12)
+      const pradzia = atsitiktinis(2, didink(20, klase))
+      const zingsnis = atsitiktinis(3, didink(12, klase))
       const seka = [0, 1, 2, 3, 4].map((i) => pradzia + i * zingsnis)
       return uzdavinys('rekurencios-sekos', {
         klausimas: `Seka: $${seka.join(', ')}, \\ldots$ Kam lygus dešimtasis narys?`,
@@ -705,6 +709,193 @@ function kurkRekurencia(lygis: Lygis): Uzdavinys | null {
         atsakymas: String(kitas),
         atsakymasRodymui: `$${kitas}$`,
         sprendimas: `Kiekvienas narys ${daugiklis} kartus didesnis: $${seka[3]} \\cdot ${daugiklis} = ${kitas}$.`,
+      })
+    },
+  ])
+}
+
+// ── Loginiai teiginiai ir įrodymas ──────────────────────────────────────────
+
+const A_LOGIKA = [
+  {
+    klausimas: 'Ar teiginys „Kiekvienas kvadratas yra stačiakampis“ teisingas? Įrašyk „taip“ arba „ne“.',
+    atsakymas: 'taip',
+    atsakymasRodymui: 'taip',
+    sprendimas: 'Kvadratas turi keturis stačiuosius kampus, tad tenkina stačiakampio apibrėžimą.',
+  },
+] as const
+
+/** Teiginiai su iš anksto žinoma tiesos reikšme — sąlyga niekada nedviprasmiška. */
+const TEIGINIAI: readonly { tekstas: string; teisingas: boolean; kodel: string }[] = [
+  {
+    tekstas: 'Kiekvienas kvadratas yra stačiakampis',
+    teisingas: true,
+    kodel: 'Kvadratas turi keturis stačiuosius kampus, tad tenkina stačiakampio apibrėžimą.',
+  },
+  {
+    tekstas: 'Kiekvienas stačiakampis yra kvadratas',
+    teisingas: false,
+    kodel: 'Stačiakampio kraštinės gali būti nelygios, pavyzdžiui 2 cm ir 5 cm.',
+  },
+  {
+    tekstas: 'Kiekvienas pirminis skaičius yra nelyginis',
+    teisingas: false,
+    kodel: 'Skaičius 2 yra pirminis ir lyginis — tai kontrapavyzdys.',
+  },
+  {
+    tekstas: 'Trikampio kampų suma lygi 180°',
+    teisingas: true,
+    kodel: 'Tai trikampio kampų sumos teorema.',
+  },
+  {
+    tekstas: 'Jei skaičius dalus iš 6, tai jis dalus ir iš 3',
+    teisingas: true,
+    kodel: 'Šešetas pats dalus iš 3, tad ir kiekvienas jo kartotinis dalus iš 3.',
+  },
+  {
+    tekstas: 'Jei skaičius dalus iš 3, tai jis dalus ir iš 6',
+    teisingas: false,
+    kodel: 'Skaičius 9 dalus iš 3, bet ne iš 6.',
+  },
+  {
+    tekstas: 'Dviejų nelyginių skaičių suma yra lyginė',
+    teisingas: true,
+    kodel: '$(2k+1) + (2m+1) = 2(k+m+1)$ — sandaugoje yra daugiklis 2.',
+  },
+  {
+    tekstas: 'Skaičiaus kvadratas visada didesnis už patį skaičių',
+    teisingas: false,
+    kodel: 'Kai skaičius yra $\\tfrac{1}{2}$, jo kvadratas $\\tfrac{1}{4}$ — mažesnis.',
+  },
+  {
+    tekstas: 'Lygiašonio trikampio pagrindo kampai lygūs',
+    teisingas: true,
+    kodel: 'Tai lygiašonio trikampio savybė, įrodoma per kraštinių lygybę.',
+  },
+  {
+    tekstas: 'Visi lyginiai skaičiai yra sudėtiniai',
+    teisingas: false,
+    kodel: 'Skaičius 2 yra lyginis, bet pirminis.',
+  },
+  {
+    tekstas: 'Vertikalieji kampai lygūs',
+    teisingas: true,
+    kodel: 'Tai vertikaliųjų kampų teorema.',
+  },
+  {
+    tekstas: 'Jei du skaičiai turi lygius kvadratus, tai jie patys lygūs',
+    teisingas: false,
+    kodel: '$(-3)^2 = 3^2 = 9$, bet $-3 \\ne 3$.',
+  },
+]
+
+/** Sąvokos ir jų rūšis — skiriamės aksiomą, apibrėžimą ir teoremą. */
+const SAVOKOS: readonly { tekstas: string; rusis: string; kodel: string }[] = [
+  {
+    tekstas: 'Per du taškus galima nubrėžti vienintelę tiesę',
+    rusis: 'aksioma',
+    kodel: 'Tai priimama be įrodymo — vadinasi, aksioma.',
+  },
+  {
+    tekstas: 'Trikampis, kurio visos kraštinės lygios, vadinamas lygiakraščiu',
+    rusis: 'apibrėžimas',
+    kodel: 'Teiginys nusako, ką reiškia sąvoka — vadinasi, apibrėžimas.',
+  },
+  {
+    tekstas: 'Stačiojo trikampio statinių kvadratų suma lygi įžambinės kvadratui',
+    rusis: 'teorema',
+    kodel: 'Tai Pitagoro teorema — teiginys, kurį reikia įrodyti.',
+  },
+  {
+    tekstas: 'Lygiašonio trikampio pagrindo kampai lygūs',
+    rusis: 'teorema',
+    kodel: 'Teiginys įrodomas remiantis kraštinių lygybe — vadinasi, teorema.',
+  },
+  {
+    tekstas: 'Skaičius, dalus tik iš vieneto ir savęs, vadinamas pirminiu',
+    rusis: 'apibrėžimas',
+    kodel: 'Teiginys nusako sąvokos reikšmę — vadinasi, apibrėžimas.',
+  },
+  {
+    tekstas: 'Per tašką, nepriklausantį tiesei, galima nubrėžti vienintelę jai lygiagrečią tiesę',
+    rusis: 'aksioma',
+    kodel: 'Tai lygiagretumo aksioma — priimama be įrodymo.',
+  },
+]
+
+export const logika: Generatorius = (lygis) => suBandymais(() => kurkLogika(lygis), A_LOGIKA, 'logika')
+
+function kurkLogika(lygis: Lygis): Uzdavinys | null {
+  return variacija([
+    // 1. Teisingas ar klaidingas teiginys
+    () => {
+      const t = pasirink(TEIGINIAI)
+      return uzdavinys('logika', {
+        klausimas: `Ar teiginys „${t.tekstas}“ teisingas? Įrašyk „taip“ arba „ne“.`,
+        atsakymas: t.teisingas ? 'taip' : 'ne',
+        atsakymasRodymui: t.teisingas ? 'taip' : 'ne',
+        sprendimas: t.kodel,
+      })
+    },
+
+    // 2. Kontrapavyzdys
+    () => {
+      const klaidingi = TEIGINIAI.filter((t) => !t.teisingas)
+      const t = pasirink(klaidingi)
+      return uzdavinys('logika', {
+        klausimas: `Teiginys „${t.tekstas}“ yra klaidingas. Ar užtenka vieno kontrapavyzdžio jam paneigti? Įrašyk „taip“ arba „ne“.`,
+        atsakymas: 'taip',
+        atsakymasRodymui: 'taip',
+        sprendimas: `Taip. Vienas pavyzdys, kuriame teiginys neveikia, jį paneigia. ${t.kodel}`,
+      })
+    },
+
+    // 3. Aksioma, apibrėžimas ar teorema
+    () => {
+      const s = pasirink(SAVOKOS)
+      return uzdavinys('logika', {
+        klausimas: `Kas yra teiginys „${s.tekstas}“ — aksioma, apibrėžimas ar teorema? Įrašyk vieną žodį.`,
+        atsakymas: s.rusis,
+        atsakymasRodymui: s.rusis,
+        sprendimas: s.kodel,
+      })
+    },
+
+    // 4. Atvirkštinis teiginys
+    () => {
+      if (lygis === 1) return null
+      const n = pasirink([4, 6, 8, 9, 10, 12, 14, 15] as const)
+      const d = n % 2 === 0 ? 2 : 3
+      return uzdavinys('logika', {
+        klausimas: `Teiginys: „Jei skaičius dalus iš ${n}, tai jis dalus iš ${d}“. Ar atvirkštinis teiginys („Jei dalus iš ${d}, tai dalus iš ${n}“) teisingas? Įrašyk „taip“ arba „ne“.`,
+        atsakymas: 'ne',
+        atsakymasRodymui: 'ne',
+        sprendimas: `Ne. Pavyzdžiui, ${d * (n / d + 1)} dalus iš ${d}, bet nedalus iš ${n}. Atvirkštinis teiginys ne visada teisingas.`,
+      })
+    },
+
+    // 5. Kiek pavyzdžių įrodo bendrą teiginį
+    () => {
+      const kiek = atsitiktinis(3, 50)
+      return uzdavinys('logika', {
+        klausimas: `Mokinys patikrino ${kiek} pavyzdžius ir visi tiko. Ar to pakanka, kad teiginys būtų įrodytas visiems skaičiams? Įrašyk „taip“ arba „ne“.`,
+        atsakymas: 'ne',
+        atsakymasRodymui: 'ne',
+        sprendimas: `Ne. Pavyzdžiai gali tik parodyti, kad teiginys tikėtinas. Įrodymas turi remtis samprotavimu, tinkančiu visiems skaičiams — ${kiek} pavyzdžių nepakanka.`,
+      })
+    },
+
+    // 6. Sąlyga ir išvada
+    () => {
+      if (lygis === 1) return null
+      const t = pasirink(TEIGINIAI.filter((x) => x.tekstas.startsWith('Jei')))
+      const dalys = t.tekstas.split(', tai ')
+      if (dalys.length !== 2) return null
+      return uzdavinys('logika', {
+        klausimas: `Teiginyje „${t.tekstas}“ — kuri dalis yra išvada? Įrašyk „pirma“ arba „antra“.`,
+        atsakymas: 'antra',
+        atsakymasRodymui: 'antra',
+        sprendimas: `Po žodžio „tai“ eina išvada: „${dalys[1]}“. Prieš jį — sąlyga.`,
       })
     },
   ])

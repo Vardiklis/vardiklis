@@ -1,6 +1,7 @@
 import { derink } from '../lietuviu'
 import { atsitiktinis, pasirink } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
+import { didink } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -37,20 +38,22 @@ const DAIKTAI = [
   { vns: 'saldainį', dgs: 'saldainius', kilm: 'saldainių' },
 ] as const
 
-export const sveikieji: Generatorius = (lygis) =>
-  suBandymais(() => kurk(lygis), ATSARGINIAI, 'daugyba-dalyba')
+export const sveikieji: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurk(lygis, klase), ATSARGINIAI, 'daugyba-dalyba')
 
 /** Septynios skirtingo pavidalo variacijos — ne vien kiti skaičiai. */
-function kurk(lygis: Lygis): Uzdavinys | null {
-  const a = () => (lygis === 1 ? atsitiktinis(2, 9) : atsitiktinis(11, lygis === 2 ? 40 : 99))
-  const b = () => atsitiktinis(2, 9)
+function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const a = () =>
+    lygis === 1 ? atsitiktinis(2, 9) : atsitiktinis(11, didink(lygis === 2 ? 40 : 99, klase))
+  const b = () => atsitiktinis(2, didink(9, klase))
+  const virsus = didink(900, klase)
 
   return variacija([
     // 1. Daugyba
     () => {
       const x = a()
       const y = b()
-      if (x * y > (lygis === 1 ? 81 : 900)) return null
+      if (x * y > (lygis === 1 ? 81 : virsus)) return null
       return uzdavinys('daugyba-dalyba', {
         klausimas: `Apskaičiuok: $${x} \\cdot ${y}$`,
         atsakymas: String(x * y),
@@ -64,7 +67,7 @@ function kurk(lygis: Lygis): Uzdavinys | null {
       const x = a()
       const y = b()
       const sandauga = x * y
-      if (sandauga > 900) return null
+      if (sandauga > virsus) return null
       return uzdavinys('daugyba-dalyba', {
         klausimas: `Apskaičiuok: $${sandauga} : ${y}$`,
         atsakymas: String(x),
@@ -77,7 +80,7 @@ function kurk(lygis: Lygis): Uzdavinys | null {
     () => {
       const x = a()
       const y = b()
-      if (x * y > 900) return null
+      if (x * y > virsus) return null
       return uzdavinys('daugyba-dalyba', {
         klausimas: `Koks skaičius turi būti vietoj langelio? $${y} \\cdot \\square = ${x * y}$`,
         atsakymas: String(x),
@@ -122,7 +125,7 @@ function kurk(lygis: Lygis): Uzdavinys | null {
       const z = atsitiktinis(2, 9)
       const w = b()
       const rez = x * y + z * w
-      if (rez > 400) return null
+      if (rez > didink(400, klase)) return null
       return uzdavinys('daugyba-dalyba', {
         klausimas: `Apskaičiuok: $${x} \\cdot ${y} + ${z} \\cdot ${w}$`,
         atsakymas: String(rez),
@@ -136,7 +139,7 @@ function kurk(lygis: Lygis): Uzdavinys | null {
       const kartai = atsitiktinis(2, 9)
       const mazas = lygis === 1 ? atsitiktinis(2, 9) : atsitiktinis(6, 30)
       const didelis = mazas * kartai
-      if (didelis > 900) return null
+      if (didelis > virsus) return null
       return uzdavinys('daugyba-dalyba', {
         klausimas: `Kiek kartų ${didelis} didesnis už ${mazas}?`,
         atsakymas: String(kartai),

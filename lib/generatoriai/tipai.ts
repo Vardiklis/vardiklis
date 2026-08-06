@@ -23,4 +23,9 @@ export type Uzdavinys = {
 
 export type Lygis = 1 | 2 | 3
 
-export type Generatorius = (lygis: Lygis) => Uzdavinys
+/**
+ * Generatorius gauna ne tik sunkumo lygį, bet ir klasę. Be klasės dešimtokas
+ * gautų tokius pat skaičius kaip penktokas — lygis nusako uždavinio pavidalą,
+ * o klasė — skaičių mastą.
+ */
+export type Generatorius = (lygis: Lygis, klase?: number) => Uzdavinys

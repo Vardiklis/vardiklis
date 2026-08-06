@@ -1,5 +1,6 @@
 import { atsitiktinis, atsitiktinisBe, pasirink } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
+import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -9,10 +10,14 @@ import type { Generatorius, Lygis, Uzdavinys } from './tipai'
  * taip garantuojama, kad sprendinys visada sveikas.
  */
 
-/** Sprendiniai be 0 ir 1 — jie per daug pasako iš pirmo žvilgsnio. */
-function sprendinys(lygis: Lygis): number {
-  if (lygis === 1) return atsitiktinis(2, 9)
-  return atsitiktinisBe(-9, 9, [-1, 0, 1])
+/**
+ * Sprendiniai be 0 ir 1 — jie per daug pasako iš pirmo žvilgsnio.
+ * Vyresnėse klasėse intervalas platesnis: dešimtokui `x = 3` per lengva.
+ */
+function sprendinys(lygis: Lygis, klase?: number): number {
+  const riba = didink(9, klase)
+  if (lygis === 1) return atsitiktinis(2, Math.max(9, Math.round(riba / 2)))
+  return atsitiktinisBe(-riba, riba, [-1, 0, 1])
 }
 
 /** `3x - 5` pavidalas. Koeficientas 1 nerašomas, neigiamas narys su minusu. */
@@ -41,19 +46,23 @@ const ATSARGINIAI_TIESINES = [
   },
 ] as const
 
-export const tiesinesLygtys: Generatorius = (lygis) =>
-  suBandymais(() => kurkTiesine(lygis), ATSARGINIAI_TIESINES, 'tiesines-lygtys')
+export const tiesinesLygtys: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkTiesine(lygis, klase), ATSARGINIAI_TIESINES, 'tiesines-lygtys')
 
 /** Aštuonios skirtingo pavidalo variacijos; sprendinys visada parenkamas pirma. */
-function kurkTiesine(lygis: Lygis): Uzdavinys | null {
-  const x = sprendinys(lygis)
+function kurkTiesine(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const x = sprendinys(lygis, klase)
+  const kf = () => atsitiktinis(2, didink(9, klase))
+  const laisvasis = () => atsitiktinisBe(-didink(20, klase), didink(20, klase), [0])
+  const virsus = didink(90, klase)
 
   return variacija([
-    // 1. ax = b
+    // 1. ax = b — aštuntokui ir vyresniam per lengva, tad jam neduodama
     () => {
-      const a = atsitiktinis(2, 9)
+      if (vyresne(klase)) return null
+      const a = kf()
       const b = a * x
-      if (Math.abs(b) > 120) return null
+      if (Math.abs(b) > virsus * 2) return null
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Išspręsk lygtį: $${a}x = ${b}$`,
         atsakymas: String(x),
@@ -62,9 +71,10 @@ function kurkTiesine(lygis: Lygis): Uzdavinys | null {
       })
     },
 
-    // 2. x + b = c
+    // 2. x + b = c — irgi tik jaunesnėms klasėms
     () => {
-      const b = atsitiktinisBe(-30, 30, [0])
+      if (vyresne(klase)) return null
+      const b = atsitiktinisBe(-didink(30, klase), didink(30, klase), [0])
       const c = x + b
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Išspręsk lygtį: $${tiesinisNaris(1, b)} = ${c}$`,
@@ -76,10 +86,10 @@ function kurkTiesine(lygis: Lygis): Uzdavinys | null {
 
     // 3. ax + b = c
     () => {
-      const a = atsitiktinis(2, 9)
-      const b = atsitiktinisBe(-20, 20, [0])
+      const a = kf()
+      const b = laisvasis()
       const c = a * x + b
-      if (Math.abs(c) > 90) return null
+      if (Math.abs(c) > virsus) return null
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Išspręsk lygtį: $${tiesinisNaris(a, b)} = ${c}$`,
         atsakymas: String(x),
@@ -91,10 +101,10 @@ function kurkTiesine(lygis: Lygis): Uzdavinys | null {
     // 4. a(x + b) = c
     () => {
       if (lygis === 1) return null
-      const a = atsitiktinis(2, 7)
-      const b = atsitiktinisBe(-9, 9, [0])
+      const a = atsitiktinis(2, didink(7, klase))
+      const b = atsitiktinisBe(-didink(9, klase), didink(9, klase), [0])
       const c = a * (x + b)
-      if (Math.abs(c) > 120) return null
+      if (Math.abs(c) > virsus * 2) return null
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Išspręsk lygtį: $${a}(${tiesinisNaris(1, b)}) = ${c}$`,
         atsakymas: String(x),
@@ -106,11 +116,11 @@ function kurkTiesine(lygis: Lygis): Uzdavinys | null {
     // 5. Kintamasis abiejose pusėse
     () => {
       if (lygis === 1) return null
-      const a = atsitiktinis(3, 9)
-      const c = atsitiktinisBe(-5, 5, [0, a])
-      const b = atsitiktinisBe(-15, 15, [0])
+      const a = atsitiktinis(3, didink(9, klase))
+      const c = atsitiktinisBe(-didink(5, klase), didink(5, klase), [0, a])
+      const b = atsitiktinisBe(-didink(15, klase), didink(15, klase), [0])
       const d = (a - c) * x + b
-      if (Math.abs(d) > 90) return null
+      if (Math.abs(d) > virsus * 2) return null
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Išspręsk lygtį: $${tiesinisNaris(a, b)} = ${tiesinisNaris(c, d)}$`,
         atsakymas: String(x),
@@ -122,8 +132,8 @@ function kurkTiesine(lygis: Lygis): Uzdavinys | null {
     // 6. Trupmeninė lygtis
     () => {
       if (lygis === 1) return null
-      const b = atsitiktinis(2, 6)
-      const a = atsitiktinisBe(-12, 12, [0])
+      const b = atsitiktinis(2, didink(6, klase))
+      const a = atsitiktinisBe(-didink(12, klase), didink(12, klase), [0])
       const c = (x + a) / b
       if (!Number.isInteger(c)) return null
       return uzdavinys('tiesines-lygtys', {
@@ -137,10 +147,10 @@ function kurkTiesine(lygis: Lygis): Uzdavinys | null {
     // 7. Tekstinis: sugalvotas skaičius
     () => {
       if (x <= 0) return null
-      const a = atsitiktinis(2, 9)
-      const b = atsitiktinis(3, 30)
+      const a = kf()
+      const b = atsitiktinis(3, didink(30, klase))
       const c = a * x + b
-      if (Math.abs(c) > 150) return null
+      if (Math.abs(c) > virsus * 3) return null
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Sugalvotą skaičių padauginome iš ${a} ir prie sandaugos pridėjome ${b}. Gavome ${c}. Koks buvo sugalvotas skaičius?`,
         atsakymas: String(x),
@@ -149,10 +159,28 @@ function kurkTiesine(lygis: Lygis): Uzdavinys | null {
       })
     },
 
-    // 8. Tekstinis: perimetras
+    // 8. Skliaustai abiejose pusėse — tik vyresnėms klasėms
+    () => {
+      if (!vyresne(klase)) return null
+      const a = atsitiktinis(2, didink(6, klase))
+      const b = atsitiktinisBe(-didink(9, klase), didink(9, klase), [0])
+      const c = atsitiktinisBe(-didink(6, klase), didink(6, klase), [0, a])
+      const d = (a * (x + b) - c * x) / 1
+      if (Math.abs(d) > virsus * 3) return null
+      return uzdavinys('tiesines-lygtys', {
+        klausimas: `Išspręsk lygtį: $${a}(${tiesinisNaris(1, b)}) = ${tiesinisNaris(c, d)}$`,
+        atsakymas: String(x),
+        atsakymasRodymui: `$x = ${x}$`,
+        sprendimas: `Atskliaudę gauname $${a}x ${b > 0 ? '+' : '-'} ${Math.abs(
+          a * b,
+        )} = ${tiesinisNaris(c, d)}$. Sutvarkę: $${a - c}x = ${(a - c) * x}$, tad $x = ${x}$.`,
+      })
+    },
+
+    // 9. Tekstinis: perimetras
     () => {
       if (x <= 1) return null
-      const kita = atsitiktinis(2, 15)
+      const kita = atsitiktinis(2, didink(15, klase))
       const p = 2 * (x + kita)
       return uzdavinys('tiesines-lygtys', {
         klausimas: `Stačiakampio perimetras ${p} cm, viena kraštinė ${kita} cm. Kokio ilgio kita kraštinė?`,
@@ -183,10 +211,10 @@ const ATSARGINIAI_KVADRATINES = [
   },
 ] as const
 
-export const kvadratinesLygtys: Generatorius = (lygis) =>
-  suBandymais(() => kurkKvadratine(lygis), ATSARGINIAI_KVADRATINES, 'kvadratines-lygtys')
+export const kvadratinesLygtys: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkKvadratine(lygis, klase), ATSARGINIAI_KVADRATINES, 'kvadratines-lygtys')
 
-function kurkKvadratine(lygis: Lygis): Uzdavinys | null {
+function kurkKvadratine(lygis: Lygis, klase?: number): Uzdavinys | null {
   if (lygis === 1) {
     const m = atsitiktinis(2, 12)
 
@@ -211,14 +239,15 @@ function kurkKvadratine(lygis: Lygis): Uzdavinys | null {
   }
 
   // Sprendiniai parenkami pirma, koeficientai išvedami iš Vietos teoremos.
-  const p = atsitiktinisBe(-8, 8, [0])
-  const q = atsitiktinisBe(-8, 8, [0, p])
+  const riba = vyresne(klase) ? 14 : 8
+  const p = atsitiktinisBe(-riba, riba, [0])
+  const q = atsitiktinisBe(-riba, riba, [0, p])
   const suma = p + q
   const sandauga = p * q
   const didesnis = Math.max(p, q)
 
   if (lygis === 2) {
-    if (Math.abs(suma) > 12 || Math.abs(sandauga) > 40) return null
+    if (Math.abs(suma) > didink(12, klase) || Math.abs(sandauga) > didink(40, klase)) return null
     const bNaris = suma === 0 ? '' : ` ${-suma > 0 ? '+' : '-'} ${Math.abs(suma)}x`
     const cNaris = ` ${sandauga > 0 ? '+' : '-'} ${Math.abs(sandauga)}`
 
@@ -234,7 +263,7 @@ function kurkKvadratine(lygis: Lygis): Uzdavinys | null {
   const a = pasirink([2, 3] as const)
   const b = -a * suma
   const c = a * sandauga
-  if (Math.abs(b) > 40 || Math.abs(c) > 90) return null
+  if (Math.abs(b) > didink(40, klase) || Math.abs(c) > didink(90, klase)) return null
   const bNaris = b === 0 ? '' : ` ${b > 0 ? '+' : '-'} ${Math.abs(b)}x`
   const cNaris = ` ${c > 0 ? '+' : '-'} ${Math.abs(c)}`
 

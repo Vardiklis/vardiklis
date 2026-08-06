@@ -1,5 +1,6 @@
 import { atsitiktinis, atsitiktinisBe, skliaustuoseJeiNeigiamas } from '../matematika'
 import { suBandymais, uzdavinys } from './bendra'
+import { didink } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -23,24 +24,24 @@ const ATSARGINIAI = [
   },
 ] as const
 
-export const neigiami: Generatorius = (lygis) =>
-  suBandymais(() => kurk(lygis), ATSARGINIAI, 'neigiami-skaiciai')
+export const neigiami: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurk(lygis, klase), ATSARGINIAI, 'neigiami-skaiciai')
 
-function kurk(lygis: Lygis): Uzdavinys | null {
-  if (lygis === 3 && Math.random() < 0.5) return kurkDaugyba()
-  if (lygis === 3) return kurkTrisNarius()
-  return kurkSudeti(lygis)
+function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
+  if (lygis === 3 && Math.random() < 0.5) return kurkDaugyba(klase)
+  if (lygis === 3) return kurkTrisNarius(klase)
+  return kurkSudeti(lygis, klase)
 }
 
-function kurkSudeti(lygis: Lygis): Uzdavinys | null {
-  const riba = lygis === 1 ? 20 : 50
+function kurkSudeti(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const riba = didink(lygis === 1 ? 20 : 50, klase)
   const a = atsitiktinisBe(-riba, riba, [0])
   const b = atsitiktinisBe(-riba, riba, [0])
   const atimtis = Math.random() < 0.5
   const rez = atimtis ? a - b : a + b
 
   if (rez === 0) return null
-  if (Math.abs(rez) > 50) return null
+  if (Math.abs(rez) > riba) return null
   // Bent vienas skaičius turi būti neigiamas — kitaip tema netikrinama.
   if (a > 0 && b > 0 && !atimtis) return null
   // 1 lygyje vengiam dviejų neigiamų iš karto.
@@ -64,12 +65,13 @@ function kurkSudeti(lygis: Lygis): Uzdavinys | null {
   })
 }
 
-function kurkDaugyba(): Uzdavinys | null {
-  const a = atsitiktinisBe(-9, 9, [0, 1, -1])
-  const b = atsitiktinisBe(-9, 9, [0, 1, -1])
+function kurkDaugyba(klase?: number): Uzdavinys | null {
+  const riba = didink(9, klase)
+  const a = atsitiktinisBe(-riba, riba, [0, 1, -1])
+  const b = atsitiktinisBe(-riba, riba, [0, 1, -1])
   if (a > 0 && b > 0) return null
   const rez = a * b
-  if (Math.abs(rez) > 50) return null
+  if (Math.abs(rez) > didink(50, klase)) return null
 
   return uzdavinys('neigiami-skaiciai', {
     klausimas: `Apskaičiuok: $${a} \\cdot ${skliaustuoseJeiNeigiamas(b)}$`,
@@ -86,12 +88,12 @@ function kurkDaugyba(): Uzdavinys | null {
   })
 }
 
-function kurkTrisNarius(): Uzdavinys | null {
-  const a = atsitiktinisBe(-25, 25, [0])
-  const b = atsitiktinis(2, 20)
-  const c = atsitiktinis(2, 20)
+function kurkTrisNarius(klase?: number): Uzdavinys | null {
+  const a = atsitiktinisBe(-didink(25, klase), didink(25, klase), [0])
+  const b = atsitiktinis(2, didink(20, klase))
+  const c = atsitiktinis(2, didink(20, klase))
   const rez = a - b + c
-  if (rez === 0 || Math.abs(rez) > 50) return null
+  if (rez === 0 || Math.abs(rez) > didink(50, klase)) return null
   if (a > 0 && rez > 0 && a - b > 0) return null // niekur neperėjom per nulį
 
   return uzdavinys('neigiami-skaiciai', {

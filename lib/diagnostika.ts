@@ -94,7 +94,7 @@ function uzkraukTema(b: Busena): Busena {
       eile,
       dabartine: {
         temaId,
-        uzdaviniai: generuokRinkini(t.generatorius, TIKRINIMO_LYGIS, UZDAVINIU_TEMAI),
+        uzdaviniai: generuokRinkini(t.generatorius, TIKRINIMO_LYGIS, UZDAVINIU_TEMAI, b.klase),
         indeksas: 0,
         teisingi: 0,
       },

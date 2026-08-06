@@ -1,5 +1,6 @@
 import { atsitiktinis, pasirink, suprastink, trupmenaTeX } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
+import { didink } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -22,15 +23,15 @@ const A_SUDETIS = [
   },
 ] as const
 
-export const sudetisAtimtis: Generatorius = (lygis) =>
-  suBandymais(() => kurkSudeti(lygis), A_SUDETIS, 'sudetis-atimtis')
+export const sudetisAtimtis: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkSudeti(lygis, klase), A_SUDETIS, 'sudetis-atimtis')
 
 /**
  * Sudėtis ir atimtis — septynios skirtingo pavidalo variacijos.
  * Skaičių ribos priklauso nuo lygio, o pavidalą kaskart parenka `variacija`.
  */
-function kurkSudeti(lygis: Lygis): Uzdavinys | null {
-  const riba = lygis === 1 ? 100 : lygis === 2 ? 1000 : 10000
+function kurkSudeti(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const riba = didink(lygis === 1 ? 100 : lygis === 2 ? 1000 : 10000, klase)
   const mazas = () => atsitiktinis(2, lygis === 1 ? 40 : lygis === 2 ? 300 : 900)
   const didelis = () => atsitiktinis(lygis === 1 ? 11 : 101, Math.floor(riba * 0.9))
 
@@ -530,13 +531,13 @@ const A_TVARKA = [
   },
 ] as const
 
-export const veiksmuTvarka: Generatorius = (lygis) =>
-  suBandymais(() => kurkTvarka(lygis), A_TVARKA, 'veiksmu-tvarka')
+export const veiksmuTvarka: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkTvarka(lygis, klase), A_TVARKA, 'veiksmu-tvarka')
 
-function kurkTvarka(lygis: Lygis): Uzdavinys | null {
-  const a = atsitiktinis(2, 20)
-  const b = atsitiktinis(2, 9)
-  const c = atsitiktinis(2, 9)
+function kurkTvarka(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const a = atsitiktinis(2, didink(20, klase))
+  const b = atsitiktinis(2, didink(9, klase))
+  const c = atsitiktinis(2, didink(9, klase))
 
   if (lygis === 1) {
     const rez = a + b * c
@@ -550,7 +551,7 @@ function kurkTvarka(lygis: Lygis): Uzdavinys | null {
 
   if (lygis === 2) {
     const rez = (a + b) * c
-    if (rez > 300) return null
+    if (rez > didink(300, klase)) return null
     return uzdavinys('veiksmu-tvarka', {
       klausimas: `Apskaičiuok: $(${a} + ${b}) \\cdot ${c}$`,
       atsakymas: String(rez),

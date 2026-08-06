@@ -1,5 +1,6 @@
 import { atsitiktinis, mbk, nsd, pasirink } from '../matematika'
 import { suBandymais, uzdavinys } from './bendra'
+import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -25,8 +26,8 @@ const ATSARGINIAI = [
   },
 ] as const
 
-export const dalumas: Generatorius = (lygis) =>
-  suBandymais(() => kurk(lygis), ATSARGINIAI, 'dalumas')
+export const dalumas: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurk(lygis, klase), ATSARGINIAI, 'dalumas')
 
 /** Visi skaičiaus dalikliai — naudojama paaiškinime. */
 function dalikliai(n: number): number[] {
@@ -37,11 +38,11 @@ function dalikliai(n: number): number[] {
   return rez
 }
 
-function kurk(lygis: Lygis): Uzdavinys | null {
+function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
   if (lygis === 1) {
     // Didžiausias bendrasis daliklis, maži skaičiai.
-    const a = atsitiktinis(6, 24)
-    const b = atsitiktinis(6, 24)
+    const a = atsitiktinis(6, didink(24, klase))
+    const b = atsitiktinis(6, didink(24, klase))
     if (a === b) return null
     const d = nsd(a, b)
     if (d === 1) return null // atsakymas 1 nieko nepatikrina
@@ -58,8 +59,10 @@ function kurk(lygis: Lygis): Uzdavinys | null {
 
   if (lygis === 2) {
     // Mažiausias bendrasis kartotinis — tai, ko reikia bendravardikliniant.
-    const a = pasirink([2, 3, 4, 5, 6, 8, 9, 10, 12] as const)
-    const b = pasirink([2, 3, 4, 5, 6, 8, 9, 10, 12] as const)
+    const platus = [2, 3, 4, 5, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 24] as const
+    const siauras = [2, 3, 4, 5, 6, 8, 9, 10, 12] as const
+    const a = pasirink(vyresne(klase) ? platus : siauras)
+    const b = pasirink(vyresne(klase) ? platus : siauras)
     if (a === b) return null
     const m = mbk(a, b)
     if (m > 60) return null
@@ -75,8 +78,8 @@ function kurk(lygis: Lygis): Uzdavinys | null {
   }
 
   // 3 lygis — MBK trims skaičiams arba didesniems dviem.
-  const a = atsitiktinis(8, 30)
-  const b = atsitiktinis(8, 30)
+  const a = atsitiktinis(8, didink(30, klase))
+  const b = atsitiktinis(8, didink(30, klase))
   if (a === b) return null
   const m = mbk(a, b)
   if (m > 120 || m === a * b) return null

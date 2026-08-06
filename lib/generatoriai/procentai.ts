@@ -1,5 +1,6 @@
 import { atsitiktinis, pasirink } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
+import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -31,8 +32,8 @@ const ATSARGINIAI = [
   },
 ] as const
 
-export const procentai: Generatorius = (lygis) =>
-  suBandymais(() => kurk(lygis), ATSARGINIAI, 'procentai')
+export const procentai: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurk(lygis, klase), ATSARGINIAI, 'procentai')
 
 /** Trumpas paaiškinimas, kas yra tas procentas dalimis. */
 function dalimis(p: number): string {
@@ -56,22 +57,25 @@ function dalimis(p: number): string {
  * Septynios skirtingo pavidalo variacijos. Lygis lemia, kiek jų prieinama:
  * pirmame lygyje tik tiesioginiai klausimai, trečiame — ir atvirkštiniai.
  */
-function kurk(lygis: Lygis): Uzdavinys | null {
-  const p = pasirink(PROCENTAI)
-  const visuma = atsitiktinis(1, 20) * 20
+function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
+  // Vyresnėse klasėse ir procentai netaisyklingesni, ir sumos didesnės.
+  const p = vyresne(klase) ? pasirink([...PROCENTAI, 15, 30, 35, 60, 80] as const) : pasirink(PROCENTAI)
+  const visuma = atsitiktinis(1, didink(20, klase)) * 20
   if ((visuma * p) % 100 !== 0) return null
   const dalis = (visuma * p) / 100
   if (dalis < 2) return null
 
   const visos = [
     // 1. Dalies radimas
-    () =>
-      uzdavinys('procentai', {
+    () => {
+      if (vyresne(klase)) return null
+      return uzdavinys('procentai', {
         klausimas: `Kiek yra ${p} % nuo ${visuma}?`,
         atsakymas: String(dalis),
         atsakymasRodymui: `$${dalis}$`,
         sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
-      }),
+      })
+    },
 
     // 2. Visumos radimas
     () =>
@@ -123,7 +127,23 @@ function kurk(lygis: Lygis): Uzdavinys | null {
       })
     },
 
-    // 7. Kiek liko procentais
+    // 7. Dviguba nuolaida — tik vyresnėms klasėms
+    () => {
+      if (!vyresne(klase)) return null
+      const poPirmos = visuma - dalis
+      const antra = (poPirmos * 10) / 100
+      if (!Number.isInteger(antra)) return null
+      return uzdavinys('procentai', {
+        klausimas: `Prekė kainavo ${visuma} €. Iš pradžių jai pritaikyta ${p} % nuolaida, po to dar 10 % nuolaida nuo naujos kainos. Kiek prekė kainuoja dabar?`,
+        atsakymas: String(poPirmos - antra),
+        atsakymasRodymui: `$${poPirmos - antra}$ €`,
+        sprendimas: `Po pirmos nuolaidos $${visuma} - ${dalis} = ${poPirmos}$ €. Antroji nuolaida $${poPirmos} \\cdot 10 : 100 = ${antra}$ €, tad $${poPirmos} - ${antra} = ${
+          poPirmos - antra
+        }$ €.`,
+      })
+    },
+
+    // 8. Kiek liko procentais
     () => {
       if (p >= 100) return null
       return uzdavinys('procentai', {

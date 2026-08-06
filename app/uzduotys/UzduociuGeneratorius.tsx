@@ -68,7 +68,13 @@ export function UzduociuGeneratorius() {
     pagrindas: Omit<Rinkinys, 'uzdaviniai' | 'rodytiAtsakymus'>,
     isvalytiAtsakymus: boolean,
   ) {
-    const uzdaviniai = generuokRinkini(pagrindas.generatorius, pagrindas.lygis, pagrindas.kiekis)
+    // Klasė lemia skaičių mastą — be jos dešimtokas gautų penktoko skaičius.
+    const uzdaviniai = generuokRinkini(
+      pagrindas.generatorius,
+      pagrindas.lygis,
+      pagrindas.kiekis,
+      klase,
+    )
 
     if (isvalytiAtsakymus) {
       const senas = rinkiniai[key]

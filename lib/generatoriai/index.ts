@@ -32,6 +32,7 @@ import { laipsniai } from './laipsniai'
 import { neigiami } from './neigiami'
 import {
   dalumoPozymiai,
+  logika,
   misiniai,
   rekurenciosSekos,
   saknuIvertinimas,
@@ -139,6 +140,7 @@ export const generatoriai: Record<string, Generatorius> = {
   vijeto,
   misiniai,
   'rekurencios-sekos': rekurenciosSekos,
+  logika,
 
   // Duomenys ir tikimybės
   vidurkis,
@@ -170,9 +172,9 @@ const PUPP_TEMOS = [
   'tikimybe',
 ] as const
 
-generatoriai.pupp = (lygis) => {
+generatoriai.pupp = (lygis, klase) => {
   const vardas = PUPP_TEMOS[Math.floor(Math.random() * PUPP_TEMOS.length)]
-  return generatoriai[vardas](lygis)
+  return generatoriai[vardas](lygis, klase ?? 10)
 }
 
 /** Ar toks generatorius egzistuoja. */
@@ -181,10 +183,10 @@ export function arYraGeneratorius(vardas: string): boolean {
 }
 
 /** Vienas uždavinys iš nurodyto generatoriaus. */
-export function generuok(vardas: string, lygis: Lygis): Uzdavinys {
+export function generuok(vardas: string, lygis: Lygis, klase?: number): Uzdavinys {
   const g = generatoriai[vardas]
   if (!g) throw new Error(`Nežinomas generatorius: ${vardas}`)
-  return g(lygis)
+  return g(lygis, klase)
 }
 
 /**
@@ -192,14 +194,19 @@ export function generuok(vardas: string, lygis: Lygis): Uzdavinys {
  * Vienodi uždaviniai atmetami — tas pats klausimas du kartus iš eilės atrodo
  * kaip klaida, net jei matematiškai viskas gerai.
  */
-export function generuokRinkini(vardas: string, lygis: Lygis, kiek: number): Uzdavinys[] {
+export function generuokRinkini(
+  vardas: string,
+  lygis: Lygis,
+  kiek: number,
+  klase?: number,
+): Uzdavinys[] {
   const rinkinys: Uzdavinys[] = []
   const matyti = new Set<string>()
   let bandymai = 0
 
   while (rinkinys.length < kiek && bandymai < kiek * 20) {
     bandymai += 1
-    const u = generuok(vardas, lygis)
+    const u = generuok(vardas, lygis, klase)
     // Brėžininiuose uždaviniuose klausimo tekstas dažnai vienodas („Kokia taško A
     // abscisė?"), o skiriasi tik piešinys — tad tapatybė yra abu kartu.
     const raktas = u.klausimas + (u.brezinys ?? '')
@@ -210,7 +217,7 @@ export function generuokRinkini(vardas: string, lygis: Lygis, kiek: number): Uzd
 
   // Jei generatorius neturi tiek skirtingų variantų, papildom kartojimais.
   while (rinkinys.length < kiek) {
-    rinkinys.push(generuok(vardas, lygis))
+    rinkinys.push(generuok(vardas, lygis, klase))
   }
 
   return rinkinys
