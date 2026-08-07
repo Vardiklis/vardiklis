@@ -1,5 +1,5 @@
 import { atsitiktinis, atsitiktinisBe, skliaustuoseJeiNeigiamas } from '../matematika'
-import { suBandymais, uzdavinys } from './bendra'
+import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
@@ -28,9 +28,13 @@ export const neigiami: Generatorius = (lygis, klase) =>
   suBandymais(() => kurk(lygis, klase), ATSARGINIAI, 'neigiami-skaiciai')
 
 function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
-  if (lygis === 3 && Math.random() < 0.5) return kurkDaugyba(klase)
-  if (lygis === 3) return kurkTrisNarius(klase)
-  return kurkSudeti(lygis, klase)
+  // Daugyba ir trys nariai anksčiau buvo pasiekiami tik panaikintame 3 lygyje.
+  return variacija([
+    () => kurkSudeti(lygis, klase),
+    () => kurkSudeti(lygis, klase),
+    () => (lygis === 1 ? null : kurkDaugyba(klase)),
+    () => (lygis === 1 ? null : kurkTrisNarius(klase)),
+  ])
 }
 
 function kurkSudeti(lygis: Lygis, klase?: number): Uzdavinys | null {

@@ -10,6 +10,8 @@ import {
   algoritmai,
   diagramos,
   erdvinesFiguros,
+  piramide,
+  prizme,
   figuros,
   konstravimas,
   koordinates,
@@ -30,6 +32,7 @@ import {
 import { kvadratinesLygtys, tiesinesLygtys } from './lygtys'
 import { laipsniai } from './laipsniai'
 import { neigiami } from './neigiami'
+import { vieta } from './vieta'
 import {
   dalumoPozymiai,
   logika,
@@ -64,9 +67,12 @@ import {
   vidurkis,
 } from './taikomieji'
 import { bendravardiklinimas, trupmenuDaugyba, trupmenuSudetis } from './trupmenos'
+import { pavidaluEile, sablonas } from './bendra'
+import { gretimiSkaiciai, simtalange, skaiciuTiese } from './simtalange'
+import { sritisKlasei, uzRibos, type Sritis } from './sritis'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
-export type { Generatorius, Lygis, Uzdavinys }
+export type { Generatorius, Lygis, Sritis, Uzdavinys }
 
 /**
  * Generatorių registras. Raktas naudojamas `lib/temos.ts` (diagnostikos grafe)
@@ -127,6 +133,8 @@ export const generatoriai: Record<string, Generatorius> = {
   figuros,
   lauzes,
   'erdvines-figuros': erdvinesFiguros,
+  piramide,
+  prizme,
   vektoriai,
   konstravimas,
   ornamentai,
@@ -141,6 +149,12 @@ export const generatoriai: Record<string, Generatorius> = {
   misiniai,
   'rekurencios-sekos': rekurenciosSekos,
   logika,
+
+  // 1 klasės erdviniai santykiai ir skaičių išdėstymas
+  vieta,
+  simtalange,
+  'skaiciu-tiese': skaiciuTiese,
+  'gretimi-skaiciai': gretimiSkaiciai,
 
   // Duomenys ir tikimybės
   vidurkis,
@@ -182,42 +196,92 @@ export function arYraGeneratorius(vardas: string): boolean {
   return vardas in generatoriai
 }
 
-/** Vienas uždavinys iš nurodyto generatoriaus. */
-export function generuok(vardas: string, lygis: Lygis, klase?: number): Uzdavinys {
+/** Kiek kartų persukama, kol pasitaiko į sritį telpantis uždavinys. */
+const MAKS_SRITIES_BANDYMU = 40
+
+/**
+ * Vienas uždavinys iš nurodyto generatoriaus.
+ *
+ * Sritis tikrinama čia, o ne kiekviename generatoriuje, dėl dviejų priežasčių:
+ * ji galioja ir tiems generatoriams, kurie apie ją nieko nežino, ir tikrinimas
+ * lieka vienoje vietoje. Neradus tinkamo per `MAKS_SRITIES_BANDYMU` kartų
+ * grąžinamas paskutinis bandymas — svetainė nelūžta, o `npm run patikra`
+ * tokį atvejį paverčia klaida, todėl nepastebėtas jis neišeina.
+ */
+export function generuok(
+  vardas: string,
+  lygis: Lygis,
+  klase?: number,
+  sritis?: Sritis | null,
+): Uzdavinys {
   const g = generatoriai[vardas]
   if (!g) throw new Error(`Nežinomas generatorius: ${vardas}`)
-  return g(lygis, klase)
+
+  const riba = sritis === undefined ? sritisKlasei(klase) : sritis
+  if (!riba) return g(lygis, klase, null)
+
+  let paskutinis = g(lygis, klase, riba)
+  for (let i = 0; i < MAKS_SRITIES_BANDYMU; i += 1) {
+    if (uzRibos(paskutinis, riba).length === 0) return paskutinis
+    paskutinis = g(lygis, klase, riba)
+  }
+  return paskutinis
 }
 
 /**
  * Kelių uždavinių rinkinys iš to paties generatoriaus.
- * Vienodi uždaviniai atmetami — tas pats klausimas du kartus iš eilės atrodo
- * kaip klaida, net jei matematiškai viskas gerai.
+ *
+ * Du dalykai, kurių anksčiau trūko:
+ *
+ * 1. Pavidalų eilė. Be jos generatorius su septyniais pavidalais dešimties
+ *    uždavinių rinkinyje realiai panaudodavo tris.
+ * 2. Tapatybė pagal šabloną, ne pagal eilutę. „Koks skaičius eina prieš pat
+ *    2028?“ ir „…4385?“ yra tas pats uždavinys; `Set` su tikslia eilute jų
+ *    neatskirdavo ir praleisdavo abu.
+ *
+ * Šablonų kartojimas leidžiamas tik tada, kai generatorius skirtingų
+ * paprasčiausiai nebeturi — kitaip rinkinys būtų trumpesnis nei prašyta.
  */
 export function generuokRinkini(
   vardas: string,
   lygis: Lygis,
   kiek: number,
   klase?: number,
+  sritis?: Sritis | null,
 ): Uzdavinys[] {
   const rinkinys: Uzdavinys[] = []
-  const matyti = new Set<string>()
-  let bandymai = 0
+  const sablonai = new Set<string>()
+  const tikslus = new Set<string>()
 
-  while (rinkinys.length < kiek && bandymai < kiek * 20) {
-    bandymai += 1
-    const u = generuok(vardas, lygis, klase)
+  pavidaluEile(Math.floor(Math.random() * 7))
+  try {
+    // 1 ratas — tik nauji šablonai.
+    for (let i = 0; i < kiek * 12 && rinkinys.length < kiek; i += 1) {
+      const u = generuok(vardas, lygis, klase, sritis)
+      const s = sablonas(u.klausimas)
+      if (sablonai.has(s)) continue
+      sablonai.add(s)
+      tikslus.add(u.klausimas + (u.brezinys ?? ''))
+      rinkinys.push(u)
+    }
+
+    // 2 ratas — šablonai jau išsemti, tad užtenka, kad skirtųsi pats uždavinys.
     // Brėžininiuose uždaviniuose klausimo tekstas dažnai vienodas („Kokia taško A
     // abscisė?"), o skiriasi tik piešinys — tad tapatybė yra abu kartu.
-    const raktas = u.klausimas + (u.brezinys ?? '')
-    if (matyti.has(raktas)) continue
-    matyti.add(raktas)
-    rinkinys.push(u)
-  }
+    for (let i = 0; i < kiek * 20 && rinkinys.length < kiek; i += 1) {
+      const u = generuok(vardas, lygis, klase, sritis)
+      const raktas = u.klausimas + (u.brezinys ?? '')
+      if (tikslus.has(raktas)) continue
+      tikslus.add(raktas)
+      rinkinys.push(u)
+    }
 
-  // Jei generatorius neturi tiek skirtingų variantų, papildom kartojimais.
-  while (rinkinys.length < kiek) {
-    rinkinys.push(generuok(vardas, lygis, klase))
+    // Jei generatorius neturi tiek skirtingų variantų, papildom kartojimais.
+    while (rinkinys.length < kiek) {
+      rinkinys.push(generuok(vardas, lygis, klase, sritis))
+    }
+  } finally {
+    pavidaluEile(null)
   }
 
   return rinkinys

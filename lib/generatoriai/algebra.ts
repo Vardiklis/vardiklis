@@ -226,9 +226,8 @@ function kurkNelygybe(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 5))
-  if (lygis === 2) return variacija(visos.slice(0, 7))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 5 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 5) : visos)
 }
 
 // ── Šaknys ──────────────────────────────────────────────────────────────────
@@ -342,9 +341,8 @@ function kurkSaknis(lygis: Lygis, klase?: number): Uzdavinys | null {
       }),
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 3))
-  if (lygis === 2) return variacija(visos.slice(0, 6))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 3 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 3) : visos)
 }
 
 // ── Greitosios daugybos formulės ────────────────────────────────────────────
@@ -484,9 +482,8 @@ function kurkFormule(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 4))
-  if (lygis === 2) return variacija(visos.slice(0, 6))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 4 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }
 
 // ── Lygčių sistemos ─────────────────────────────────────────────────────────
@@ -659,9 +656,8 @@ function kurkSistema(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 4))
-  if (lygis === 2) return variacija(visos.slice(0, 6))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 4 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }
 
 // ── Funkcijos ───────────────────────────────────────────────────────────────
@@ -832,7 +828,6 @@ function kurkFunkcija(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 5))
-  if (lygis === 2) return variacija(visos.slice(0, 7))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 5 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 5) : visos)
 }

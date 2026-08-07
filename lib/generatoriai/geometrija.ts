@@ -135,7 +135,7 @@ function kurkPerimetra(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  return variacija(lygis === 1 ? visos.slice(0, 3) : lygis === 2 ? visos.slice(0, 5) : visos)
+  return variacija(lygis === 1 ? visos.slice(0, 3) : visos)
 }
 
 // ── Plotas ir tūris ─────────────────────────────────────────────────────────
@@ -282,9 +282,8 @@ function kurkPlota(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 3))
-  if (lygis === 2) return variacija(visos.slice(0, 7))
-  return variacija(vyresne(klase) ? visos : visos.slice(0, 9))
+  // Lengvesniam lygiui — tik pirmieji 3 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 3) : vyresne(klase) ? visos : visos.slice(0, 9))
 }
 
 // ── Kampai ──────────────────────────────────────────────────────────────────
@@ -419,9 +418,8 @@ function kurkKampus(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 3))
-  if (lygis === 2) return variacija(visos.slice(0, 5))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 3 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 3) : visos)
 }
 
 // ── Pitagoro teorema ────────────────────────────────────────────────────────
@@ -531,9 +529,8 @@ function kurkPitagora(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 4))
-  if (lygis === 2) return variacija(visos.slice(0, 5))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 4 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }
 
 // ── Apskritimas ─────────────────────────────────────────────────────────────
@@ -632,9 +629,8 @@ function kurkApskritima(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 2))
-  if (lygis === 2) return variacija(visos.slice(0, 5))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 2 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }
 
 // ── Trigonometrija ──────────────────────────────────────────────────────────
@@ -768,7 +764,6 @@ function kurkTrigonometrija(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 4))
-  if (lygis === 2) return variacija(visos.slice(0, 4))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 4 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }

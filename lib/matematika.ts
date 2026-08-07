@@ -115,12 +115,18 @@ function kanonine(skaitiklis: number, vardiklis: number): string {
  * - `0,50` → `1/2`
  * - `1 1/2` → `3/2` (mišrusis skaičius)
  * - tarpai, procento ženklas ir įvairūs brūkšneliai nurašomi
+ * - `desineje` → `dešinėje` (diakritikai nurašomi, tad tekstinį atsakymą
+ *   galima įrašyti ir be lietuviškų raidžių)
  *
  * Netekstiniai atsakymai grąžinami kaip sumažintos raidės be tarpų.
  */
 export function normalizuok(ivestis: string): string {
   let s = (ivestis ?? '').trim().toLowerCase()
   if (s === '') return ''
+
+  // Lietuviškos raidės su diakritikais suvedamos į paprastąsias: pirmokas,
+  // rašantis „desineje", turi gauti tą patį rezultatą kaip „dešinėje".
+  s = s.replace(/[ąčęėįšųūž]/g, (r) => 'aceeisuuz'['ąčęėįšųūž'.indexOf(r)])
 
   s = s.replace(/[−–—]/g, '-') // − – — → -
   s = s.replace(/,/g, '.')

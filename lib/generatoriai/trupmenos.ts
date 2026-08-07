@@ -6,7 +6,7 @@ import {
   trupmenaTeX,
   type Trupmena,
 } from '../matematika'
-import { suBandymais, uzdavinys } from './bendra'
+import { suBandymais, uzdavinys, variacija } from './bendra'
 import { vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
@@ -115,17 +115,94 @@ const ATSARGINIAI_SUDETIS = [
 export const trupmenuSudetis: Generatorius = (lygis, klase) =>
   suBandymais(() => kurkSudeti(lygis, klase), ATSARGINIAI_SUDETIS, 'trupmenu-sudetis')
 
-function kurkSudeti(lygis: Lygis, klase?: number): Uzdavinys | null {
-  // 3 lygis — kombinuoti veiksmai: mišrusis skaičius ir trupmena.
-  if (lygis === 3 && Math.random() < 0.45) return kurkMisru()
+/** Tekstiniai trupmenų sudėties kontekstai. */
+const SUDETIES_KONTEKSTAI = [
+  { kas: 'torto', pirmas: 'Jonas suvalgė', antras: 'Rūta suvalgė' },
+  { kas: 'kelio', pirmas: 'Iki pietų nueita', antras: 'po pietų dar' },
+  { kas: 'darbo', pirmas: 'Pirmą dieną atlikta', antras: 'antrą dieną' },
+  { kas: 'buteliuko', pirmas: 'Ryte išgerta', antras: 'vakare' },
+] as const
 
+/**
+ * Trupmenų sudėtis ir atimtis.
+ *
+ * Šalia skaičiavimo pavidalo atsirado trūkstamas dėmuo, tekstinis uždavinys
+ * ir palyginimas su vienetu — be jų dešimt uždavinių buvo dešimt kartų
+ * „Apskaičiuok ir suprastink“, skyrėsi tik trupmenos.
+ */
+function kurkSudeti(lygis: Lygis, klase?: number): Uzdavinys | null {
+  return variacija([
+    () => kurkIsraiska(lygis, klase),
+    () => kurkIsraiska(lygis, klase),
+    () => (lygis === 1 ? null : kurkMisru()),
+    () => kurkTrukstamaDemeni(lygis, klase),
+    () => kurkTekstine(lygis, klase),
+    () => kurkPalyginimaSuVienetu(lygis, klase),
+  ])
+}
+
+/** Trūkstamas dėmuo: $\square + a/b = c/d$. */
+function kurkTrukstamaDemeni(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const [d1, d2] = pasirink(vyresne(klase) ? POROS_SUNKIOS : POROS_KURUOTOS)
+  if (d1 === d2) return null
+  const n1 = atsitiktinis(1, d1 - 1)
+  const n2 = atsitiktinis(1, d2 - 1)
+  const suma = suprastink(n1 * d2 + n2 * d1, d1 * d2)
+  if (suma.vardiklis > ribaVardiklio(lygis, klase) || suma.skaitiklis > suma.vardiklis) return null
+  const demuo = { skaitiklis: n2, vardiklis: d2 }
+
+  return uzdavinys('trupmenu-sudetis', {
+    klausimas: `Koks skaičius turi būti vietoj langelio? $\\dfrac{${n1}}{${d1}} + \\square = ${tex(suma)}$`,
+    atsakymas: neapdorotas(suprastink(demuo.skaitiklis, demuo.vardiklis)),
+    atsakymasRodymui: tex(suprastink(demuo.skaitiklis, demuo.vardiklis)),
+    sprendimas: `Iš sumos atimame žinomą dėmenį: $${tex(suma)} - \\dfrac{${n1}}{${d1}} = ${tex(
+      suprastink(demuo.skaitiklis, demuo.vardiklis),
+    )}$.`,
+  })
+}
+
+/** Tekstinis uždavinys — kiek liko arba kiek iš viso. */
+function kurkTekstine(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const k = pasirink(SUDETIES_KONTEKSTAI)
+  const [d1, d2] = pasirink(vyresne(klase) ? POROS_SUNKIOS : POROS_KURUOTOS)
+  if (d1 === d2) return null
+  const n1 = atsitiktinis(1, d1 - 1)
+  const n2 = atsitiktinis(1, d2 - 1)
+  const suma = suprastink(n1 * d2 + n2 * d1, d1 * d2)
+  if (suma.vardiklis > ribaVardiklio(lygis, klase)) return null
+  if (suma.skaitiklis >= suma.vardiklis) return null
+
+  return uzdavinys('trupmenu-sudetis', {
+    klausimas: `${k.pirmas} $\\dfrac{${n1}}{${d1}}$ ${k.kas}, ${k.antras} $\\dfrac{${n2}}{${d2}}$. Kokia dalis iš viso?`,
+    atsakymas: neapdorotas(suma),
+    atsakymasRodymui: tex(suma),
+    sprendimas: `$\\dfrac{${n1}}{${d1}} + \\dfrac{${n2}}{${d2}} = ${tex(suma)}$.`,
+  })
+}
+
+/** Kiek trūksta iki vieneto — patikrina, ar suprantama trupmenos prasmė. */
+function kurkPalyginimaSuVienetu(lygis: Lygis, klase?: number): Uzdavinys | null {
+  if (lygis === 1) return null
+  const d = pasirink(vyresne(klase) ? VARDIKLIAI_SUNKUS : VARDIKLIAI)
+  const n = atsitiktinis(1, d - 1)
+  const liko = suprastink(d - n, d)
+  if (liko.skaitiklis === 0) return null
+
+  return uzdavinys('trupmenu-sudetis', {
+    klausimas: `Kiek trūksta trupmenai $\\dfrac{${n}}{${d}}$ iki vieneto?`,
+    atsakymas: neapdorotas(liko),
+    atsakymasRodymui: tex(liko),
+    sprendimas: `$1 - \\dfrac{${n}}{${d}} = \\dfrac{${d} - ${n}}{${d}} = ${tex(liko)}$.`,
+  })
+}
+
+/** Įprastinis skaičiavimo pavidalas: $a/b \pm c/d$. */
+function kurkIsraiska(lygis: Lygis, klase?: number): Uzdavinys | null {
   const poros = vyresne(klase)
     ? POROS_SUNKIOS
     : lygis === 1
       ? POROS_LENGVOS
-      : lygis === 2
-        ? POROS_KURUOTOS
-        : POROS_PLATESNES
+      : POROS_KURUOTOS
   const riba = ribaVardiklio(lygis, klase)
   const [d1, d2] = pasirink(poros)
 
@@ -255,7 +332,79 @@ const ATSARGINIAI_DAUGYBA = [
 export const trupmenuDaugyba: Generatorius = (lygis, klase) =>
   suBandymais(() => kurkDaugyba(lygis, klase), ATSARGINIAI_DAUGYBA, 'trupmenu-daugyba')
 
+/**
+ * Trupmenų daugyba ir dalyba.
+ *
+ * Prie skaičiavimo pavidalo pridėti trūkstamas daugiklis, dalies nuo dydžio
+ * radimas ir atvirkštinės trupmenos klausimas.
+ */
 function kurkDaugyba(lygis: Lygis, klase?: number): Uzdavinys | null {
+  return variacija([
+    () => kurkDaugybosIsraiska(lygis, klase),
+    () => kurkDaugybosIsraiska(lygis, klase),
+    () => kurkTrukstamaDaugikli(lygis, klase),
+    () => kurkDaliNuoDydzio(lygis, klase),
+    () => kurkAtvirkstine(lygis, klase),
+  ])
+}
+
+/** Trūkstamas daugiklis: $a/b \\cdot \\square = c/d$. */
+function kurkTrukstamaDaugikli(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const vardikliai = vyresne(klase) ? VARDIKLIAI_SUNKUS : VARDIKLIAI
+  const d1 = pasirink(vardikliai)
+  const d2 = pasirink(vardikliai)
+  const n1 = atsitiktinis(1, d1 - 1)
+  const n2 = atsitiktinis(1, d2 - 1)
+  const rez = suprastink(n1 * n2, d1 * d2)
+  if (rez.vardiklis > ribaVardiklio(lygis, klase)) return null
+  const daugiklis = suprastink(n2, d2)
+  if (daugiklis.vardiklis === 1) return null
+
+  return uzdavinys('trupmenu-daugyba', {
+    klausimas: `Koks skaičius turi būti vietoj langelio? $\\dfrac{${n1}}{${d1}} \\cdot \\square = ${tex(rez)}$`,
+    atsakymas: neapdorotas(daugiklis),
+    atsakymasRodymui: tex(daugiklis),
+    sprendimas: `Sandaugą dalijame iš žinomo daugiklio: $${tex(rez)} : \\dfrac{${n1}}{${d1}} = ${tex(
+      daugiklis,
+    )}$.`,
+  })
+}
+
+/** Dalis nuo dydžio — daugyba iš trupmenos taikomajame kontekste. */
+function kurkDaliNuoDydzio(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const d = pasirink(vyresne(klase) ? VARDIKLIAI_SUNKUS : VARDIKLIAI)
+  const n = atsitiktinis(1, d - 1)
+  const k = atsitiktinis(2, 12) * d
+  const rez = (n * k) / d
+  if (!Number.isInteger(rez) || k > 300) return null
+
+  return uzdavinys('trupmenu-daugyba', {
+    klausimas: `Kiek yra $\\dfrac{${n}}{${d}}$ nuo ${k}?`,
+    atsakymas: String(rez),
+    atsakymasRodymui: `$${rez}$`,
+    sprendimas: `$${k} : ${d} = ${k / d}$, o $${k / d} \\cdot ${n} = ${rez}$.`,
+  })
+}
+
+/** Atvirkštinė trupmena — be jos dalyba lieka mechaniška taisyklė. */
+function kurkAtvirkstine(lygis: Lygis, klase?: number): Uzdavinys | null {
+  if (lygis === 1) return null
+  const d = pasirink(vyresne(klase) ? VARDIKLIAI_SUNKUS : VARDIKLIAI)
+  const n = atsitiktinis(2, d - 1)
+  if (n === d) return null
+  const t = suprastink(d, n)
+  if (t.vardiklis === 1) return null
+
+  return uzdavinys('trupmenu-daugyba', {
+    klausimas: `Kokia trupmena yra atvirkštinė trupmenai $\\dfrac{${n}}{${d}}$?`,
+    atsakymas: neapdorotas(t),
+    atsakymasRodymui: tex(t),
+    sprendimas: `Sukeičiame skaitiklį ir vardiklį: $\\dfrac{${d}}{${n}} = ${tex(t)}$.`,
+  })
+}
+
+/** Įprastinis skaičiavimo pavidalas: sandauga arba dalmuo. */
+function kurkDaugybosIsraiska(lygis: Lygis, klase?: number): Uzdavinys | null {
   const riba = ribaVardiklio(lygis, klase)
   const vardikliai = vyresne(klase) ? VARDIKLIAI_SUNKUS : VARDIKLIAI
 
@@ -354,63 +503,112 @@ const POROS_MBK: readonly (readonly [number, number])[] = [
 ]
 
 function kurkBendravardiklinima(lygis: Lygis, klase?: number): Uzdavinys | null {
-  if (lygis === 1) {
-    // Mažiausias bendrasis vardiklis.
-    const [d1, d2] = pasirink(vyresne(klase) ? POROS_MBK : POROS_KURUOTOS)
-    if (d1 === d2) return null
-    const m = mbk(d1, d2)
-    if (m > (vyresne(klase) ? 120 : 36)) return null
-    const n1 = atsitiktinis(1, d1 - 1)
-    const n2 = atsitiktinis(1, d2 - 1)
-
-    return uzdavinys('bendravardiklinimas', {
-      klausimas: `Koks mažiausias bendrasis vardiklis trupmenoms $\\dfrac{${n1}}{${d1}}$ ir $\\dfrac{${n2}}{${d2}}$?`,
-      atsakymas: String(m),
-      atsakymasRodymui: `$${m}$`,
-      sprendimas: `${m} dalijasi ir iš ${d1}, ir iš ${d2}, o mažesnio tokio skaičiaus nėra.`,
-    })
-  }
-
-  if (lygis === 2) {
-    // Trupmenos plėtimas iki nurodyto vardiklio.
-    const d = vyresne(klase)
-      ? pasirink([2, 3, 4, 5, 6, 7, 8, 9, 10, 12] as const)
-      : pasirink([2, 3, 4, 5, 6, 8] as const)
-    const k = atsitiktinis(2, vyresne(klase) ? 9 : 5)
-    const naujas = d * k
-    if (naujas > (vyresne(klase) ? 90 : 24)) return null
-    const n = atsitiktinis(1, d - 1)
-
-    return uzdavinys('bendravardiklinimas', {
-      klausimas: `Užrašyk trupmeną $\\dfrac{${n}}{${d}}$ vardikliu ${naujas}. Koks bus skaitiklis?`,
-      atsakymas: String(n * k),
-      atsakymasRodymui: `$${n * k}$`,
-      sprendimas: `Vardiklis padidėjo ${k} kartus, tad ir skaitiklis: $${n} \\cdot ${k} = ${
-        n * k
-      }$.`,
-    })
-  }
-
-  // 3 lygis — palyginimas, kuriam bendravardiklinti būtina.
-  const [d1, d2] = pasirink(vyresne(klase) ? POROS_SUNKIOS : POROS_PLATESNES)
-  if (d1 === d2) return null
+  const [d1, d2] = pasirink(vyresne(klase) ? POROS_MBK : POROS_KURUOTOS)
   const n1 = atsitiktinis(1, d1 - 1)
   const n2 = atsitiktinis(1, d2 - 1)
-  const kaire = n1 * d2
-  const desine = n2 * d1
-  if (kaire === desine) return null
-  // Per didelis skirtumas — atsakymą galima atspėti nebendravardiklinus.
-  if (Math.abs(kaire - desine) > d1 * d2 * 0.25) return null
-
-  const didesne = kaire > desine ? { skaitiklis: n1, vardiklis: d1 } : { skaitiklis: n2, vardiklis: d2 }
   const m = mbk(d1, d2)
 
-  return uzdavinys('bendravardiklinimas', {
-    klausimas: `Kuri trupmena didesnė: $\\dfrac{${n1}}{${d1}}$ ar $\\dfrac{${n2}}{${d2}}$? Įrašyk didesniąją.`,
-    atsakymas: neapdorotas(didesne),
-    atsakymasRodymui: tex(didesne),
-    sprendimas: `Suvedus į vardiklį ${m}: $\\dfrac{${(n1 * m) / d1}}{${m}}$ ir $\\dfrac{${
-      (n2 * m) / d2
-    }}{${m}}$.`,
-  })
+  return variacija([
+    // 1. Mažiausias bendrasis vardiklis
+    () => {
+      if (d1 === d2 || m > (vyresne(klase) ? 120 : 36)) return null
+      return uzdavinys('bendravardiklinimas', {
+        klausimas: `Koks mažiausias bendrasis vardiklis trupmenoms $\\dfrac{${n1}}{${d1}}$ ir $\\dfrac{${n2}}{${d2}}$?`,
+        atsakymas: String(m),
+        atsakymasRodymui: `$${m}$`,
+        sprendimas: `${m} dalijasi ir iš ${d1}, ir iš ${d2}, o mažesnio tokio skaičiaus nėra.`,
+      })
+    },
+
+    // 2. Trupmenos plėtimas iki nurodyto vardiklio
+    () => {
+      const d = vyresne(klase)
+        ? pasirink([2, 3, 4, 5, 6, 7, 8, 9, 10, 12] as const)
+        : pasirink([2, 3, 4, 5, 6, 8] as const)
+      const k = atsitiktinis(2, vyresne(klase) ? 9 : 5)
+      const naujas = d * k
+      if (naujas > (vyresne(klase) ? 90 : 24)) return null
+      const n = atsitiktinis(1, d - 1)
+      return uzdavinys('bendravardiklinimas', {
+        klausimas: `Užrašyk trupmeną $\\dfrac{${n}}{${d}}$ vardikliu ${naujas}. Koks bus skaitiklis?`,
+        atsakymas: String(n * k),
+        atsakymasRodymui: `$${n * k}$`,
+        sprendimas: `Vardiklis padidėjo ${k} kartus, tad ir skaitiklis: $${n} \\cdot ${k} = ${
+          n * k
+        }$.`,
+      })
+    },
+
+    // 3. Palyginimas, kuriam bendravardiklinti būtina
+    () => {
+      const [e1, e2] = pasirink(vyresne(klase) ? POROS_SUNKIOS : POROS_PLATESNES)
+      if (e1 === e2) return null
+      const a1 = atsitiktinis(1, e1 - 1)
+      const a2 = atsitiktinis(1, e2 - 1)
+      const kaire = a1 * e2
+      const desine = a2 * e1
+      if (kaire === desine) return null
+      // Per didelis skirtumas — atsakymą galima atspėti nebendravardiklinus.
+      if (Math.abs(kaire - desine) > e1 * e2 * 0.25) return null
+      const didesne =
+        kaire > desine ? { skaitiklis: a1, vardiklis: e1 } : { skaitiklis: a2, vardiklis: e2 }
+      const bv = mbk(e1, e2)
+      return uzdavinys('bendravardiklinimas', {
+        klausimas: `Kuri trupmena didesnė: $\\dfrac{${a1}}{${e1}}$ ar $\\dfrac{${a2}}{${e2}}$? Įrašyk didesniąją.`,
+        atsakymas: neapdorotas(didesne),
+        atsakymasRodymui: tex(didesne),
+        sprendimas: `Suvedus į vardiklį ${bv}: $\\dfrac{${(a1 * bv) / e1}}{${bv}}$ ir $\\dfrac{${
+          (a2 * bv) / e2
+        }}{${bv}}$.`,
+      })
+    },
+
+    // 4. Kiek kartų padidinti vardiklį — atvirkštinis plėtimo veiksmas
+    () => {
+      const d = pasirink([2, 3, 4, 5, 6, 8] as const)
+      const k = atsitiktinis(2, 6)
+      const n = atsitiktinis(1, d - 1)
+      return uzdavinys('bendravardiklinimas', {
+        klausimas: `Trupmena $\\dfrac{${n}}{${d}}$ išplėsta iki $\\dfrac{${n * k}}{${d * k}}$. Iš kokio skaičiaus buvo padauginti skaitiklis ir vardiklis?`,
+        atsakymas: String(k),
+        atsakymasRodymui: `$${k}$`,
+        sprendimas: `$${d} \\cdot ${k} = ${d * k}$, tad daugiklis yra ${k}.`,
+      })
+    },
+
+    // 5. Suprastinimas — priešinga kryptis
+    () => {
+      if (lygis === 1) return null
+      const d = pasirink([2, 3, 4, 5, 6] as const)
+      const k = atsitiktinis(2, 6)
+      const n = atsitiktinis(1, d - 1)
+      const t = suprastink(n * k, d * k)
+      if (t.vardiklis !== d) return null
+      return uzdavinys('bendravardiklinimas', {
+        klausimas: `Suprastink trupmeną $\\dfrac{${n * k}}{${d * k}}$. Koks bus vardiklis?`,
+        atsakymas: String(d),
+        atsakymasRodymui: `$${d}$`,
+        sprendimas: `Skaitiklį ir vardiklį dalijame iš ${k}: $\\dfrac{${n * k}}{${d * k}} = \\dfrac{${n}}{${d}}$.`,
+      })
+    },
+
+    // 6. Ar dvi trupmenos lygios
+    () => {
+      if (lygis === 1) return null
+      const d = pasirink([2, 3, 4, 5, 6] as const)
+      const k = atsitiktinis(2, 5)
+      const n = atsitiktinis(1, d - 1)
+      const lygios = Math.random() < 0.5
+      const skaitiklis = lygios ? n * k : n * k + 1
+      if (!lygios && skaitiklis >= d * k) return null
+      return uzdavinys('bendravardiklinimas', {
+        klausimas: `Ar trupmenos $\\dfrac{${n}}{${d}}$ ir $\\dfrac{${skaitiklis}}{${d * k}}$ lygios? Rašyk „taip" arba „ne".`,
+        atsakymas: lygios ? 'taip' : 'ne',
+        atsakymasRodymui: lygios ? 'taip' : 'ne',
+        sprendimas: lygios
+          ? `Išplėtus pirmąją ${k} kartus gaunama $\\dfrac{${n * k}}{${d * k}}$ — tos pačios.`
+          : `Išplėtus pirmąją ${k} kartus gaunama $\\dfrac{${n * k}}{${d * k}}$, o ne $\\dfrac{${skaitiklis}}{${d * k}}$.`,
+      })
+    },
+  ])
 }

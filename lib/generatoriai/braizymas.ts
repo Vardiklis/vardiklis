@@ -1,7 +1,8 @@
+import { derink } from '../lietuviu'
 import { atsitiktinis, atsitiktinisBe, pasirink } from '../matematika'
 import { sk, suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
-import type { Generatorius, Lygis, Uzdavinys } from './tipai'
+import type { Generatorius, Lygis, Sritis, Uzdavinys } from './tipai'
 
 /**
  * Braižymas, transformacijos, figūros, vektoriai, algoritmai ir diagramos.
@@ -77,32 +78,78 @@ function kurkKoordinates(lygis: Lygis): Uzdavinys | null {
 
   const ax = atsitiktinisBe(ribos.nuo + 1, ribos.iki, [0])
   const ay = atsitiktinisBe(ribos.nuo + 1, ribos.iki, [0])
+  const suA = (papildomai = '') =>
+    svg(t.dydis, t.dydis, t.piesinys + taskas(t.x(ax), t.y(ay), ORANGE, 'A') + papildomai)
 
-  const brezinys = svg(t.dydis, t.dydis, t.piesinys + taskas(t.x(ax), t.y(ay), ORANGE, 'A'))
+  return variacija([
+    // 1. Abscisė
+    () =>
+      uzdavinys('koordinates', {
+        klausimas: 'Kokia taško A abscisė (pirmoji koordinatė)?',
+        atsakymas: String(ax),
+        atsakymasRodymui: `$${ax}$`,
+        sprendimas: `Nuo taško leidžiamės iki $x$ ašies ir nuskaitome ${ax}.`,
+        brezinys: suA(),
+      }),
 
-  if (lygis === 3) {
-    // Atstumas iki ašies — reikia suprasti, ką reiškia koordinatė.
-    return uzdavinys('koordinates', {
-      klausimas: 'Per kiek langelių taškas A nutolęs nuo $y$ ašies?',
-      atsakymas: String(Math.abs(ax)),
-      atsakymasRodymui: `$${Math.abs(ax)}$`,
-      sprendimas: `Taško A abscisė yra ${ax}, tad atstumas iki $y$ ašies — ${Math.abs(ax)} langeliai.`,
-      brezinys,
-    })
-  }
+    // 2. Ordinatė
+    () =>
+      uzdavinys('koordinates', {
+        klausimas: 'Kokia taško A ordinatė (antroji koordinatė)?',
+        atsakymas: String(ay),
+        atsakymasRodymui: `$${ay}$`,
+        sprendimas: `Nuo taško einame iki $y$ ašies ir nuskaitome ${ay}.`,
+        brezinys: suA(),
+      }),
 
-  const klausiamX = lygis === 1 ? true : Math.random() < 0.5
-  return uzdavinys('koordinates', {
-    klausimas: klausiamX
-      ? 'Kokia taško A abscisė (pirmoji koordinatė)?'
-      : 'Kokia taško A ordinatė (antroji koordinatė)?',
-    atsakymas: String(klausiamX ? ax : ay),
-    atsakymasRodymui: `$${klausiamX ? ax : ay}$`,
-    sprendimas: klausiamX
-      ? `Nuo taško leidžiamės iki $x$ ašies ir nuskaitome ${ax}.`
-      : `Nuo taško einame iki $y$ ašies ir nuskaitome ${ay}.`,
-    brezinys,
-  })
+    // 3. Atstumas iki y ašies — reikia suprasti, ką reiškia koordinatė
+    () =>
+      uzdavinys('koordinates', {
+        klausimas: 'Per kiek langelių taškas A nutolęs nuo $y$ ašies?',
+        atsakymas: String(Math.abs(ax)),
+        atsakymasRodymui: `$${Math.abs(ax)}$`,
+        sprendimas: `Taško A abscisė yra ${ax}, tad atstumas iki $y$ ašies — ${Math.abs(ax)} langeliai.`,
+        brezinys: suA(),
+      }),
+
+    // 4. Atstumas iki x ašies
+    () =>
+      uzdavinys('koordinates', {
+        klausimas: 'Per kiek langelių taškas A nutolęs nuo $x$ ašies?',
+        atsakymas: String(Math.abs(ay)),
+        atsakymasRodymui: `$${Math.abs(ay)}$`,
+        sprendimas: `Taško A ordinatė yra ${ay}, tad atstumas iki $x$ ašies — ${Math.abs(ay)} langeliai.`,
+        brezinys: suA(),
+      }),
+
+    // 5. Atstumas tarp dviejų taškų vienoje eilėje
+    () => {
+      const bx = atsitiktinisBe(ribos.nuo + 1, ribos.iki, [0, ax])
+      const brezinys = suA(taskas(t.x(bx), t.y(ay), INK, 'B'))
+      return uzdavinys('koordinates', {
+        klausimas: 'Per kiek langelių taškas B nutolęs nuo taško A?',
+        atsakymas: String(Math.abs(bx - ax)),
+        atsakymasRodymui: `$${Math.abs(bx - ax)}$`,
+        sprendimas: `Abu taškai yra toje pačioje eilėje, tad atstumas yra abscisių skirtumas: ${Math.abs(bx - ax)}.`,
+        brezinys,
+      })
+    },
+
+    // 6. Kelintame ketvirtyje — tik kai ašys turi neigiamą pusę
+    () => {
+      if (lygis === 1) return null
+      const ketvirtis = ax > 0 ? (ay > 0 ? 1 : 4) : ay > 0 ? 2 : 3
+      return uzdavinys('koordinates', {
+        klausimas: 'Kelintame koordinačių ketvirtyje yra taškas A?',
+        atsakymas: String(ketvirtis),
+        atsakymasRodymui: `$${ketvirtis}$`,
+        sprendimas: `Abscisė ${ax > 0 ? 'teigiama' : 'neigiama'}, ordinatė ${
+          ay > 0 ? 'teigiama' : 'neigiama'
+        } — tai ${ketvirtis} ketvirtis.`,
+        brezinys: suA(),
+      })
+    },
+  ])
 }
 
 // ── Simetrija ir transformacijos ────────────────────────────────────────────
@@ -116,55 +163,205 @@ const A_SIMETRIJA = [
   },
 ] as const
 
-export const simetrija: Generatorius = (lygis) =>
-  suBandymais(() => kurkSimetrija(lygis), A_SIMETRIJA, 'simetrija')
+export const simetrija: Generatorius = (lygis, _klase, sritis) =>
+  suBandymais(() => kurkSimetrija(lygis, sritis), A_SIMETRIJA, 'simetrija')
 
-function kurkSimetrija(lygis: Lygis): Uzdavinys | null {
+/**
+ * Simetrija tinklelyje, kuriame nėra neigiamų skaičių.
+ *
+ * 2–3 klasėje simetrija mokoma, o neigiami skaičiai — dar ne. Ašis todėl
+ * brėžiama ne per nulį, o per pasirinktą tinklelio liniją, ir atspindėta
+ * koordinatė skaičiuojama kaip $2k - x$ — visi skaičiai lieka teigiami.
+ */
+function kurkSimetrijaBeNeigiamu(lygis: Lygis): Uzdavinys | null {
+  const t = tinklelis(0, 10)
+  const k = atsitiktinis(3, 7)
+  const ax = atsitiktinisBe(1, 9, [k])
+  const ay = atsitiktinisBe(1, 9, [k])
+
+  /** Brėžinys su vertikalia arba horizontalia simetrijos ašimi per langelį k. */
+  const piesk = (asisY: boolean) =>
+    svg(
+      t.dydis,
+      t.dydis,
+      t.piesinys +
+        (asisY
+          ? `<line x1="${t.x(k)}" y1="14" x2="${t.x(k)}" y2="${t.dydis - 14}" stroke="${ORANGE}" stroke-width="2.5"/>`
+          : `<line x1="14" y1="${t.y(k)}" x2="${t.dydis - 14}" y2="${t.y(k)}" stroke="${ORANGE}" stroke-width="2.5"/>`) +
+        taskas(t.x(ax), t.y(ay), INK, 'A'),
+    )
+
+  /** Atspindėta koordinatė: nuo ašies tiek pat, tik kitoje pusėje. */
+  const atspindys = (v: number) => 2 * k - v
+
+  return variacija([
+    // 1. Atspindys vertikalios ašies atžvilgiu
+    () => {
+      const rez = atspindys(ax)
+      if (rez < 0 || rez > 10) return null
+      return uzdavinys('simetrija', {
+        klausimas:
+          'Taškas A atspindimas oranžinės ašies atžvilgiu. Kokia bus atspindėto taško abscisė?',
+        atsakymas: String(rez),
+        atsakymasRodymui: `$${rez}$`,
+        sprendimas: `Nuo ašies iki A yra ${Math.abs(ax - k)} langeliai, tad atspindys stovi per tiek pat kitoje pusėje — ties ${rez}.`,
+        brezinys: piesk(true),
+      })
+    },
+
+    // 2. Atspindys horizontalios ašies atžvilgiu
+    () => {
+      if (lygis === 1) return null
+      const rez = atspindys(ay)
+      if (rez < 0 || rez > 10) return null
+      return uzdavinys('simetrija', {
+        klausimas:
+          'Taškas A atspindimas oranžinės ašies atžvilgiu. Kokia bus atspindėto taško ordinatė?',
+        atsakymas: String(rez),
+        atsakymasRodymui: `$${rez}$`,
+        sprendimas: `Nuo ašies iki A yra ${Math.abs(ay - k)} langeliai, tad atspindys stovi per tiek pat kitoje pusėje — ties ${rez}.`,
+        brezinys: piesk(false),
+      })
+    },
+
+    // 3. Atstumas iki ašies — be jo atspindys lieka mechaniška taisyklė
+    () =>
+      uzdavinys('simetrija', {
+        klausimas: 'Per kiek langelių taškas A nutolęs nuo oranžinės ašies?',
+        atsakymas: String(Math.abs(ax - k)),
+        atsakymasRodymui: `$${Math.abs(ax - k)}$`,
+        sprendimas: `Taškas stovi ties ${ax}, ašis — ties ${k}, tad atstumas ${Math.abs(ax - k)}.`,
+        brezinys: piesk(true),
+      }),
+
+    // 4. Atstumas tarp taško ir jo atspindžio
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('simetrija', {
+        klausimas: 'Per kiek langelių taškas A nutolęs nuo savo atspindžio?',
+        atsakymas: String(2 * Math.abs(ax - k)),
+        atsakymasRodymui: `$${2 * Math.abs(ax - k)}$`,
+        sprendimas: `Iki ašies ${Math.abs(ax - k)} langeliai, o atspindys stovi per tiek pat kitoje pusėje: $2 \\cdot ${Math.abs(ax - k)} = ${2 * Math.abs(ax - k)}$.`,
+        brezinys: piesk(true),
+      })
+    },
+
+    // 5. Kur eina ašis — atvirkštinis uždavinys
+    () => {
+      if (lygis === 1) return null
+      const poras = atspindys(ax)
+      if (poras < 0 || poras > 10 || poras === ax) return null
+      return uzdavinys('simetrija', {
+        klausimas: `Taškai ties ${ax} ir ${poras} yra simetriški vienas kitam. Ties kuriuo skaičiumi eina simetrijos ašis?`,
+        atsakymas: String(k),
+        atsakymasRodymui: `$${k}$`,
+        sprendimas: `Ašis eina lygiai per vidurį: $(${ax} + ${poras}) : 2 = ${k}$.`,
+        brezinys: piesk(true),
+      })
+    },
+
+    // 6. Ašies vieta iš brėžinio
+    () =>
+      uzdavinys('simetrija', {
+        klausimas: 'Ties kuriuo skaičiumi eina oranžinė simetrijos ašis?',
+        atsakymas: String(k),
+        atsakymasRodymui: `$${k}$`,
+        sprendimas: `Ašis nubrėžta ties ${k}.`,
+        brezinys: piesk(true),
+      }),
+  ])
+}
+
+function kurkSimetrija(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null {
+  if (sritis && sritis.min >= 0) return kurkSimetrijaBeNeigiamu(lygis)
+
   const t = tinklelis(-5, 5)
   const ax = atsitiktinisBe(-5, 5, [0])
   const ay = atsitiktinisBe(-5, 5, [0])
 
-  const asisY = lygis === 1 ? true : Math.random() < 0.5
-  const piesinys =
-    t.piesinys +
-    // Simetrijos ašis paryškinama oranžine.
-    (asisY
-      ? `<line x1="${t.x(0)}" y1="14" x2="${t.x(0)}" y2="${t.dydis - 14}" stroke="${ORANGE}" stroke-width="2.5"/>`
-      : `<line x1="14" y1="${t.y(0)}" x2="${t.dydis - 14}" y2="${t.y(0)}" stroke="${ORANGE}" stroke-width="2.5"/>`) +
-    taskas(t.x(ax), t.y(ay), INK, 'A')
+  /** Brėžinys su simetrijos ašimi: vertikalia arba horizontalia. */
+  const suAsimi = (asisY: boolean) =>
+    svg(
+      t.dydis,
+      t.dydis,
+      t.piesinys +
+        // Simetrijos ašis paryškinama oranžine.
+        (asisY
+          ? `<line x1="${t.x(0)}" y1="14" x2="${t.x(0)}" y2="${t.dydis - 14}" stroke="${ORANGE}" stroke-width="2.5"/>`
+          : `<line x1="14" y1="${t.y(0)}" x2="${t.dydis - 14}" y2="${t.y(0)}" stroke="${ORANGE}" stroke-width="2.5"/>`) +
+        taskas(t.x(ax), t.y(ay), INK, 'A'),
+    )
 
-  const brezinys = svg(t.dydis, t.dydis, piesinys)
+  return variacija([
+    // 1. Atspindys vertikalios ašies atžvilgiu
+    () =>
+      uzdavinys('simetrija', {
+        klausimas: 'Taškas A atspindimas oranžinės ašies atžvilgiu. Kokia bus atspindėto taško abscisė?',
+        atsakymas: String(-ax),
+        atsakymasRodymui: `$${-ax}$`,
+        sprendimas: `Atspindint ašies atžvilgiu ta koordinatė keičia ženklą: $${ax} \\to ${-ax}$, o kita lieka ta pati.`,
+        brezinys: suAsimi(true),
+      }),
 
-  if (lygis === 3) {
-    // Postūmis — kita transformacija, bet tas pats skaitymas iš brėžinio.
-    const poslinkis = atsitiktinisBe(-4, 4, [0])
-    const nauja = ax + poslinkis
-    if (Math.abs(nauja) > 9) return null
-    return uzdavinys('simetrija', {
-      klausimas: `Taškas A pastumiamas ${
-        poslinkis > 0 ? 'į dešinę' : 'į kairę'
-      } per ${Math.abs(poslinkis)} langelius. Kokia bus jo abscisė?`,
-      atsakymas: String(nauja),
-      atsakymasRodymui: `$${nauja}$`,
-      sprendimas: `Prie abscisės pridedame poslinkį: $${ax} ${
-        poslinkis > 0 ? '+' : '-'
-      } ${Math.abs(poslinkis)} = ${nauja}$.`,
-      brezinys,
-    })
-  }
+    // 2. Atspindys horizontalios ašies atžvilgiu
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('simetrija', {
+        klausimas: 'Taškas A atspindimas oranžinės ašies atžvilgiu. Kokia bus atspindėto taško ordinatė?',
+        atsakymas: String(-ay),
+        atsakymasRodymui: `$${-ay}$`,
+        sprendimas: `Atspindint ašies atžvilgiu ta koordinatė keičia ženklą: $${ay} \\to ${-ay}$, o kita lieka ta pati.`,
+        brezinys: suAsimi(false),
+      })
+    },
 
-  const atsakymas = asisY ? -ax : -ay
-  return uzdavinys('simetrija', {
-    klausimas: asisY
-      ? 'Taškas A atspindimas oranžinės ašies atžvilgiu. Kokia bus atspindėto taško abscisė?'
-      : 'Taškas A atspindimas oranžinės ašies atžvilgiu. Kokia bus atspindėto taško ordinatė?',
-    atsakymas: String(atsakymas),
-    atsakymasRodymui: `$${atsakymas}$`,
-    sprendimas: `Atspindint ašies atžvilgiu ta koordinatė keičia ženklą: $${
-      asisY ? ax : ay
-    } \\to ${atsakymas}$, o kita lieka ta pati.`,
-    brezinys,
-  })
+    // 3. Postūmis — kita transformacija, bet tas pats skaitymas iš brėžinio
+    () => {
+      const poslinkis = atsitiktinisBe(-4, 4, [0])
+      const nauja = ax + poslinkis
+      if (Math.abs(nauja) > 9) return null
+      return uzdavinys('simetrija', {
+        klausimas: `Taškas A pastumiamas ${
+          poslinkis > 0 ? 'į dešinę' : 'į kairę'
+        } per ${Math.abs(poslinkis)} langelius. Kokia bus jo abscisė?`,
+        atsakymas: String(nauja),
+        atsakymasRodymui: `$${nauja}$`,
+        sprendimas: `Prie abscisės pridedame poslinkį: $${ax} ${
+          poslinkis > 0 ? '+' : '-'
+        } ${Math.abs(poslinkis)} = ${nauja}$.`,
+        brezinys: suAsimi(true),
+      })
+    },
+
+    // 4. Postūmis vertikaliai
+    () => {
+      if (lygis === 1) return null
+      const poslinkis = atsitiktinisBe(-4, 4, [0])
+      const nauja = ay + poslinkis
+      if (Math.abs(nauja) > 9) return null
+      return uzdavinys('simetrija', {
+        klausimas: `Taškas A pastumiamas ${
+          poslinkis > 0 ? 'aukštyn' : 'žemyn'
+        } per ${Math.abs(poslinkis)} langelius. Kokia bus jo ordinatė?`,
+        atsakymas: String(nauja),
+        atsakymasRodymui: `$${nauja}$`,
+        sprendimas: `Prie ordinatės pridedame poslinkį: $${ay} ${
+          poslinkis > 0 ? '+' : '-'
+        } ${Math.abs(poslinkis)} = ${nauja}$.`,
+        brezinys: suAsimi(false),
+      })
+    },
+
+    // 5. Atstumas tarp taško ir jo atspindžio
+    () =>
+      uzdavinys('simetrija', {
+        klausimas: 'Per kiek langelių taškas A nutolęs nuo savo atspindžio oranžinės ašies atžvilgiu?',
+        atsakymas: String(2 * Math.abs(ax)),
+        atsakymasRodymui: `$${2 * Math.abs(ax)}$`,
+        sprendimas: `Iki ašies yra ${Math.abs(ax)} langeliai, o atspindys stovi per tiek pat kitoje pusėje: $2 \\cdot ${Math.abs(ax)} = ${2 * Math.abs(ax)}$.`,
+        brezinys: suAsimi(true),
+      }),
+  ])
 }
 
 // ── Plokščiosios figūros ────────────────────────────────────────────────────
@@ -302,7 +499,7 @@ function kurkFigura(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 8. Taisyklingosios figūros vienas kampas
     () => {
-      if (!vyresne(klase) && lygis !== 3) return null
+      if (!vyresne(klase) && lygis === 1) return null
       const kampas = ((n - 2) * 180) / n
       if (!Number.isInteger(kampas)) return null
       return uzdavinys('figuros', {
@@ -327,9 +524,8 @@ function kurkFigura(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 4))
-  if (lygis === 2) return variacija(visos.slice(0, 7))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji keturi pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }
 
 // ── Laužės ──────────────────────────────────────────────────────────────────
@@ -347,12 +543,13 @@ export const lauzes: Generatorius = (lygis) =>
   suBandymais(() => kurkLauze(lygis), A_LAUZE, 'lauzes')
 
 function kurkLauze(lygis: Lygis): Uzdavinys | null {
-  const kiek = lygis === 1 ? 3 : lygis === 2 ? 4 : 5
+  const kiek = lygis === 1 ? atsitiktinis(3, 4) : atsitiktinis(4, 5)
   const t = tinklelis(0, 8, 24)
 
   let x = atsitiktinis(0, 3)
   let y = atsitiktinis(0, 3)
   const taskai: [number, number][] = [[x, y]]
+  const atkarpos: { horizontali: boolean; ilgis: number }[] = []
   let ilgis = 0
 
   for (let i = 0; i < kiek; i += 1) {
@@ -362,6 +559,7 @@ function kurkLauze(lygis: Lygis): Uzdavinys | null {
     const ny = horizontaliai ? y : y + zingsnis
     if (nx < 0 || nx > 8 || ny < 0 || ny > 8) return null
     ilgis += Math.abs(zingsnis)
+    atkarpos.push({ horizontali: horizontaliai, ilgis: Math.abs(zingsnis) })
     x = nx
     y = ny
     taskai.push([x, y])
@@ -377,19 +575,75 @@ function kurkLauze(lygis: Lygis): Uzdavinys | null {
     `${t.piesinys}<polyline points="${kelias}" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>${virsunes}`,
   )
 
-  return uzdavinys('lauzes', {
-    klausimas:
-      lygis === 3
-        ? 'Kiek atkarpų turi ši laužė?'
-        : 'Kokio ilgio yra ši laužė? Atsakyk langeliais.',
-    atsakymas: String(lygis === 3 ? kiek : ilgis),
-    atsakymasRodymui: `$${lygis === 3 ? kiek : ilgis}$`,
-    sprendimas:
-      lygis === 3
-        ? `Laužę sudaro ${kiek} atkarpos.`
-        : `Sudedame visų ${kiek} atkarpų ilgius — iš viso ${ilgis} langeliai.`,
-    brezinys,
-  })
+  const ilgiausia = Math.max(...atkarpos.map((a) => a.ilgis))
+  const horizontaliu = atkarpos.filter((a) => a.horizontali).length
+
+  return variacija([
+    // 1. Bendras ilgis
+    () =>
+      uzdavinys('lauzes', {
+        klausimas: 'Kokio ilgio yra ši laužė? Atsakyk langeliais.',
+        atsakymas: String(ilgis),
+        atsakymasRodymui: `$${ilgis}$`,
+        sprendimas: `Sudedame visų ${kiek} atkarpų ilgius — iš viso ${ilgis} langeliai.`,
+        brezinys,
+      }),
+
+    // 2. Atkarpų skaičius
+    () =>
+      uzdavinys('lauzes', {
+        klausimas: 'Kiek atkarpų turi ši laužė?',
+        atsakymas: String(kiek),
+        atsakymasRodymui: `$${kiek}$`,
+        sprendimas: `Laužę sudaro ${kiek} atkarpos.`,
+        brezinys,
+      }),
+
+    // 3. Viršūnių skaičius — dažna klaida yra sumaišyti su atkarpomis
+    () =>
+      uzdavinys('lauzes', {
+        klausimas: 'Kiek viršūnių turi ši laužė?',
+        atsakymas: String(kiek + 1),
+        atsakymasRodymui: `$${kiek + 1}$`,
+        sprendimas: `Atkarpų yra ${kiek}, o viršūnių visada viena daugiau: ${kiek + 1}.`,
+        brezinys,
+      }),
+
+    // 4. Ilgiausia atkarpa
+    () =>
+      uzdavinys('lauzes', {
+        klausimas: 'Kokio ilgio yra ilgiausia šios laužės atkarpa? Atsakyk langeliais.',
+        atsakymas: String(ilgiausia),
+        atsakymasRodymui: `$${ilgiausia}$`,
+        sprendimas: `Ilgiausia atkarpa driekiasi per ${ilgiausia} langelius.`,
+        brezinys,
+      }),
+
+    // 5. Horizontalių atkarpų skaičius
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('lauzes', {
+        klausimas: 'Kiek šios laužės atkarpų yra horizontalios?',
+        atsakymas: String(horizontaliu),
+        atsakymasRodymui: `$${horizontaliu}$`,
+        sprendimas: `Horizontalios atkarpos eina į šoną — jų yra ${horizontaliu}.`,
+        brezinys,
+      })
+    },
+
+    // 6. Kiek trūksta iki nurodyto ilgio
+    () => {
+      if (lygis === 1) return null
+      const tikslas = ilgis + atsitiktinis(2, 6)
+      return uzdavinys('lauzes', {
+        klausimas: `Kiek langelių šiai laužei trūksta iki ${tikslas} langelių ilgio?`,
+        atsakymas: String(tikslas - ilgis),
+        atsakymasRodymui: `$${tikslas - ilgis}$`,
+        sprendimas: `Laužės ilgis ${ilgis}, tad $${tikslas} - ${ilgis} = ${tikslas - ilgis}$.`,
+        brezinys,
+      })
+    },
+  ])
 }
 
 // ── Erdvinės figūros ────────────────────────────────────────────────────────
@@ -415,26 +669,201 @@ const A_ERDVINES = [
 export const erdvinesFiguros: Generatorius = (lygis, klase) =>
   suBandymais(() => kurkErdvine(lygis, klase), A_ERDVINES, 'erdvines-figuros')
 
-/** Kubo brėžinys perspektyvoje — paaiškina klausimą be papildomų žodžių. */
-function kuboBrezinys(): string {
-  const p = 30
-  const g = 34
-  const priekis = `<rect x="${p}" y="${p + g}" width="90" height="90" fill="none" stroke="${INK}" stroke-width="2"/>`
-  const galas = `<rect x="${p + g}" y="${p}" width="90" height="90" fill="none" stroke="${LINE}" stroke-width="2"/>`
-  const jungtys = [
-    [p, p + g, p + g, p],
-    [p + 90, p + g, p + g + 90, p],
-    [p, p + g + 90, p + g, p + 90],
-    [p + 90, p + g + 90, p + g + 90, p + 90],
+// ── Erdvinių kūnų brėžiniai ─────────────────────────────────────────────────
+//
+// Anksčiau visiems kūnams buvo piešiamas tik kubas, o piramidės ir prizmės
+// likdavo visai be brėžinio. Be to kubo paslėptos briaunos buvo brėžiamos
+// `--line` spalva, todėl beveik nesimatė ir figūra atrodė kaip kvadratas.
+// Dabar kiekvienas kūnas turi savo brėžinį, o paslėptos briaunos yra
+// punktyrinės — taip, kaip vadovėlyje.
+
+type Taskas = readonly [number, number]
+
+/** Matoma briauna — ištisinė linija. */
+function briauna(a: Taskas, b: Taskas): string {
+  return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>`
+}
+
+/** Paslėpta briauna — punktyras, kaip vadovėlio brėžiniuose. */
+function paslėptaBriauna(a: Taskas, b: Taskas): string {
+  return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${MUTED}" stroke-width="1.5" stroke-dasharray="5 4" stroke-linecap="round"/>`
+}
+
+function briaunos(poros: readonly (readonly [Taskas, Taskas])[]): string {
+  return poros.map(([a, b]) => briauna(a, b)).join('')
+}
+
+function paslėptos(poros: readonly (readonly [Taskas, Taskas])[]): string {
+  return poros.map(([a, b]) => paslėptaBriauna(a, b)).join('')
+}
+
+/**
+ * Gretasienis (arba kubas, kai plotis ir aukštis vienodi).
+ *
+ * Lygiagreti projekcija: galinė siena pastumta į dešinę ir aukštyn. Paslėptas
+ * yra galinis apatinis kairysis kampas, tad punktyrinės yra trys jį liečiančios
+ * briaunos.
+ */
+function gretasienioBrezinys(plotis = 92, aukstis = 92): string {
+  const p = 26
+  const g = 32
+  const y = p + g
+  const [A, B, C, D]: Taskas[] = [
+    [p, y],
+    [p + plotis, y],
+    [p + plotis, y + aukstis],
+    [p, y + aukstis],
   ]
-    .map(([x1, y1, x2, y2]) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${LINE}" stroke-width="2"/>`)
-    .join('')
-  return svg(190, 190, `${galas}${jungtys}${priekis}`)
+  const [A2, B2, C2, D2]: Taskas[] = [
+    [p + g, p],
+    [p + plotis + g, p],
+    [p + plotis + g, p + aukstis],
+    [p + g, p + aukstis],
+  ]
+
+  return svg(
+    plotis + g + 2 * p,
+    aukstis + g + 2 * p,
+    paslėptos([
+      [D2, A2],
+      [D2, C2],
+      [D2, D],
+    ]) +
+      briaunos([
+        [A, B],
+        [B, C],
+        [C, D],
+        [D, A],
+        [A2, B2],
+        [B2, C2],
+        [A, A2],
+        [B, B2],
+        [C, C2],
+      ]),
+  )
+}
+
+/** Kubas — gretasienis su vienodais matmenimis. */
+function kuboBrezinys(): string {
+  return gretasienioBrezinys(92, 92)
+}
+
+/**
+ * Piramidė su n-kampiu pagrindu.
+ *
+ * Pagrindas piešiamas kaip elipsėje įrašytas daugiakampis — taip jis atrodo
+ * kaip horizontali plokštuma, o ne kaip plokščia figūra. Tolimosios pagrindo
+ * briaunos punktyrinės.
+ */
+function piramidesBrezinys(kampu: 3 | 4): string {
+  const plotis = 190
+  const aukstis = 180
+  const cx = plotis / 2
+  const cy = 132
+  const rx = 62
+  const ry = 22
+  const virsune: Taskas = [cx, 24]
+
+  // Pagrindo viršūnės ant elipsės. Pradedama nuo tolimiausios (viršutinės),
+  // kad paslėpta būtų lygiai viena viršūnė, o ne dvi vienodo aukščio.
+  const pradzia = Math.PI / 2
+  const pagrindas: Taskas[] = Array.from({ length: kampu }, (_, i) => {
+    const kampas = pradzia + (2 * Math.PI * i) / kampu
+    return [cx + rx * Math.cos(kampas), cy - ry * Math.sin(kampas)] as Taskas
+  })
+
+  // Tolimiausia viršūnė (aukščiausiai brėžinyje) yra paslėpta.
+  const tolimiausia = pagrindas.reduce((a, t, i) => (t[1] < pagrindas[a][1] ? i : a), 0)
+
+  const pagrindoBriaunos: [Taskas, Taskas][] = pagrindas.map((t, i) => [
+    t,
+    pagrindas[(i + 1) % kampu],
+  ])
+  const slepti = (i: number) => i === tolimiausia || (i + 1) % kampu === tolimiausia
+
+  return svg(
+    plotis,
+    aukstis,
+    paslėptos([
+      ...pagrindoBriaunos.filter((_, i) => slepti(i)),
+      [virsune, pagrindas[tolimiausia]],
+    ]) +
+      briaunos([
+        ...pagrindoBriaunos.filter((_, i) => !slepti(i)),
+        ...pagrindas.filter((_, i) => i !== tolimiausia).map((t) => [virsune, t] as [Taskas, Taskas]),
+      ]),
+  )
+}
+
+/**
+ * Stačioji prizmė: du vienodi daugiakampiai vienas virš kito, sujungti
+ * vertikaliomis šoninėmis briaunomis.
+ *
+ * Pirmas bandymas piešė du pasuktus daugiakampius įstrižai vieną nuo kito —
+ * šešiakampei prizmei toks brėžinys išeidavo neįskaitomas. Stačioji prizmė
+ * yra ir pati temos formuluotė („Stačioji prizmė"), ir įprastas vadovėlio
+ * vaizdas: pagrindas sutrumpintas į plokščią ovalą, viršus — tiesiai virš jo.
+ */
+function prizmesBrezinys(kampu: 3 | 6): string {
+  const rx = kampu === 3 ? 52 : 48
+  const ry = 18
+  const h = 96
+  const krastas = 20
+  const cx = rx + krastas
+  const apaciosY = h + ry + krastas
+  // Trikampė prizmė piešiama viršūne į priekį, šešiakampė — briauna į šoną.
+  const pradzia = kampu === 3 ? -Math.PI / 2 : 0
+
+  const kampai = Array.from({ length: kampu }, (_, i) => pradzia + (2 * Math.PI * i) / kampu)
+  const apacia: Taskas[] = kampai.map((k) => [cx + rx * Math.cos(k), apaciosY - ry * Math.sin(k)])
+  const virsus: Taskas[] = apacia.map(([x, y]) => [x, y - h] as Taskas)
+
+  // Priekinės viršūnės — tos, kurios brėžinyje nusileidžia žemiau centro.
+  const priekyje = kampai.map((k) => Math.sin(k) <= 1e-9)
+  // Kraštinės viršūnės sudaro siluetą, tad jų šoninės briaunos matomos visada.
+  const xReiksmes = apacia.map(([x]) => x)
+  const krastine = apacia.map(
+    ([x]) => x === Math.min(...xReiksmes) || x === Math.max(...xReiksmes),
+  )
+
+  const matomos: [Taskas, Taskas][] = []
+  const slepiamos: [Taskas, Taskas][] = []
+
+  for (let i = 0; i < kampu; i += 1) {
+    const kitas = (i + 1) % kampu
+    // Viršutinis pagrindas matomas visas — į jį žiūrima iš viršaus.
+    matomos.push([virsus[i], virsus[kitas]])
+    // Apatinio pagrindo tolimoji dalis pasislepia už kūno.
+    ;(priekyje[i] && priekyje[kitas] ? matomos : slepiamos).push([apacia[i], apacia[kitas]])
+    ;(priekyje[i] || krastine[i] ? matomos : slepiamos).push([apacia[i], virsus[i]])
+  }
+
+  return svg(2 * rx + 2 * krastas, h + 2 * ry + 2 * krastas, paslėptos(slepiamos) + briaunos(matomos))
+}
+
+/** Kūno brėžinys pagal jo pavadinimą programoje. */
+function kunoBrezinys(pavadinimas: string): string | undefined {
+  switch (pavadinimas) {
+    case 'kubas':
+      return kuboBrezinys()
+    case 'stačiakampis gretasienis':
+      return gretasienioBrezinys(108, 74)
+    case 'keturkampė piramidė':
+      return piramidesBrezinys(4)
+    case 'trikampė piramidė':
+      return piramidesBrezinys(3)
+    case 'trikampė prizmė':
+      return prizmesBrezinys(3)
+    case 'šešiakampė prizmė':
+      return prizmesBrezinys(6)
+    default:
+      return undefined
+  }
 }
 
 function kurkErdvine(lygis: Lygis, klase?: number): Uzdavinys | null {
   const k = pasirink(KUNAI)
-  const brezinys = k.pavadinimas === 'kubas' ? kuboBrezinys() : undefined
+  const brezinys = kunoBrezinys(k.pavadinimas)
   const a = atsitiktinis(2, didink(9, klase))
   const b = atsitiktinis(2, didink(9, klase))
   const c = atsitiktinis(2, didink(9, klase))
@@ -533,7 +962,7 @@ function kurkErdvine(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 9. Briauna iš tūrio
     () => {
-      if (!vyresne(klase) && lygis !== 3) return null
+      if (!vyresne(klase) && lygis === 1) return null
       return uzdavinys('erdvines-figuros', {
         klausimas: `Kubo tūris ${a ** 3} cm³. Kokia jo briauna?`,
         atsakymas: String(a),
@@ -556,9 +985,8 @@ function kurkErdvine(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 5))
-  if (lygis === 2) return variacija(visos.slice(0, 8))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 5 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 5) : visos)
 }
 
 // ── Vektoriai ───────────────────────────────────────────────────────────────
@@ -702,7 +1130,7 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 7. Skaliarinė sandauga
     () => {
-      if (!vyresne(klase) && lygis !== 3) return null
+      if (!vyresne(klase) && lygis === 1) return null
       const rez = a1 * b1 + a2 * b2
       return uzdavinys('vektoriai', {
         klausimas: `Vektoriai $\\vec{a} = (${a1}; ${a2})$ ir $\\vec{b} = (${b1}; ${b2})$. Kam lygi jų skaliarinė sandauga?`,
@@ -733,9 +1161,8 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 3))
-  if (lygis === 2) return variacija(visos.slice(0, 6))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 3 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 3) : visos)
 }
 
 // ── Algoritmai ir programavimas ─────────────────────────────────────────────
@@ -847,7 +1274,7 @@ function kurkAlgoritma(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 8. Įdėtieji ciklai
     () => {
-      if (!vyresne(klase) && lygis !== 3) return null
+      if (!vyresne(klase) && lygis === 1) return null
       const isorinis = atsitiktinis(2, didink(6, klase))
       const vidinis = atsitiktinis(2, didink(6, klase))
       return uzdavinys('algoritmai', {
@@ -861,14 +1288,53 @@ function kurkAlgoritma(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 4))
-  if (lygis === 2) return variacija(visos.slice(0, 7))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji keturi pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }
 
 // ── Diagramos ir duomenys ───────────────────────────────────────────────────
 
-const KATEGORIJOS = ['Pr', 'An', 'Tr', 'Kt', 'Pn'] as const
+/**
+ * Diagramų temos.
+ *
+ * Anksčiau visos diagramos buvo apie knygas per savaitės dienas, o klausimų
+ * buvo po vieną kiekvienam lygiui. Kadangi `diagramos` naudojamos 41 potemėje,
+ * tai buvo labiausiai pastebima monotonija visoje bibliotekoje.
+ */
+const DIAGRAMU_TEMOS = [
+  {
+    kategorijos: ['Pr', 'An', 'Tr', 'Kt', 'Pn'],
+    ko: { vns: 'knyga', dgs: 'knygos', kilm: 'knygų' },
+    veiksmas: 'perskaityta',
+    stulpelisG: 'dieną',
+    stulpelisK: 'dienos',
+    stulpelisDgs: 'dienas',
+  },
+  {
+    kategorijos: ['Jonas', 'Rūta', 'Aistė', 'Matas', 'Ieva'],
+    ko: { vns: 'taškas', dgs: 'taškai', kilm: 'taškų' },
+    veiksmas: 'surinkta',
+    stulpelisG: 'žaidėją',
+    stulpelisK: 'žaidėjo',
+    stulpelisDgs: 'žaidėjus',
+  },
+  {
+    kategorijos: ['I', 'II', 'III', 'IV', 'V'],
+    ko: { vns: 'lankytojas', dgs: 'lankytojai', kilm: 'lankytojų' },
+    veiksmas: 'apsilankė',
+    stulpelisG: 'mėnesį',
+    stulpelisK: 'mėnesio',
+    stulpelisDgs: 'mėnesius',
+  },
+  {
+    kategorijos: ['1a', '1b', '2a', '2b', '3a'],
+    ko: { vns: 'medelis', dgs: 'medeliai', kilm: 'medelių' },
+    veiksmas: 'pasodinta',
+    stulpelisG: 'klasę',
+    stulpelisK: 'klasės',
+    stulpelisDgs: 'klases',
+  },
+] as const
 
 const A_DIAGRAMOS = [
   {
@@ -883,6 +1349,7 @@ export const diagramos: Generatorius = (lygis) =>
   suBandymais(() => kurkDiagrama(lygis), A_DIAGRAMOS, 'diagramos')
 
 function kurkDiagrama(lygis: Lygis): Uzdavinys | null {
+  const tema = pasirink(DIAGRAMU_TEMOS)
   const kiek = lygis === 1 ? 4 : 5
   const reiksmes = Array.from({ length: kiek }, () => atsitiktinis(1, 9))
   if (new Set(reiksmes).size < 3) return null
@@ -904,7 +1371,7 @@ function kurkDiagrama(lygis: Lygis): Uzdavinys | null {
       v === maks ? ORANGE : LINE
     }" stroke="${INK}" stroke-width="1"/>`
     stulpeliai += `<text x="${x + (plotis - 16) / 2}" y="${aukstis + 28}" font-size="11" fill="${MUTED}" text-anchor="middle">${
-      KATEGORIJOS[i]
+      tema.kategorijos[i]
     }</text>`
     stulpeliai += `<text x="${x + (plotis - 16) / 2}" y="${aukstis + 4 - h}" font-size="11" font-weight="600" fill="${INK}" text-anchor="middle">${v}</text>`
   })
@@ -915,36 +1382,318 @@ function kurkDiagrama(lygis: Lygis): Uzdavinys | null {
   const suma = reiksmes.reduce((a, b) => a + b, 0)
   const maksIndeksas = reiksmes.indexOf(maks)
   const minReiksme = Math.min(...reiksmes)
+  const minIndeksas = reiksmes.indexOf(minReiksme)
+  const ko = tema.ko.kilm
 
-  if (lygis === 1) {
-    return uzdavinys('diagramos', {
-      klausimas: 'Kiek knygų perskaityta daugiausiai per vieną dieną?',
-      atsakymas: String(maks),
-      atsakymasRodymui: `$${maks}$`,
-      sprendimas: `Aukščiausias stulpelis yra ${KATEGORIJOS[maksIndeksas]} — ${maks} knygos.`,
-      brezinys,
-    })
-  }
+  return variacija([
+    // 1. Didžiausia reikšmė
+    () =>
+      uzdavinys('diagramos', {
+        klausimas: `Kiek daugiausiai ${ko} ${tema.veiksmas} per vieną ${tema.stulpelisG}?`,
+        atsakymas: String(maks),
+        atsakymasRodymui: `$${maks}$`,
+        sprendimas: `Aukščiausias stulpelis yra ${tema.kategorijos[maksIndeksas]} — ${maks} ${derink(maks, tema.ko)}.`,
+        brezinys,
+      }),
 
-  if (lygis === 2) {
-    return uzdavinys('diagramos', {
-      klausimas: 'Kiek iš viso knygų perskaityta per visas dienas?',
-      atsakymas: String(suma),
-      atsakymasRodymui: `$${suma}$`,
-      sprendimas: `$${reiksmes.join(' + ')} = ${suma}$ knygos.`,
-      brezinys,
-    })
-  }
+    // 2. Bendra suma
+    () =>
+      uzdavinys('diagramos', {
+        klausimas: `Kiek iš viso ${ko} ${tema.veiksmas}?`,
+        atsakymas: String(suma),
+        atsakymasRodymui: `$${suma}$`,
+        sprendimas: `$${reiksmes.join(' + ')} = ${suma}$.`,
+        brezinys,
+      }),
 
-  return uzdavinys('diagramos', {
-    klausimas: 'Kiek knygų perskaityta daugiau geriausią dieną nei prasčiausią?',
-    atsakymas: String(maks - minReiksme),
-    atsakymasRodymui: `$${maks - minReiksme}$`,
-    sprendimas: `Daugiausia ${maks}, mažiausia ${minReiksme}: $${maks} - ${minReiksme} = ${
-      maks - minReiksme
-    }$.`,
-    brezinys,
-  })
+    // 3. Skirtumas tarp didžiausios ir mažiausios
+    () => {
+      if (maks === minReiksme) return null
+      return uzdavinys('diagramos', {
+        klausimas: `Kiek ${ko} daugiau tenka didžiausiam stulpeliui nei mažiausiam?`,
+        atsakymas: String(maks - minReiksme),
+        atsakymasRodymui: `$${maks - minReiksme}$`,
+        sprendimas: `Daugiausia ${maks}, mažiausia ${minReiksme}: $${maks} - ${minReiksme} = ${
+          maks - minReiksme
+        }$.`,
+        brezinys,
+      })
+    },
+
+    // 4. Mažiausia reikšmė
+    () =>
+      uzdavinys('diagramos', {
+        klausimas: `Kiek mažiausiai ${ko} ${tema.veiksmas} per vieną ${tema.stulpelisG}?`,
+        atsakymas: String(minReiksme),
+        atsakymasRodymui: `$${minReiksme}$`,
+        sprendimas: `Žemiausias stulpelis yra ${tema.kategorijos[minIndeksas]} — ${minReiksme} ${derink(minReiksme, tema.ko)}.`,
+        brezinys,
+      }),
+
+    // 5. Kiek stulpelių viršija ribą
+    () => {
+      const riba = Math.floor((maks + minReiksme) / 2)
+      const kiekVirs = reiksmes.filter((v) => v > riba).length
+      if (kiekVirs === 0 || kiekVirs === kiek) return null
+      return uzdavinys('diagramos', {
+        klausimas: `Kiek ${tema.stulpelisDgs} turi daugiau nei ${riba} ${ko}?`,
+        atsakymas: String(kiekVirs),
+        atsakymasRodymui: `$${kiekVirs}$`,
+        sprendimas: `Už ${riba} didesnės reikšmės: ${reiksmes.filter((v) => v > riba).join(', ')} — iš viso ${kiekVirs}.`,
+        brezinys,
+      })
+    },
+
+    // 6. Pirmų dviejų stulpelių suma
+    () =>
+      uzdavinys('diagramos', {
+        klausimas: `Kiek ${ko} ${tema.veiksmas} per pirmas dvi ${tema.stulpelisDgs} kartu?`,
+        atsakymas: String(reiksmes[0] + reiksmes[1]),
+        atsakymasRodymui: `$${reiksmes[0] + reiksmes[1]}$`,
+        sprendimas: `$${reiksmes[0]} + ${reiksmes[1]} = ${reiksmes[0] + reiksmes[1]}$.`,
+        brezinys,
+      }),
+
+    // 7. Vidurkis — tik kai jis sveikas
+    () => {
+      if (lygis === 1 || suma % kiek !== 0) return null
+      return uzdavinys('diagramos', {
+        klausimas: `Koks vidutinis ${ko} skaičius, tenkantis vienam stulpeliui?`,
+        atsakymas: String(suma / kiek),
+        atsakymasRodymui: `$${suma / kiek}$`,
+        sprendimas: `$${suma} : ${kiek} = ${suma / kiek}$.`,
+        brezinys,
+      })
+    },
+
+    // 8. Kelintas stulpelis aukščiausias
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('diagramos', {
+        klausimas: 'Kelintas iš kairės yra aukščiausias stulpelis?',
+        atsakymas: String(maksIndeksas + 1),
+        atsakymasRodymui: `$${maksIndeksas + 1}$`,
+        sprendimas: `Aukščiausias yra ${tema.kategorijos[maksIndeksas]} — ${maksIndeksas + 1} iš kairės.`,
+        brezinys,
+      })
+    },
+  ])
+}
+
+// ── Piramidė ir prizmė atskirai ─────────────────────────────────────────────
+//
+// Potemės „Piramidė", „Taisyklingoji piramidė" ir „Stačioji prizmė" naudojo
+// bendrą `erdvines-figuros` generatorių, tad po jomis atsirasdavo kubų ir
+// gretasienių uždaviniai. Kūnas turi būti generavimo įvestis, o ne atsitiktinis
+// pasirinkimas iš visų kūnų sąrašo.
+
+const PIRAMIDES = [
+  { pavadinimas: 'trikampė piramidė', kampu: 3, sienos: 4, briaunos: 6, virsunes: 4 },
+  { pavadinimas: 'keturkampė piramidė', kampu: 4, sienos: 5, briaunos: 8, virsunes: 5 },
+] as const
+
+const A_PIRAMIDE = [
+  {
+    klausimas: 'Kiek sienų turi keturkampė piramidė?',
+    atsakymas: '5',
+    atsakymasRodymui: '$5$',
+    sprendimas: 'Keturkampis pagrindas ir keturi šoniniai trikampiai — iš viso 5 sienos.',
+  },
+] as const
+
+export const piramide: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkPiramide(lygis, klase), A_PIRAMIDE, 'piramide')
+
+function kurkPiramide(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const k = pasirink(PIRAMIDES)
+  const brezinys = piramidesBrezinys(k.kampu as 3 | 4)
+  const kraštinė = atsitiktinis(2, didink(9, klase))
+  const aukstine = atsitiktinis(3, didink(12, klase))
+  const pagrindoPlotas = kraštinė * kraštinė
+
+  return variacija([
+    // 1. Sienų skaičius
+    () =>
+      uzdavinys('piramide', {
+        klausimas: `Kiek sienų turi ${k.pavadinimas}?`,
+        atsakymas: String(k.sienos),
+        atsakymasRodymui: `$${k.sienos}$`,
+        sprendimas: `Vienas ${k.kampu === 3 ? 'trikampis' : 'keturkampis'} pagrindas ir ${k.kampu} šoniniai trikampiai — iš viso ${k.sienos}.`,
+        brezinys,
+      }),
+
+    // 2. Briaunų skaičius
+    () =>
+      uzdavinys('piramide', {
+        klausimas: `Kiek briaunų turi ${k.pavadinimas}?`,
+        atsakymas: String(k.briaunos),
+        atsakymasRodymui: `$${k.briaunos}$`,
+        sprendimas: `${k.kampu} pagrindo briaunos ir ${k.kampu} šoninės — iš viso ${k.briaunos}.`,
+        brezinys,
+      }),
+
+    // 3. Viršūnių skaičius
+    () =>
+      uzdavinys('piramide', {
+        klausimas: `Kiek viršūnių turi ${k.pavadinimas}?`,
+        atsakymas: String(k.virsunes),
+        atsakymasRodymui: `$${k.virsunes}$`,
+        sprendimas: `${k.kampu} pagrindo viršūnės ir viena viršūnė viršuje — iš viso ${k.virsunes}.`,
+        brezinys,
+      }),
+
+    // 4. Šoninių sienų forma
+    () =>
+      uzdavinys('piramide', {
+        klausimas: `Kiek trikampių šoninių sienų turi ${k.pavadinimas}?`,
+        atsakymas: String(k.kampu),
+        atsakymasRodymui: `$${k.kampu}$`,
+        sprendimas: `Kiek pagrindo kraštinių, tiek ir šoninių sienų — ${k.kampu}.`,
+        brezinys,
+      }),
+
+    // 5. Taisyklingosios keturkampės piramidės tūris
+    () => {
+      if (lygis === 1 || k.kampu !== 4) return null
+      const turis = (pagrindoPlotas * aukstine) / 3
+      if (!Number.isInteger(turis)) return null
+      return uzdavinys('piramide', {
+        klausimas: `Taisyklingosios keturkampės piramidės pagrindo kraštinė ${kraštinė} cm, aukštinė ${aukstine} cm. Koks jos tūris?`,
+        atsakymas: String(turis),
+        atsakymasRodymui: `$${turis}$ cm³`,
+        sprendimas: `Pagrindo plotas $${kraštinė}^2 = ${pagrindoPlotas}$ cm², tad $V = \\dfrac{${pagrindoPlotas} \\cdot ${aukstine}}{3} = ${turis}$ cm³.`,
+        brezinys,
+      })
+    },
+
+    // 6. Pagrindo plotas iš tūrio — atvirkštinis veiksmas
+    () => {
+      if (lygis === 1) return null
+      const turis = (pagrindoPlotas * aukstine) / 3
+      if (!Number.isInteger(turis)) return null
+      return uzdavinys('piramide', {
+        klausimas: `Piramidės tūris ${turis} cm³, aukštinė ${aukstine} cm. Koks jos pagrindo plotas?`,
+        atsakymas: String(pagrindoPlotas),
+        atsakymasRodymui: `$${pagrindoPlotas}$ cm²`,
+        sprendimas: `Iš $V = \\dfrac{S \\cdot h}{3}$ gauname $S = \\dfrac{3 \\cdot ${turis}}{${aukstine}} = ${pagrindoPlotas}$ cm².`,
+        brezinys,
+      })
+    },
+
+    // 7. Kiek kartų piramidė mažesnė už tokio pat pagrindo prizmę
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('piramide', {
+        klausimas: `Piramidė ir prizmė turi vienodus pagrindus ir vienodas aukštines. Kiek kartų prizmės tūris didesnis?`,
+        atsakymas: '3',
+        atsakymasRodymui: '$3$',
+        sprendimas: `Prizmės tūris $S \\cdot h$, piramidės — $\\dfrac{S \\cdot h}{3}$, tad tris kartus.`,
+        brezinys,
+      })
+    },
+  ])
+}
+
+const PRIZMES = [
+  { pavadinimas: 'trikampė prizmė', kampu: 3, sienos: 5, briaunos: 9, virsunes: 6 },
+  { pavadinimas: 'šešiakampė prizmė', kampu: 6, sienos: 8, briaunos: 18, virsunes: 12 },
+] as const
+
+const A_PRIZME = [
+  {
+    klausimas: 'Kiek sienų turi trikampė prizmė?',
+    atsakymas: '5',
+    atsakymasRodymui: '$5$',
+    sprendimas: 'Du trikampiai pagrindai ir trys šoninės sienos — iš viso 5.',
+  },
+] as const
+
+export const prizme: Generatorius = (lygis, klase) =>
+  suBandymais(() => kurkPrizme(lygis, klase), A_PRIZME, 'prizme')
+
+function kurkPrizme(lygis: Lygis, klase?: number): Uzdavinys | null {
+  const k = pasirink(PRIZMES)
+  const brezinys = prizmesBrezinys(k.kampu as 3 | 6)
+  const pagrindoPlotas = atsitiktinis(4, didink(40, klase))
+  const aukstine = atsitiktinis(3, didink(15, klase))
+
+  return variacija([
+    // 1. Sienų skaičius
+    () =>
+      uzdavinys('prizme', {
+        klausimas: `Kiek sienų turi ${k.pavadinimas}?`,
+        atsakymas: String(k.sienos),
+        atsakymasRodymui: `$${k.sienos}$`,
+        sprendimas: `Du pagrindai ir ${k.kampu} šoninės sienos — iš viso ${k.sienos}.`,
+        brezinys,
+      }),
+
+    // 2. Briaunų skaičius
+    () =>
+      uzdavinys('prizme', {
+        klausimas: `Kiek briaunų turi ${k.pavadinimas}?`,
+        atsakymas: String(k.briaunos),
+        atsakymasRodymui: `$${k.briaunos}$`,
+        sprendimas: `Po ${k.kampu} briaunas abiejuose pagranduose ir ${k.kampu} šoninės — iš viso ${k.briaunos}.`,
+        brezinys,
+      }),
+
+    // 3. Viršūnių skaičius
+    () =>
+      uzdavinys('prizme', {
+        klausimas: `Kiek viršūnių turi ${k.pavadinimas}?`,
+        atsakymas: String(k.virsunes),
+        atsakymasRodymui: `$${k.virsunes}$`,
+        sprendimas: `Po ${k.kampu} viršūnes abiejuose pagranduose — iš viso ${k.virsunes}.`,
+        brezinys,
+      }),
+
+    // 4. Šoninių sienų skaičius
+    () =>
+      uzdavinys('prizme', {
+        klausimas: `Kiek šoninių sienų turi ${k.pavadinimas}?`,
+        atsakymas: String(k.kampu),
+        atsakymasRodymui: `$${k.kampu}$`,
+        sprendimas: `Šoninių sienų tiek, kiek pagrindo kraštinių — ${k.kampu}.`,
+        brezinys,
+      }),
+
+    // 5. Prizmės tūris
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('prizme', {
+        klausimas: `Prizmės pagrindo plotas ${pagrindoPlotas} cm², aukštinė ${aukstine} cm. Koks jos tūris?`,
+        atsakymas: String(pagrindoPlotas * aukstine),
+        atsakymasRodymui: `$${pagrindoPlotas * aukstine}$ cm³`,
+        sprendimas: `$V = S \\cdot h = ${pagrindoPlotas} \\cdot ${aukstine} = ${pagrindoPlotas * aukstine}$ cm³.`,
+        brezinys,
+      })
+    },
+
+    // 6. Aukštinė iš tūrio
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('prizme', {
+        klausimas: `Prizmės tūris ${pagrindoPlotas * aukstine} cm³, pagrindo plotas ${pagrindoPlotas} cm². Kokia jos aukštinė?`,
+        atsakymas: String(aukstine),
+        atsakymasRodymui: `$${aukstine}$ cm`,
+        sprendimas: `$h = \\dfrac{${pagrindoPlotas * aukstine}}{${pagrindoPlotas}} = ${aukstine}$ cm.`,
+        brezinys,
+      })
+    },
+
+    // 7. Oilerio formulė
+    () => {
+      if (lygis === 1) return null
+      return uzdavinys('prizme', {
+        klausimas: `Prizmė turi ${k.sienos} sienas ir ${k.virsunes} viršūnes. Kiek ji turi briaunų? (Naudok $S + V - B = 2$.)`,
+        atsakymas: String(k.briaunos),
+        atsakymasRodymui: `$${k.briaunos}$`,
+        sprendimas: `$B = S + V - 2 = ${k.sienos} + ${k.virsunes} - 2 = ${k.briaunos}$.`,
+        brezinys,
+      })
+    },
+  ])
 }
 
 // ── Konstravimas (braižymas) ────────────────────────────────────────────────
@@ -1080,7 +1829,7 @@ function kurkKonstravima(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 8. Trikampio pusiaukraštinė
     () => {
-      if (!vyresne(klase) && lygis !== 3) return null
+      if (!vyresne(klase) && lygis === 1) return null
       return uzdavinys('konstravimas', {
         klausimas: `Trikampio kraštinė ${ilgis} cm. Į kokias dvi dalis ją padalija pusiaukraštinė? Įrašyk vienos dalies ilgį.`,
         atsakymas: String(ilgis / 2),
@@ -1092,9 +1841,8 @@ function kurkKonstravima(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 4))
-  if (lygis === 2) return variacija(visos.slice(0, 7))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji keturi pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 4) : visos)
 }
 
 // ── Ornamentai ir sekos plokštumoje ─────────────────────────────────────────
@@ -1141,7 +1889,7 @@ function kurkOrnamenta(lygis: Lygis, klase?: number): Uzdavinys | null {
   const visos = [
     // 1. Kelinta figūra
     () => {
-      const kelinta = 3 + (lygis === 3 ? atsitiktinis(2, 6) : atsitiktinis(1, 3))
+      const kelinta = 3 + (lygis === 1 ? atsitiktinis(1, 3) : atsitiktinis(2, 6))
       const atsakymas = pradzia + (kelinta - 1) * zingsnis
       if (atsakymas > virsus) return null
       return uzdavinys('ornamentai', {
@@ -1215,7 +1963,7 @@ function kurkOrnamenta(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 6. Ornamento apsukos
     () => {
-      if (!vyresne(klase) && lygis !== 3) return null
+      if (!vyresne(klase) && lygis === 1) return null
       const kartai = atsitiktinis(3, didink(8, klase))
       const viena = pradzia + 2 * zingsnis
       return uzdavinys('ornamentai', {
@@ -1228,7 +1976,6 @@ function kurkOrnamenta(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 3))
-  if (lygis === 2) return variacija(visos.slice(0, 5))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 3 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 3) : visos)
 }

@@ -215,29 +215,7 @@ export const kvadratinesLygtys: Generatorius = (lygis, klase) =>
   suBandymais(() => kurkKvadratine(lygis, klase), ATSARGINIAI_KVADRATINES, 'kvadratines-lygtys')
 
 function kurkKvadratine(lygis: Lygis, klase?: number): Uzdavinys | null {
-  if (lygis === 1) {
-    const m = atsitiktinis(2, 12)
-
-    // Pusė uždavinių su papildomu nariu — kitaip variantų yra vos vienuolika.
-    if (Math.random() < 0.5) {
-      const b = atsitiktinis(2, 30)
-      const c = m * m + b
-      return uzdavinys('kvadratines-lygtys', {
-        klausimas: `Išspręsk: $x^2 + ${b} = ${c}$. Įrašyk teigiamąjį sprendinį.`,
-        atsakymas: String(m),
-        atsakymasRodymui: `$x = ${m}$`,
-        sprendimas: `$x^2 = ${c} - ${b} = ${m * m}$, tad teigiamasis sprendinys yra ${m}.`,
-      })
-    }
-
-    return uzdavinys('kvadratines-lygtys', {
-      klausimas: `Išspręsk: $x^2 = ${m * m}$. Įrašyk teigiamąjį sprendinį.`,
-      atsakymas: String(m),
-      atsakymasRodymui: `$x = ${m}$`,
-      sprendimas: `$${m} \\cdot ${m} = ${m * m}$, tad teigiamasis sprendinys yra ${m}.`,
-    })
-  }
-
+  const m = atsitiktinis(2, 12)
   // Sprendiniai parenkami pirma, koeficientai išvedami iš Vietos teoremos.
   const riba = vyresne(klase) ? 14 : 8
   const p = atsitiktinisBe(-riba, riba, [0])
@@ -246,34 +224,136 @@ function kurkKvadratine(lygis: Lygis, klase?: number): Uzdavinys | null {
   const sandauga = p * q
   const didesnis = Math.max(p, q)
 
-  if (lygis === 2) {
-    if (Math.abs(suma) > didink(12, klase) || Math.abs(sandauga) > didink(40, klase)) return null
-    const bNaris = suma === 0 ? '' : ` ${-suma > 0 ? '+' : '-'} ${Math.abs(suma)}x`
-    const cNaris = ` ${sandauga > 0 ? '+' : '-'} ${Math.abs(sandauga)}`
-
-    return uzdavinys('kvadratines-lygtys', {
-      klausimas: `Išspręsk: $x^2${bNaris}${cNaris} = 0$. Įrašyk didesnįjį sprendinį.`,
-      atsakymas: String(didesnis),
-      atsakymasRodymui: `$x = ${didesnis}$`,
-      sprendimas: `Sprendiniai yra ${Math.min(p, q)} ir ${didesnis}, nes jų suma ${suma}, o sandauga ${sandauga}.`,
-    })
+  /**
+   * Nario užrašas su ženklu: „ + 5x", „ - 3", „ + x".
+   * Vienetinis koeficientas prie nežinomojo nerašomas — „1x" mokykloje
+   * neužrašoma niekada.
+   */
+  const naris = (k: number, x: string) => {
+    if (k === 0) return ''
+    const modulis = Math.abs(k) === 1 && x !== '' ? '' : String(Math.abs(k))
+    return ` ${k > 0 ? '+' : '-'} ${modulis}${x}`
   }
 
-  // 3 lygis — su vyresniuoju koeficientu.
-  const a = pasirink([2, 3] as const)
-  const b = -a * suma
-  const c = a * sandauga
-  if (Math.abs(b) > didink(40, klase) || Math.abs(c) > didink(90, klase)) return null
-  const bNaris = b === 0 ? '' : ` ${b > 0 ? '+' : '-'} ${Math.abs(b)}x`
-  const cNaris = ` ${c > 0 ? '+' : '-'} ${Math.abs(c)}`
+  return variacija([
+    // 1. Paprasčiausia nepilna lygtis
+    () =>
+      uzdavinys('kvadratines-lygtys', {
+        klausimas: `Išspręsk: $x^2 = ${m * m}$. Įrašyk teigiamąjį sprendinį.`,
+        atsakymas: String(m),
+        atsakymasRodymui: `$x = ${m}$`,
+        sprendimas: `$${m} \\cdot ${m} = ${m * m}$, tad teigiamasis sprendinys yra ${m}.`,
+      }),
 
-  return uzdavinys('kvadratines-lygtys', {
-    klausimas: `Išspręsk: $${a}x^2${bNaris}${cNaris} = 0$. Įrašyk didesnįjį sprendinį.`,
-    atsakymas: String(didesnis),
-    atsakymasRodymui: `$x = ${didesnis}$`,
-    sprendimas: `Padalijus abi puses iš ${a}, lieka lygtis su sprendiniais ${Math.min(
-      p,
-      q,
-    )} ir ${didesnis}: jų suma ${suma}, sandauga ${sandauga}.`,
-  })
+    // 2. Nepilna lygtis su laisvuoju nariu
+    () => {
+      const bb = atsitiktinis(2, 30)
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Išspręsk: $x^2 + ${bb} = ${m * m + bb}$. Įrašyk teigiamąjį sprendinį.`,
+        atsakymas: String(m),
+        atsakymasRodymui: `$x = ${m}$`,
+        sprendimas: `$x^2 = ${m * m + bb} - ${bb} = ${m * m}$, tad teigiamasis sprendinys yra ${m}.`,
+      })
+    },
+
+    // 3. Nepilna lygtis su atimtimi
+    () => {
+      const bb = atsitiktinis(2, 30)
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Išspręsk: $x^2 - ${bb} = ${m * m - bb}$. Įrašyk teigiamąjį sprendinį.`,
+        atsakymas: String(m),
+        atsakymasRodymui: `$x = ${m}$`,
+        sprendimas: `$x^2 = ${m * m - bb} + ${bb} = ${m * m}$, tad teigiamasis sprendinys yra ${m}.`,
+      })
+    },
+
+    // 4. Neigiamasis sprendinys — priminimas, kad jų yra du
+    () =>
+      uzdavinys('kvadratines-lygtys', {
+        klausimas: `Išspręsk: $x^2 = ${m * m}$. Įrašyk neigiamąjį sprendinį.`,
+        atsakymas: String(-m),
+        atsakymasRodymui: `$x = ${-m}$`,
+        sprendimas: `$(${-m}) \\cdot (${-m}) = ${m * m}$, tad neigiamasis sprendinys yra ${-m}.`,
+      }),
+
+    // 5. Kiek sprendinių turi lygtis
+    () => {
+      const laisvas = atsitiktinis(1, 40)
+      const teigiamas = Math.random() < 0.5
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Kiek sprendinių turi lygtis $x^2 = ${teigiamas ? laisvas : -laisvas}$?`,
+        atsakymas: teigiamas ? '2' : '0',
+        atsakymasRodymui: teigiamas ? '$2$' : '$0$',
+        sprendimas: teigiamas
+          ? `Teigiamas skaičius turi du sprendinius — teigiamą ir neigiamą.`
+          : `Kvadratas negali būti neigiamas, tad sprendinių nėra.`,
+      })
+    },
+
+    // 6. Pilna lygtis — didesnysis sprendinys
+    () => {
+      if (lygis === 1) return null
+      if (Math.abs(suma) > didink(12, klase) || Math.abs(sandauga) > didink(40, klase)) return null
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Išspręsk: $x^2${naris(-suma, 'x')}${naris(sandauga, '')} = 0$. Įrašyk didesnįjį sprendinį.`,
+        atsakymas: String(didesnis),
+        atsakymasRodymui: `$x = ${didesnis}$`,
+        sprendimas: `Sprendiniai yra ${Math.min(p, q)} ir ${didesnis}, nes jų suma ${suma}, o sandauga ${sandauga}.`,
+      })
+    },
+
+    // 4. Pilna lygtis — mažesnysis sprendinys
+    () => {
+      if (lygis === 1) return null
+      if (Math.abs(suma) > didink(12, klase) || Math.abs(sandauga) > didink(40, klase)) return null
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Išspręsk: $x^2${naris(-suma, 'x')}${naris(sandauga, '')} = 0$. Įrašyk mažesnįjį sprendinį.`,
+        atsakymas: String(Math.min(p, q)),
+        atsakymasRodymui: `$x = ${Math.min(p, q)}$`,
+        sprendimas: `Sprendiniai yra ${Math.min(p, q)} ir ${didesnis}, nes jų suma ${suma}, o sandauga ${sandauga}.`,
+      })
+    },
+
+    // 5. Lygtis su vyresniuoju koeficientu
+    () => {
+      if (lygis === 1) return null
+      const a = pasirink([2, 3] as const)
+      const bb = -a * suma
+      const cc = a * sandauga
+      if (Math.abs(bb) > didink(40, klase) || Math.abs(cc) > didink(90, klase)) return null
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Išspręsk: $${a}x^2${naris(bb, 'x')}${naris(cc, '')} = 0$. Įrašyk didesnįjį sprendinį.`,
+        atsakymas: String(didesnis),
+        atsakymasRodymui: `$x = ${didesnis}$`,
+        sprendimas: `Padalijus abi puses iš ${a}, lieka lygtis su sprendiniais ${Math.min(
+          p,
+          q,
+        )} ir ${didesnis}: jų suma ${suma}, sandauga ${sandauga}.`,
+      })
+    },
+
+    // 6. Sprendinių suma pagal Vietos teoremą
+    () => {
+      if (lygis === 1) return null
+      if (Math.abs(suma) > didink(12, klase) || Math.abs(sandauga) > didink(40, klase)) return null
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Kokia lygties $x^2${naris(-suma, 'x')}${naris(sandauga, '')} = 0$ sprendinių suma?`,
+        atsakymas: String(suma),
+        atsakymasRodymui: `$${suma}$`,
+        sprendimas: `Pagal Vietos teoremą sprendinių suma lygi $-b$: čia ${suma}.`,
+      })
+    },
+
+    // 7. Sprendinių sandauga
+    () => {
+      if (lygis === 1) return null
+      if (Math.abs(suma) > didink(12, klase) || Math.abs(sandauga) > didink(40, klase)) return null
+      return uzdavinys('kvadratines-lygtys', {
+        klausimas: `Kokia lygties $x^2${naris(-suma, 'x')}${naris(sandauga, '')} = 0$ sprendinių sandauga?`,
+        atsakymas: String(sandauga),
+        atsakymasRodymui: `$${sandauga}$`,
+        sprendimas: `Pagal Vietos teoremą sprendinių sandauga lygi laisvajam nariui: čia ${sandauga}.`,
+      })
+    },
+  ])
 }

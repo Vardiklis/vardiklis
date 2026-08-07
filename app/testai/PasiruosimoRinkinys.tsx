@@ -56,7 +56,7 @@ export function PasiruosimoRinkinys({ ikiKlases, minutes, kiek, id }: Props) {
     for (let i = 0; nauji.length < kiek && i < kiek * 10; i += 1) {
       const t = pasirink(tinkamos)
       // Senesnės klasės temos duodamos sunkesniu lygiu — jos jau turi būti tvirtos.
-      const lygis = t.klase >= ikiKlases - 1 ? 2 : 3
+      const lygis = t.klase >= ikiKlases - 1 ? 1 : 2
       const u = generuok(t.generatorius, lygis, ikiKlases)
       if (matyti.has(u.klausimas)) continue
       matyti.add(u.klausimas)

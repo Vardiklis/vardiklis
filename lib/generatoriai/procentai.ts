@@ -11,10 +11,16 @@ import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 const PROCENTAI = [5, 10, 20, 25, 50, 75] as const
 
+/**
+ * Kiekvienas kontekstas neša ir savo veiksmą — kitaip sakinys išeina
+ * „Bibliotekoje yra 520 knygų. 5 % iš jų nuvyko į ekskursiją“.
+ */
 const KONTEKSTAI = [
-  { daiktas: 'Klasėje yra', vienetas: 'mokinių', dalis: 'mokinių' },
-  { daiktas: 'Bibliotekoje yra', vienetas: 'knygų', dalis: 'knygų' },
-  { daiktas: 'Stovykloje yra', vienetas: 'vaikų', dalis: 'vaikų' },
+  { kur: 'Klasėje yra', ko: 'mokinių', veiksmas: 'nuvyko į ekskursiją', klausia: 'nuvyko' },
+  { kur: 'Bibliotekoje yra', ko: 'knygų', veiksmas: 'yra išduota skaitytojams', klausia: 'išduota' },
+  { kur: 'Stovykloje yra', ko: 'vaikų', veiksmas: 'moka plaukti', klausia: 'moka plaukti' },
+  { kur: 'Sode auga', ko: 'medžių', veiksmas: 'yra obelys', klausia: 'yra obelų' },
+  { kur: 'Parduotuvėje yra', ko: 'prekių', veiksmas: 'parduota per dieną', klausia: 'parduota' },
 ] as const
 
 const ATSARGINIAI = [
@@ -120,7 +126,7 @@ function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
     () => {
       const k = pasirink(KONTEKSTAI)
       return uzdavinys('procentai', {
-        klausimas: `${k.daiktas} ${visuma} ${k.vienetas}. ${p} % iš jų nuvyko į ekskursiją. Kiek ${k.dalis} nuvyko?`,
+        klausimas: `${k.kur} ${visuma} ${k.ko}. ${p} % iš jų ${k.veiksmas}. Kiek ${k.klausia}?`,
         atsakymas: String(dalis),
         atsakymasRodymui: `$${dalis}$`,
         sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
@@ -155,5 +161,5 @@ function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  return variacija(lygis === 1 ? visos.slice(0, 3) : lygis === 2 ? visos.slice(0, 5) : visos)
+  return variacija(lygis === 1 ? visos.slice(0, 5) : visos)
 }

@@ -8,7 +8,9 @@
  */
 
 import katex from 'katex'
-import { generatoriai } from '../lib/generatoriai/index'
+import { generatoriai, generuokRinkini } from '../lib/generatoriai/index'
+import { sablonas } from '../lib/generatoriai/bendra'
+import { sritisKlasei, uzRibos, type Sritis } from '../lib/generatoriai/sritis'
 import type { Lygis, Uzdavinys } from '../lib/generatoriai/tipai'
 import { normalizuok } from '../lib/matematika'
 import { potemes, programa } from '../lib/programa'
@@ -19,6 +21,8 @@ const RODYTI_PAVYZDZIUS = process.argv.includes('--pavyzdziai')
 
 const klaidos: string[] = []
 const perspejimai: string[] = []
+/** Žinoma įvairovės skola — rodoma atskirai, patikros nestabdo. */
+const skola: string[] = []
 
 // ---------------------------------------------------------------------------
 // Grafo vientisumas
@@ -168,26 +172,122 @@ function patikrinkUzdavini(u: Uzdavinys, vardas: string, lygis: Lygis): void {
 }
 
 // ---------------------------------------------------------------------------
+// Programos patikra: sritis ir rinkinio įvairovė
+//
+// Ankstesnis auditas tikrino generatorius atskirai, be klasės ir be temos.
+// Todėl jam „Koks skaičius eina prieš pat 6523?“ pirmokui atrodė tvarkinga:
+// atsakymas teisingas, KaTeX švarus, eilutės nesikartoja. Šios dvi patikros
+// žiūri būtent to, kas lūžo — kokį rinkinį gauna konkrečios klasės mokinys.
+// ---------------------------------------------------------------------------
+
+/** Kiek uždavinių rinkinyje tikrinama — tiek pat, kiek rodo svetainė. */
+const RINKINYJE = 10
+
+/**
+ * Įvairovės ribos dešimties uždavinių rinkiniui.
+ *
+ * Du atskiri slenksčiai, nes tai du skirtingi dalykai. Vienas ar du šablonai
+ * dešimčiai uždavinių yra broko riba — būtent tokį rinkinį („Koks skaičius
+ * eina prieš pat …?“ ×10) ir buvo skųstasi, tad tai klaida. Keturi ar penki
+ * šablonai yra plonoka, bet naudojama — tai matomas darbų sąrašas.
+ */
+const IVAIROVE_KLAIDA = 3
+const IVAIROVE_PERSPEJIMAS = 6
+
+/**
+ * Generatoriai, kurie kol kas turi tik vieną ar du uždavinio pavidalus.
+ *
+ * Šiuo metu sąrašas tuščias — visi generatoriai duoda bent tris skirtingus
+ * šablonus dešimčiai uždavinių. Sąrašas gali tik trumpėti: auditas rėkia ir
+ * tada, kai į jį patenka kas nors naujo, ir tada, kai įrašas nebereikalingas,
+ * tad pamiršti jo išbraukti nepavyks.
+ */
+const SKOLA = new Set<string>([])
+
+/** Generatoriai iš `SKOLA`, kurie per šį paleidimą nė karto nenukrito. */
+const skolaPasitaise = new Set(SKOLA)
+
+function patikrinkPrograma(): void {
+  for (const k of programa) {
+    for (const tema of k.temos) {
+      const vienetai: { kur: string; generatorius: string; lygis: Lygis; sritis?: Sritis }[] = []
+
+      if (tema.generatorius) {
+        vienetai.push({
+          kur: `${k.klase} kl. ${tema.numeris}. ${tema.pavadinimas}`,
+          generatorius: tema.generatorius,
+          lygis: tema.lygis ?? 2,
+          sritis: tema.sritis,
+        })
+      }
+      for (const p of potemes(tema)) {
+        if (!p.generatorius) continue
+        vienetai.push({
+          kur: `${k.klase} kl. ${p.numeris}. ${p.pavadinimas}`,
+          generatorius: p.generatorius,
+          lygis: p.lygis,
+          sritis: p.sritis,
+        })
+      }
+
+      for (const v of vienetai) {
+        // Mokinys gali paspausti bet kurį sunkumą, o ne tik numatytąjį — būtent
+        // taip ir atsirasdavo keturženkliai skaičiai pirmokui.
+        for (const lygis of [1, 2] as const) {
+          const riba = v.sritis ?? sritisKlasei(k.klase)
+          const rinkinys = generuokRinkini(v.generatorius, lygis, RINKINYJE, k.klase, v.sritis)
+
+          if (riba) {
+            const blogi = rinkinys.flatMap((u) => uzRibos(u, riba))
+            if (blogi.length > 0) {
+              klaidos.push(
+                `${v.kur} (${v.generatorius}, sunkumas ${lygis}): skaičiai ${[
+                  ...new Set(blogi),
+                ]
+                  .slice(0, 4)
+                  .join(', ')} nepatenka į [${riba.min}, ${riba.max}]`,
+              )
+            }
+          }
+
+          const skirtingi = new Set(rinkinys.map((u) => sablonas(u.klausimas))).size
+          const zinute = `${v.kur} (${v.generatorius}, sunkumas ${lygis}): tik ${skirtingi} skirtingi šablonai iš ${RINKINYJE}`
+          if (skirtingi < IVAIROVE_KLAIDA) {
+            skolaPasitaise.delete(v.generatorius)
+            if (SKOLA.has(v.generatorius)) skola.push(zinute)
+            else klaidos.push(zinute)
+          } else if (skirtingi < IVAIROVE_PERSPEJIMAS) {
+            perspejimai.push(zinute)
+          }
+        }
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 patikrinkGrafa()
+patikrinkPrograma()
 
 const suvestine: string[] = []
 
 for (const [vardas, generatorius] of Object.entries(generatoriai)) {
-  for (const lygis of [1, 2, 3] as const) {
+  for (const lygis of [1, 2] as const) {
     const uzdaviniai: Uzdavinys[] = []
     for (let i = 0; i < KIEK; i += 1) uzdaviniai.push(generatorius(lygis))
     for (const u of uzdaviniai) patikrinkUzdavini(u, vardas, lygis)
 
-    const unikalus = new Set(uzdaviniai.map((u) => u.klausimas + (u.brezinys ?? ''))).size
-    const dalis = Math.round((unikalus / KIEK) * 100)
-    if (dalis < 25) {
+    // Šablonas, ne tiksli eilutė: „…prieš pat 2028?“ ir „…prieš pat 4385?“
+    // yra tas pats uždavinys, o eilučių aibė jų neatskirdavo.
+    const unikalus = new Set(uzdaviniai.map((u) => sablonas(u.klausimas))).size
+    if (unikalus < 3) {
       perspejimai.push(
-        `${vardas} (lygis ${lygis}): tik ${unikalus} skirtingi klausimai iš ${KIEK}`,
+        `${vardas} (lygis ${lygis}): tik ${unikalus} skirtingi šablonai iš ${KIEK} uždavinių`,
       )
     }
     suvestine.push(
-      `${vardas.padEnd(20)} lygis ${lygis}   ${String(unikalus).padStart(3)}/${KIEK} skirtingų (${dalis} %)`,
+      `${vardas.padEnd(20)} lygis ${lygis}   ${String(unikalus).padStart(3)} šablonai`,
     )
 
     if (RODYTI_PAVYZDZIUS) {
@@ -200,8 +300,21 @@ for (const [vardas, generatorius] of Object.entries(generatoriai)) {
   }
 }
 
-console.log('\n=== Įvairovė ===')
+console.log('\n=== Įvairovė (skirtingų šablonų) ===')
 console.log(suvestine.join('\n'))
+
+for (const g of skolaPasitaise) {
+  klaidos.push(
+    `Generatorius "${g}" jau praeina įvairovės ribą — išbrauk jį iš SKOLOS sąrašo`,
+  )
+}
+
+if (skola.length > 0) {
+  const generatoriai = [...new Set(skola.map((z) => z.match(/\(([a-z-]+),/)?.[1] ?? '?'))]
+  console.log(`\n=== Įvairovės skola (${skola.length} rinkiniai, ${generatoriai.length} generatoriai) ===`)
+  console.log(`Šie generatoriai turi 1–2 uždavinio pavidalus: ${generatoriai.join(', ')}.`)
+  console.log('Kol jie tokie, dešimties uždavinių rinkinys kartoja tą patį klausimą.')
+}
 
 if (perspejimai.length > 0) {
   console.log(`\n=== Perspėjimai (${perspejimai.length}) ===`)
@@ -214,4 +327,4 @@ if (klaidos.length > 0) {
   process.exit(1)
 }
 
-console.log(`\n✓ Visi generatoriai praėjo patikrą (po ${KIEK} uždavinių × 3 lygiai).`)
+console.log(`\n✓ Visi generatoriai praėjo patikrą (po ${KIEK} uždavinių × 2 sunkumo lygiai).`)

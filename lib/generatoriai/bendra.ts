@@ -30,17 +30,41 @@ export function uzdavinys(temaId: string, j: Juodrastis): Uzdavinys {
 }
 
 /**
- * Viena atsitiktinė variacija iš sąrašo.
+ * Kurį pavidalą imti kitą kartą. `null` — rinktis atsitiktinai.
+ *
+ * Vieno uždavinio generavimui pakanka atsitiktinumo, bet rinkiniui — ne:
+ * renkant su grąžinimu iš septynių pavidalų dešimt kartų, vienas pavidalas
+ * vidutiniškai pasikartoja keturis kartus, ir rinkinys atrodo monotoniškas.
+ * Todėl `generuokRinkini` įjungia eiliškumą, o `variacija` jį suka.
+ */
+let siulomasPavidalas: number | null = null
+
+/** Įjungia arba išjungia pavidalų eiliškumą. Kviečia tik `generuokRinkini`. */
+export function pavidaluEile(nuo: number | null): void {
+  siulomasPavidalas = nuo
+}
+
+/**
+ * Viena variacija iš sąrašo.
  *
  * Vien keisti skaičius neužtenka: dešimt uždavinių pavidalu `a + b` atrodo
  * kaip vienas uždavinys, perrašytas dešimt kartų. Todėl kiekvienas lygis turi
  * po kelias skirtingo pavidalo variacijas — trūkstamą dėmenį, tekstinį
  * uždavinį, kelis veiksmus — o skaičiai keičiami jau jų viduje.
+ *
+ * Kai eiliškumas įjungtas, pavidalai imami paeiliui ir skaitliukas sukamas
+ * net tada, kai variantas grąžina `null`. Taip nepavykęs pavidalas nestabdo
+ * eilės, o rinkinys padengia visus pavidalus, kol jų neišsemia.
  */
 export function variacija(
   variantai: readonly (() => Uzdavinys | null)[],
 ): Uzdavinys | null {
-  return variantai[Math.floor(Math.random() * variantai.length)]()
+  if (siulomasPavidalas === null) {
+    return variantai[Math.floor(Math.random() * variantai.length)]()
+  }
+  const i = siulomasPavidalas % variantai.length
+  siulomasPavidalas += 1
+  return variantai[i]()
 }
 
 /**
@@ -67,4 +91,28 @@ export function suBandymais(
  */
 export function sk(n: number): string {
   return n < 0 ? `(${n})` : String(n)
+}
+
+/**
+ * Uždavinio šablonas — klausimas be konkrečių reikšmių.
+ *
+ * Du uždaviniai, kurių šablonai sutampa, mokiniui yra tas pats uždavinys,
+ * nors eilutės ir skiriasi: „Koks skaičius eina prieš pat 2028?“ ir
+ * „…4385?“ abu virsta „koks skaičius eina prieš pat #?“. Tikslus eilučių
+ * lyginimas to nemato, todėl `generuokRinkini` ir auditas remiasi šituo.
+ */
+export function sablonas(klausimas: string): string {
+  return (
+    klausimas
+      .toLowerCase()
+      .replace(/\{,\}/g, ',')
+      // Komandos paliekamos vardu, o ne nurašomos: be `cdot` reiškiniai
+      // `# + # cdot #` ir `( # + # ) cdot #` atrodytų vienodi.
+      .replace(/\\([a-zA-Z]+)/g, ' $1 ')
+      // Minusas nelaikomas skaičiaus dalimi — jis yra struktūra.
+      .replace(/\d+(?:[.,]\d+)?/g, '#')
+      .replace(/[^a-ząčęėįšųūž#+\-:()=<>]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  )
 }

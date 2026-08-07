@@ -180,7 +180,6 @@ function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
     },
   ]
 
-  if (lygis === 1) return variacija(visos.slice(0, 5))
-  if (lygis === 2) return variacija(visos.slice(0, 8))
-  return variacija(visos)
+  // Lengvesniam lygiui — tik pirmieji 5 pavidalai; sunkesniam visi.
+  return variacija(lygis === 1 ? visos.slice(0, 5) : visos)
 }

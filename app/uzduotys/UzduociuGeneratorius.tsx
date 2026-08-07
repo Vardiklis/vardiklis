@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
 import Mygtukas from '@/components/Mygtukas'
-import { generuokRinkini, type Lygis, type Uzdavinys } from '@/lib/generatoriai'
+import { generuokRinkini, type Lygis, type Sritis, type Uzdavinys } from '@/lib/generatoriai'
 import { uzdaviniuKiekis } from '@/lib/lietuviu'
 import { potemes, programa, type IsskleistaPotema, type ProgramosTema } from '@/lib/programa'
 
@@ -16,9 +16,8 @@ const UzdavinioKortele = dynamic(() => import('@/components/UzdavinioKortele'), 
 const KIEKIAI = [5, 10, 20] as const
 
 const LYGIAI: { reiksme: Lygis; etikete: string }[] = [
-  { reiksme: 1, etikete: 'Lengvas' },
-  { reiksme: 2, etikete: 'Vidutinis' },
-  { reiksme: 3, etikete: 'Sunkus' },
+  { reiksme: 1, etikete: 'Vidutinis' },
+  { reiksme: 2, etikete: 'Sunkesnis' },
 ]
 
 /** Vienas sugeneruotas rinkinys. Kiekviena tema ar potemė turi savąjį. */
@@ -27,6 +26,8 @@ type Rinkinys = {
   temosPavadinimas: string
   generatorius: string
   lygis: Lygis
+  /** Temos ar potemės skaičių riba. `undefined` — klasės numatytoji. */
+  sritis?: Sritis
   kiekis: number
   uzdaviniai: Uzdavinys[]
   rodytiAtsakymus: boolean
@@ -68,12 +69,14 @@ export function UzduociuGeneratorius() {
     pagrindas: Omit<Rinkinys, 'uzdaviniai' | 'rodytiAtsakymus'>,
     isvalytiAtsakymus: boolean,
   ) {
-    // Klasė lemia skaičių mastą — be jos dešimtokas gautų penktoko skaičius.
+    // Klasė lemia skaičių mastą, o sritis — griežtą ribą. Be srities pirmokas,
+    // paspaudęs sunkesnį lygį, gaudavo skaičius iki 10 000.
     const uzdaviniai = generuokRinkini(
       pagrindas.generatorius,
       pagrindas.lygis,
       pagrindas.kiekis,
       klase,
+      pagrindas.sritis,
     )
 
     if (isvalytiAtsakymus) {
@@ -118,6 +121,7 @@ export function UzduociuGeneratorius() {
       temosPavadinimas: tema.pavadinimas,
       generatorius: tema.generatorius,
       lygis: tema.lygis ?? 2,
+      sritis: tema.sritis,
       kiekis: 10,
     })
   }
@@ -129,6 +133,7 @@ export function UzduociuGeneratorius() {
       temosPavadinimas: tema.pavadinimas,
       generatorius: p.generatorius,
       lygis: p.lygis,
+      sritis: p.sritis,
       kiekis: 10,
     })
   }

@@ -1,7 +1,8 @@
+import { derink } from '../lietuviu'
 import { atsitiktinis, nsd, pasirink, suprastink, trupmenaTeX } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
-import type { Generatorius, Lygis, Uzdavinys } from './tipai'
+import type { Generatorius, Lygis, Sritis, Uzdavinys } from './tipai'
 
 /**
  * Gebėjimai, kurių reikalauja 5–10 klasių turinio aprašas, bet kurių neturėjo
@@ -195,19 +196,50 @@ const A_SKAITMENYS = [
   },
 ] as const
 
-export const skaitmenys: Generatorius = (lygis) =>
-  suBandymais(() => kurkSkaitmenis(lygis), A_SKAITMENYS, 'skaitmenys')
+export const skaitmenys: Generatorius = (lygis, _klase, sritis) =>
+  suBandymais(() => kurkSkaitmenis(lygis, sritis), A_SKAITMENYS, 'skaitmenys')
 
-function kurkSkaitmenis(lygis: Lygis): Uzdavinys | null {
+/** „1 dešimtis“, „3 dešimtys“, „10 dešimčių“. */
+function desimtysZodis(n: number): string {
+  return derink(n, { vns: 'dešimtis', dgs: 'dešimtys', kilm: 'dešimčių' })
+}
+
+/** „1 vienetas“, „3 vienetai“, „10 vienetų“. */
+function vienetaiZodis(n: number): string {
+  return derink(n, { vns: 'vienetas', dgs: 'vienetai', kilm: 'vienetų' })
+}
+
+/** Skaičiaus žodis pagal ženklų skaičių — sąlygai „sudaryk didžiausią …“. */
+const ZENKLU_ZODIS: Record<number, string> = {
+  2: 'dviženklį',
+  3: 'triženklį',
+  4: 'keturženklį',
+}
+
+/**
+ * Skyriai ir skaitmenys.
+ *
+ * Generatorius buvo prirakintas prie keturženklių skaičių, todėl 1 klasės
+ * potemė „Kas yra dešimtys ir vienetai?“ duodavo uždavinius apie tūkstančius.
+ * Dabar ženklų skaičių nustato sritis, o dešimčių ir vienetų klausimai yra
+ * atskiri pavidalai — jie ir yra tikroji pirmokų potemė.
+ */
+function kurkSkaitmenis(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null {
+  const virsus = sritis?.max ?? 9999
+  if (virsus < 10) return null
+  const skyriai = SKYRIAI.filter((s) => s.verte * 10 <= virsus + 1)
+  const zenklu = Math.min(4, String(Math.min(virsus, 9999)).length)
+
   return variacija([
     // 1. Vietinė reikšmė
     () => {
-      const skyrius = pasirink(SKYRIAI.slice(1))
+      if (skyriai.length < 2) return null
+      const skyrius = pasirink(skyriai.slice(1))
       const skaitmuo = atsitiktinis(1, 9)
-      const n = atsitiktinis(1000, 9999)
+      const n = atsitiktinis(skyrius.verte, virsus)
       const suSkaitmeniu =
-        n - Math.floor(n / skyrius.verte) % 10 * skyrius.verte + skaitmuo * skyrius.verte
-      if (String(suSkaitmeniu).length !== 4) return null
+        n - ((Math.floor(n / skyrius.verte) % 10) * skyrius.verte) + skaitmuo * skyrius.verte
+      if (suSkaitmeniu > virsus || suSkaitmeniu < skyrius.verte) return null
       return uzdavinys('skaitmenys', {
         klausimas: `Kokia skaitmens ${skaitmuo} vietinė reikšmė skaičiuje ${suSkaitmeniu}?`,
         atsakymas: String(skaitmuo * skyrius.verte),
@@ -220,21 +252,65 @@ function kurkSkaitmenis(lygis: Lygis): Uzdavinys | null {
 
     // 2. Skyrių suma — trūkstamas dėmuo
     () => {
-      const n = atsitiktinis(1111, 9999)
-      const skaitmenys = String(n).split('').map(Number)
-      const [t, s, d, v] = skaitmenys
-      if ([t, s, d, v].some((x) => x === 0)) return null
+      // Skyrių pavadinimai baigiasi tūkstančiais, tad daugiau nei keturi
+      // ženklai šiam pavidalui netinka.
+      const n = atsitiktinis(10, Math.min(virsus, 9999))
+      const sk = String(n).split('').map(Number)
+      if (sk.some((x) => x === 0) || sk.length < 2) return null
+      const dalys = sk.map((c, i) => c * 10 ** (sk.length - 1 - i))
+      const trukstamas = atsitiktinis(0, dalys.length - 1)
+      const rodomi = dalys.map((d, i) => (i === trukstamas ? '\\square' : String(d)))
       return uzdavinys('skaitmenys', {
-        klausimas: `Skaičių ${n} išskaidėme skyrių suma: $${t * 1000} + \\square + ${d * 10} + ${v}$. Koks skaičius vietoj langelio?`,
-        atsakymas: String(s * 100),
-        atsakymasRodymui: `$${s * 100}$`,
-        sprendimas: `Šimtų skyriuje stovi ${s}, tad trūksta ${s * 100}.`,
+        klausimas: `Skaičių ${n} išskaidėme skyrių suma: $${rodomi.join(' + ')}$. Koks skaičius vietoj langelio?`,
+        atsakymas: String(dalys[trukstamas]),
+        atsakymasRodymui: `$${dalys[trukstamas]}$`,
+        sprendimas: `${SKYRIAI[sk.length - 1 - trukstamas].pavadinimas} skyriuje stovi ${sk[trukstamas]}, tad trūksta ${dalys[trukstamas]}.`,
       })
     },
 
-    // 3. Romėniškas → arabiškas
+    // 3. Kiek pilnų dešimčių
     () => {
-      const n = atsitiktinis(4, lygis === 1 ? 39 : 399)
+      const n = atsitiktinis(11, virsus)
+      if (n % 10 === 0) return null
+      return uzdavinys('skaitmenys', {
+        klausimas: `Kiek pilnų dešimčių yra skaičiuje ${n}?`,
+        atsakymas: String(Math.floor(n / 10)),
+        atsakymasRodymui: `$${Math.floor(n / 10)}$`,
+        sprendimas: `${n} yra ${Math.floor(n / 10)} ${desimtysZodis(Math.floor(n / 10))} ir dar ${n % 10} ${vienetaiZodis(n % 10)}.`,
+      })
+    },
+
+    // 4. Kiek vienetų lieka virš dešimčių
+    () => {
+      const n = atsitiktinis(11, virsus)
+      if (n % 10 === 0) return null
+      return uzdavinys('skaitmenys', {
+        klausimas: `Kiek vienetų yra skaičiuje ${n} virš pilnų dešimčių?`,
+        atsakymas: String(n % 10),
+        atsakymasRodymui: `$${n % 10}$`,
+        sprendimas: `${n} yra ${Math.floor(n / 10)} ${desimtysZodis(Math.floor(n / 10))} ir ${n % 10} ${vienetaiZodis(n % 10)}.`,
+      })
+    },
+
+    // 5. Skaičius iš dešimčių ir vienetų — atvirkštinis veiksmas
+    () => {
+      if (lygis === 1) return null
+      const d = atsitiktinis(1, Math.min(9, Math.floor(virsus / 10)))
+      const v = atsitiktinis(1, 9)
+      const n = d * 10 + v
+      if (n > virsus) return null
+      return uzdavinys('skaitmenys', {
+        klausimas: `Skaičių sudaro ${d} ${desimtysZodis(d)} ir ${v} ${vienetaiZodis(v)}. Koks tai skaičius?`,
+        atsakymas: String(n),
+        atsakymasRodymui: `$${n}$`,
+        sprendimas: `$${d} \\cdot 10 + ${v} = ${n}$.`,
+      })
+    },
+
+    // 6. Romėniškas → arabiškas
+    () => {
+      const n = atsitiktinis(4, Math.min(virsus, lygis === 1 ? 39 : 399))
+      if (n < 4) return null
       return uzdavinys('skaitmenys', {
         klausimas: `Kokį skaičių žymi romėniškasis užrašas ${iRomeniskus(n)}?`,
         atsakymas: String(n),
@@ -243,9 +319,9 @@ function kurkSkaitmenis(lygis: Lygis): Uzdavinys | null {
       })
     },
 
-    // 4. Skaitmenų suma
+    // 7. Skaitmenų suma
     () => {
-      const n = atsitiktinis(100, 9999)
+      const n = atsitiktinis(10, virsus)
       const suma = String(n)
         .split('')
         .reduce((a, c) => a + Number(c), 0)
@@ -257,14 +333,15 @@ function kurkSkaitmenis(lygis: Lygis): Uzdavinys | null {
       })
     },
 
-    // 5. Didžiausias skaičius iš skaitmenų
+    // 8. Didžiausias skaičius iš skaitmenų
     () => {
-      if (lygis === 1) return null
-      const skaitmenys = Array.from({ length: 4 }, () => atsitiktinis(1, 9))
-      if (new Set(skaitmenys).size < 4) return null
-      const didziausias = Number([...skaitmenys].sort((a, b) => b - a).join(''))
+      if (lygis === 1 || zenklu < 2) return null
+      const sk = Array.from({ length: zenklu }, () => atsitiktinis(1, 9))
+      if (new Set(sk).size < zenklu) return null
+      const didziausias = Number([...sk].sort((a, b) => b - a).join(''))
+      if (didziausias > virsus) return null
       return uzdavinys('skaitmenys', {
-        klausimas: `Iš skaitmenų ${skaitmenys.join(', ')} sudaryk didžiausią keturženklį skaičių. Kiekvienas skaitmuo naudojamas po kartą.`,
+        klausimas: `Iš skaitmenų ${sk.join(', ')} sudaryk didžiausią ${ZENKLU_ZODIS[zenklu]} skaičių. Kiekvienas skaitmuo naudojamas po kartą.`,
         atsakymas: String(didziausias),
         atsakymasRodymui: `$${didziausias}$`,
         sprendimas: `Skaitmenis rikiuojame mažėjančiai: ${didziausias}.`,
@@ -350,7 +427,7 @@ function kurkIvertinima(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 5. Iškėlimas prieš šaknies ženklą
     () => {
-      if (lygis !== 3) return null
+      if (lygis === 1) return null
       const a = atsitiktinis(2, didink(9, klase))
       const b = pasirink([2, 3, 5, 6, 7, 10, 11, 13, 15] as const)
       return uzdavinys('saknu-ivertinimas', {
@@ -596,7 +673,7 @@ function kurkMisini(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 5. Lydinys iš dviejų dalių
     () => {
-      if (lygis !== 3) return null
+      if (lygis === 1) return null
       const a = atsitiktinis(2, didink(8, klase)) * 10
       const b = atsitiktinis(2, didink(8, klase)) * 10
       const d = nsd(a, b)
@@ -698,7 +775,7 @@ function kurkRekurencia(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 5. Geometrinė seka
     () => {
-      if (lygis !== 3) return null
+      if (lygis === 1) return null
       const pradzia = atsitiktinis(1, 4)
       const daugiklis = pasirink([2, 3] as const)
       const seka = [0, 1, 2, 3].map((i) => pradzia * daugiklis ** i)
