@@ -114,6 +114,26 @@ export function UzduociuGeneratorius() {
     setIsskleista(null)
   }
 
+  /**
+   * Temos antraštės paspaudimas.
+   *
+   * Atveriant užvertą temą užveriama visa kita: kitų temų potemių sąrašai
+   * (juos riboja pats `isskleista`) ir anksčiau atidarytas uždavinių rinkinys.
+   * Be to rinkinys likdavo kaboti po sena tema net tada, kai vartotojas jau
+   * naršė kitą — ekrane vienu metu būdavo matoma dviejų temų turinys.
+   *
+   * Užveriant temą rinkinys paliekamas: jį vartotojas atsidarė sąmoningai, ir
+   * jame jau gali būti įrašytų atsakymų.
+   */
+  function perjunkTema(numeris: number, jauAtidaryta: boolean) {
+    if (jauAtidaryta) {
+      setIsskleista(null)
+      return
+    }
+    setAtidarytas(null)
+    setIsskleista(numeris)
+  }
+
   function pasirinkTema(tema: ProgramosTema) {
     if (!tema.generatorius) return
     perjunk(raktas(tema.numeris, null), {
@@ -319,11 +339,7 @@ export function UzduociuGeneratorius() {
               <li key={tema.numeris}>
                 <button
                   type="button"
-                  onClick={() =>
-                    skirstoma
-                      ? setIsskleista(atidaryta ? null : tema.numeris)
-                      : pasirinkTema(tema)
-                  }
+                  onClick={() => (skirstoma ? perjunkTema(tema.numeris, atidaryta) : pasirinkTema(tema))}
                   aria-expanded={skirstoma ? atidaryta : undefined}
                   className={`be-spausdinimo flex w-full items-baseline gap-4 px-5 py-4 text-left transition-colors ${
                     atidarytasRinkinys ? 'bg-orange-soft' : 'hover:bg-paper-2'
