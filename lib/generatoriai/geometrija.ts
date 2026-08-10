@@ -1,4 +1,5 @@
 import { atsitiktinis, pasirink, suprastink, trupmenaTeX } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
@@ -318,7 +319,7 @@ function kurkKampus(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 2. Gretutiniai arba papildomi kampai
     () => {
-      const gretutiniai = Math.random() < 0.5
+      const gretutiniai = atsitiktinumas() < 0.5
       const suma = gretutiniai ? 180 : 90
       const a = atsitiktinis(2, suma / 5 - 2) * 5
       const b = suma - a

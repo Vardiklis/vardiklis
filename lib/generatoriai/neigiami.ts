@@ -1,4 +1,5 @@
 import { atsitiktinis, atsitiktinisBe, skliaustuoseJeiNeigiamas } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
@@ -41,7 +42,7 @@ function kurkSudeti(lygis: Lygis, klase?: number): Uzdavinys | null {
   const riba = didink(lygis === 1 ? 20 : 50, klase)
   const a = atsitiktinisBe(-riba, riba, [0])
   const b = atsitiktinisBe(-riba, riba, [0])
-  const atimtis = Math.random() < 0.5
+  const atimtis = atsitiktinumas() < 0.5
   const rez = atimtis ? a - b : a + b
 
   if (rez === 0) return null

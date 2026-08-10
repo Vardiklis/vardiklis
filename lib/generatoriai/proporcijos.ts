@@ -1,5 +1,6 @@
 import { skaitvardzioForma } from '../lietuviu'
 import { atsitiktinis, pasirink } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { suBandymais, uzdavinys } from './bendra'
 import { didink } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
@@ -120,7 +121,7 @@ function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
   const kaina2 = vienetoKaina * kiekis2
   if (kaina2 > 300) return null
 
-  if (lygis === 1 || (lygis === 2 && Math.random() < 0.6)) {
+  if (lygis === 1 || (lygis === 2 && atsitiktinumas() < 0.6)) {
     return uzdavinys('proporcijos', {
       klausimas: `${kiekis1} ${vard(k, kiekis1)} kainuoja ${kaina1} ${k.matas}. Kiek kainuoja ${kiekis2} ${
         TOKS.vardininkas[forma(kiekis2)]

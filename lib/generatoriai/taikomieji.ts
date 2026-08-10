@@ -1,7 +1,9 @@
 import { derink } from '../lietuviu'
 import { atsitiktinis, nsd, pasirink, suprastink, trupmenaTeX } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
+import { rutuliaiDezeje } from './vaizdai'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -126,7 +128,7 @@ function kurkGreiti(lygis: Lygis, klase?: number): Uzdavinys | null {
     // 8. Ar greitis tikroviškas
     () => {
       if (lygis === 1) return null
-      const nerealu = Math.random() < 0.5
+      const nerealu = atsitiktinumas() < 0.5
       const greitisKmH = nerealu ? atsitiktinis(300, 900) : atsitiktinis(40, 120)
       return uzdavinys('greitis', {
         klausimas: `Mokinys apskaičiavo, kad automobilis mieste važiavo ${greitisKmH} km/h greičiu. Ar toks greitis tikroviškas? Rašyk „taip" arba „ne".`,
@@ -535,6 +537,8 @@ function kurkTikimybe(lygis: Lygis, klase?: number): Uzdavinys | null {
   const tM = suprastink(melyni, isViso)
   if (tR.vardiklis > 20 || tM.vardiklis > 20) return null
   const deze = `Dėžėje ${raudoni} raudoni ir ${melyni} mėlyni rutuliai.`
+  // Rutuliai piešiami tik tada, kai jų dar galima suskaičiuoti akimis.
+  const brezinys = isViso <= 18 ? rutuliaiDezeje(raudoni, melyni) : undefined
 
   return variacija([
     // 1. Palanki baigtis
@@ -546,6 +550,7 @@ function kurkTikimybe(lygis: Lygis, klase?: number): Uzdavinys | null {
         atsakymas: `${tR.skaitiklis}/${tR.vardiklis}`,
         atsakymasRodymui: `$${trupmenaTeX(tR)}$`,
         sprendimas: `Palankių baigčių ${raudoni}, visų — ${isViso}, tad tikimybė $${trupmenaTeX(tR)}$.`,
+        brezinys,
       })
     },
 
@@ -556,6 +561,7 @@ function kurkTikimybe(lygis: Lygis, klase?: number): Uzdavinys | null {
         atsakymas: `${tM.skaitiklis}/${tM.vardiklis}`,
         atsakymasRodymui: `$${trupmenaTeX(tM)}$`,
         sprendimas: `Ne raudonų yra ${melyni} iš ${isViso}, tad tikimybė $${trupmenaTeX(tM)}$.`,
+        brezinys,
       }),
 
     // 3. Visų baigčių skaičius — be jo tikimybės vardiklis lieka nesuprastas
@@ -565,6 +571,7 @@ function kurkTikimybe(lygis: Lygis, klase?: number): Uzdavinys | null {
         atsakymas: String(isViso),
         atsakymasRodymui: `$${isViso}$`,
         sprendimas: `$${raudoni} + ${melyni} = ${isViso}$ — tiek rutulių, tiek ir baigčių.`,
+        brezinys,
       }),
 
     // 4. Kiek rutulių reikia pridėti, kad tikimybė taptų 1/2
@@ -576,6 +583,7 @@ function kurkTikimybe(lygis: Lygis, klase?: number): Uzdavinys | null {
         atsakymas: String(daugiau - maziau),
         atsakymasRodymui: `$${daugiau - maziau}$`,
         sprendimas: `$${daugiau} - ${maziau} = ${daugiau - maziau}$.`,
+        brezinys,
       })
     },
 
@@ -586,7 +594,10 @@ function kurkTikimybe(lygis: Lygis, klase?: number): Uzdavinys | null {
         klausimas: `${deze} Kokia tikimybė ištraukti žalią rutulį? Įrašyk skaičių.`,
         atsakymas: '0',
         atsakymasRodymui: '$0$',
+        // Tikimybė visada tarp 0 ir 1 — didesni skaičiai distraktoriais netinka.
+        distraktoriai: ['$1$', `$${trupmenaTeX(tR)}$`, '$\\dfrac{1}{2}$'],
         sprendimas: 'Žalių rutulių dėžėje nėra, tad įvykis negalimas — tikimybė 0.',
+        brezinys,
       })
     },
 
@@ -597,7 +608,9 @@ function kurkTikimybe(lygis: Lygis, klase?: number): Uzdavinys | null {
         klausimas: `${deze} Kokia tikimybė ištraukti raudoną arba mėlyną rutulį? Įrašyk skaičių.`,
         atsakymas: '1',
         atsakymasRodymui: '$1$',
+        distraktoriai: ['$0$', `$${trupmenaTeX(tR)}$`, '$\\dfrac{1}{2}$'],
         sprendimas: 'Kitokių rutulių dėžėje nėra, tad įvykis būtinas — tikimybė 1.',
+        brezinys,
       })
     },
   ])

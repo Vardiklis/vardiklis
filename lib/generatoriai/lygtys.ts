@@ -1,4 +1,5 @@
 import { atsitiktinis, atsitiktinisBe, pasirink } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
@@ -279,7 +280,7 @@ function kurkKvadratine(lygis: Lygis, klase?: number): Uzdavinys | null {
     // 5. Kiek sprendinių turi lygtis
     () => {
       const laisvas = atsitiktinis(1, 40)
-      const teigiamas = Math.random() < 0.5
+      const teigiamas = atsitiktinumas() < 0.5
       return uzdavinys('kvadratines-lygtys', {
         klausimas: `Kiek sprendinių turi lygtis $x^2 = ${teigiamas ? laisvas : -laisvas}$?`,
         atsakymas: teigiamas ? '2' : '0',

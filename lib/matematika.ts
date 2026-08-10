@@ -5,6 +5,8 @@
  * Čia nėra jokios uždavinių logikos — tik įrankiai, kuriuos naudoja generatoriai.
  */
 
+import { atsitiktinumas } from './sekla'
+
 export type Trupmena = {
   skaitiklis: number
   vardiklis: number
@@ -40,13 +42,13 @@ export function suprastink(skaitiklis: number, vardiklis: number): Trupmena {
 
 /** Sveikas atsitiktinis skaičius intervale [min, max] imtinai. */
 export function atsitiktinis(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min
+  return Math.floor(atsitiktinumas() * (max - min + 1)) + min
 }
 
 /** Atsitiktinis elementas iš masyvo. */
 export function pasirink<T>(masyvas: readonly T[]): T {
   if (masyvas.length === 0) throw new Error('Tuščias masyvas')
-  return masyvas[Math.floor(Math.random() * masyvas.length)]
+  return masyvas[Math.floor(atsitiktinumas() * masyvas.length)]
 }
 
 /** Atsitiktinis nenulinis skaičius intervale — vengiam 0 ir, jei prašoma, 1. */
@@ -62,7 +64,7 @@ export function atsitiktinisBe(min: number, max: number, vengti: readonly number
 export function sumaisyk<T>(masyvas: readonly T[]): T[] {
   const kopija = [...masyvas]
   for (let i = kopija.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
+    const j = Math.floor(atsitiktinumas() * (i + 1))
     ;[kopija[i], kopija[j]] = [kopija[j], kopija[i]]
   }
   return kopija

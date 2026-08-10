@@ -1,5 +1,6 @@
 import { derink } from '../lietuviu'
 import { atsitiktinis, pasirink, sumaisyk } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import type { Generatorius, Lygis, Sritis, Uzdavinys } from './tipai'
 
@@ -25,7 +26,6 @@ import type { Generatorius, Lygis, Sritis, Uzdavinys } from './tipai'
  */
 
 const INK = 'var(--ink)'
-const ORANGE = 'var(--orange)'
 const LINE = 'var(--line)'
 const MUTED = 'var(--muted)'
 
@@ -105,8 +105,10 @@ function tinklas(o: Piesinys): string {
       const paslėptas = o.slepti?.includes(n) ?? false
       const rodoma = o.pakeisti?.[n] ?? n
 
+      // Pažymėtas langelis skiriamas storesne juoda linija, ne spalva —
+      // spausdinant oranžinė virsta juoda ir žymė dingtų.
       turinys += `<rect x="${x(s)}" y="${y(e)}" width="${LANG}" height="${LANG}" fill="none" stroke="${
-        pazymetas ? ORANGE : LINE
+        pazymetas ? INK : LINE
       }" stroke-width="${pazymetas ? 2.5 : 1}"/>`
 
       turinys += `<text x="${x(s) + LANG / 2}" y="${y(e) + LANG / 2 + 4}" font-size="13" text-anchor="middle" fill="${
@@ -229,7 +231,7 @@ function kurkSimtalange(lygis: Lygis, sritis: Sritis | null): Uzdavinys | null {
     () => {
       const n = atsitiktinis(11, 100)
       const e = eilute(n)
-      const pabaiga = Math.random() < 0.5
+      const pabaiga = atsitiktinumas() < 0.5
       const rez = pabaiga ? langelis(e, 10) : langelis(e, 1)
       if (rez === n) return null
 
@@ -343,8 +345,8 @@ function tiesesSvg(nuo: number, iki: number, zingsnis: number, zymes: readonly Z
   }
 
   for (const z of zymes) {
-    turinys += `<circle cx="${x(z.reiksme)}" cy="${asis}" r="5.5" fill="${ORANGE}"/>`
-    turinys += `<text x="${x(z.reiksme)}" y="${asis - 13}" font-size="13" font-weight="600" fill="${ORANGE}" text-anchor="middle">${z.etikete}</text>`
+    turinys += `<circle cx="${x(z.reiksme)}" cy="${asis}" r="5.5" fill="${INK}"/>`
+    turinys += `<text x="${x(z.reiksme)}" y="${asis - 13}" font-size="13" font-weight="600" fill="${INK}" text-anchor="middle">${z.etikete}</text>`
   }
 
   return `<svg viewBox="0 0 ${plotis} ${aukstis}" width="${plotis}" height="${aukstis}" role="img" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">${turinys}</svg>`
@@ -372,7 +374,7 @@ function kurkTiese(lygis: Lygis, sritis: Sritis | null): Uzdavinys | null {
     // 2. Judesys padalomis
     () => {
       const zingsniu = atsitiktinis(2, 4)
-      const kairen = Math.random() < 0.4
+      const kairen = atsitiktinumas() < 0.4
       const n = atsitiktinis(kairen ? zingsniu : 1, galas / zingsnis - (kairen ? 1 : zingsniu)) * zingsnis
       const rez = kairen ? n - zingsniu * zingsnis : n + zingsniu * zingsnis
       if (rez < 0 || rez > galas) return null

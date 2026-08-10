@@ -1,5 +1,6 @@
 import { derink } from '../lietuviu'
 import { atsitiktinis, atsitiktinisBe, pasirink } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { sk, suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Sritis, Uzdavinys } from './tipai'
@@ -416,7 +417,7 @@ function kurkFigura(lygis: Lygis, klase?: number): Uzdavinys | null {
   const visos = [
     // 1. Kraštinių arba viršūnių skaičius
     () => {
-      const klausiaKrastiniu = Math.random() < 0.5
+      const klausiaKrastiniu = atsitiktinumas() < 0.5
       return uzdavinys('figuros', {
         klausimas: klausiaKrastiniu
           ? 'Kiek kraštinių turi ši figūra?'
@@ -554,7 +555,7 @@ function kurkLauze(lygis: Lygis): Uzdavinys | null {
 
   for (let i = 0; i < kiek; i += 1) {
     const horizontaliai = i % 2 === 0
-    const zingsnis = atsitiktinis(1, 4) * (Math.random() < 0.5 ? 1 : -1)
+    const zingsnis = atsitiktinis(1, 4) * (atsitiktinumas() < 0.5 ? 1 : -1)
     const nx = horizontaliai ? x + zingsnis : x
     const ny = horizontaliai ? y : y + zingsnis
     if (nx < 0 || nx > 8 || ny < 0 || ny > 8) return null
@@ -1034,7 +1035,7 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
           y,
         )}" stroke="${ORANGE}" stroke-width="2.5"/>${taskas(t.x(x), t.y(y), ORANGE)}`,
       )
-      const klausiamX = Math.random() < 0.5
+      const klausiamX = atsitiktinumas() < 0.5
       return uzdavinys('vektoriai', {
         klausimas: `Vektorius nubrėžtas iš pradžios taško. Kokia jo ${
           klausiamX ? 'pirmoji' : 'antroji'
@@ -1059,7 +1060,7 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
 
     // 3. Vektorių sudėtis
     () => {
-      const klausiamX = Math.random() < 0.5
+      const klausiamX = atsitiktinumas() < 0.5
       const suma = klausiamX ? a1 + b1 : a2 + b2
       if (suma === 0) return null
       return uzdavinys('vektoriai', {
@@ -1077,7 +1078,7 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
     // 4. Vektorių atimtis
     () => {
       if (lygis === 1) return null
-      const klausiamX = Math.random() < 0.5
+      const klausiamX = atsitiktinumas() < 0.5
       const skirtumas = klausiamX ? a1 - b1 : a2 - b2
       if (skirtumas === 0) return null
       return uzdavinys('vektoriai', {
@@ -1096,7 +1097,7 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
     () => {
       if (lygis === 1) return null
       const k = atsitiktinisBe(-5, 5, [0, 1])
-      const klausiamX = Math.random() < 0.5
+      const klausiamX = atsitiktinumas() < 0.5
       const rez = k * (klausiamX ? a1 : a2)
       return uzdavinys('vektoriai', {
         klausimas: `Vektorius $\\vec{a} = (${a1}; ${a2})$. Kokia vektoriaus $${k}\\vec{a}$ ${
@@ -1113,7 +1114,7 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
     // 6. Vektorius iš dviejų taškų
     () => {
       if (lygis === 1) return null
-      const klausiamX = Math.random() < 0.5
+      const klausiamX = atsitiktinumas() < 0.5
       const rez = klausiamX ? b1 - a1 : b2 - a2
       if (rez === 0) return null
       return uzdavinys('vektoriai', {
@@ -1145,7 +1146,7 @@ function kurkVektoriu(lygis: Lygis, klase?: number): Uzdavinys | null {
     // 8. Atkarpos vidurio taškas
     () => {
       if (lygis === 1) return null
-      const klausiamX = Math.random() < 0.5
+      const klausiamX = atsitiktinumas() < 0.5
       const suma = klausiamX ? a1 + b1 : a2 + b2
       if (suma % 2 !== 0) return null
       return uzdavinys('vektoriai', {

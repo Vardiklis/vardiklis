@@ -1,4 +1,5 @@
 import { naujasId, normalizuok } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import type { Uzdavinys } from './tipai'
 
 const MAKS_BANDYMU = 50
@@ -11,6 +12,8 @@ type Juodrastis = {
   sprendimas?: string
   /** SVG brėžinys, jei uždavinys be jo neaiškus. */
   brezinys?: string
+  /** Domenui teisingi klaidingi atsakymai pasirenkamojo atsakymo formatui. */
+  distraktoriai?: string[]
 }
 
 /**
@@ -26,6 +29,7 @@ export function uzdavinys(temaId: string, j: Juodrastis): Uzdavinys {
     atsakymasRodymui: j.atsakymasRodymui,
     sprendimas: j.sprendimas,
     brezinys: j.brezinys,
+    distraktoriai: j.distraktoriai,
   }
 }
 
@@ -60,7 +64,7 @@ export function variacija(
   variantai: readonly (() => Uzdavinys | null)[],
 ): Uzdavinys | null {
   if (siulomasPavidalas === null) {
-    return variantai[Math.floor(Math.random() * variantai.length)]()
+    return variantai[Math.floor(atsitiktinumas() * variantai.length)]()
   }
   const i = siulomasPavidalas % variantai.length
   siulomasPavidalas += 1
@@ -81,7 +85,7 @@ export function suBandymais(
     const u = kurk()
     if (u) return u
   }
-  const atsarginis = atsarginiai[Math.floor(Math.random() * atsarginiai.length)]
+  const atsarginis = atsarginiai[Math.floor(atsitiktinumas() * atsarginiai.length)]
   return uzdavinys(temaId, atsarginis)
 }
 

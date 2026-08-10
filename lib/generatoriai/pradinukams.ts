@@ -2,6 +2,7 @@ import { derink } from '../lietuviu'
 import { atsitiktinis, pasirink, suprastink, trupmenaTeX } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink } from './mastas'
+import { duLaikrodziai, laikrodis, langeliuEile, trupmenosJuosta } from './vaizdai'
 import type { Generatorius, Lygis, Sritis, Uzdavinys } from './tipai'
 
 /**
@@ -407,9 +408,10 @@ function kurkSeka(lygis: Lygis, klase?: number, sritis?: Sritis | null): Uzdavin
       if (kitas > virsus) return null
 
       return uzdavinys('sekos', {
-        klausimas: `Koks skaičius eina toliau: $${nariai.join(', ')}, \\ldots$?`,
+        klausimas: 'Seka didėja tolygiai. Koks skaičius eina toliau?',
         atsakymas: String(kitas),
         atsakymasRodymui: `$${kitas}$`,
+        brezinys: langeliuEile([...nariai, null], true),
         sprendimas: `Kiekvienas narys ${zingsnis} vienetais didesnis už ankstesnį: $${nariai[3]} + ${zingsnis} = ${kitas}$.`,
       })
     },
@@ -423,9 +425,10 @@ function kurkSeka(lygis: Lygis, klase?: number, sritis?: Sritis | null): Uzdavin
       if (kitas < apacia) return null
 
       return uzdavinys('sekos', {
-        klausimas: `Koks skaičius eina toliau: $${nariai.join(', ')}, \\ldots$?`,
+        klausimas: 'Seka mažėja tolygiai. Koks skaičius eina toliau?',
         atsakymas: String(kitas),
         atsakymasRodymui: `$${kitas}$`,
+        brezinys: langeliuEile([...nariai, null], true),
         sprendimas: `Kiekvienas narys ${zingsnis} vienetais mažesnis už ankstesnį: $${nariai[3]} - ${zingsnis} = ${kitas}$.`,
       })
     },
@@ -437,13 +440,13 @@ function kurkSeka(lygis: Lygis, klase?: number, sritis?: Sritis | null): Uzdavin
       const nariai = [0, 1, 2, 3, 4].map((i) => pradzia + i * zingsnis)
       if (nariai[4] > virsus) return null
       const trukstamas = atsitiktinis(1, 3)
-      const rodomi = nariai.map((v, i) => (i === trukstamas ? '\\square' : String(v)))
 
       return uzdavinys('sekos', {
-        klausimas: `Koks skaičius turi būti vietoj langelio? $${rodomi.join(', ')}$`,
+        klausimas: 'Koks skaičius turi būti vietoj klaustuko?',
         atsakymas: String(nariai[trukstamas]),
         atsakymasRodymui: `$${nariai[trukstamas]}$`,
-        sprendimas: `Seka didėja po ${zingsnis}, tad langelyje ${nariai[trukstamas]}.`,
+        sprendimas: `Seka didėja po ${zingsnis}, tad klaustuko vietoje ${nariai[trukstamas]}.`,
+        brezinys: langeliuEile(nariai.map((v, i) => (i === trukstamas ? null : v))),
       })
     },
 
@@ -544,6 +547,7 @@ function kurkDali(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null {
         atsakymas: String(dalis),
         atsakymasRodymui: `$${dalis}$`,
         sprendimas: `${Didžioji} — tai dalyba iš ${d.vardiklis}: $${visuma} : ${d.vardiklis} = ${dalis}$.`,
+        brezinys: trupmenosJuosta(d.vardiklis, 1, `visas skaičius — ${visuma}`),
       }),
 
     // 2. Atvirkštinis veiksmas: žinoma dalis, ieškoma visuma
@@ -580,6 +584,7 @@ function kurkDali(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null {
         atsakymas: String(liko),
         atsakymasRodymui: `$${liko}$`,
         sprendimas: `${Didžioji} yra $${visuma} : ${d.vardiklis} = ${dalis}$, tad liko $${visuma} - ${dalis} = ${liko}$.`,
+        brezinys: trupmenosJuosta(d.vardiklis, 1, `iš viso — ${visuma}`),
       })
     },
 
@@ -820,6 +825,7 @@ function kurkLaika(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null {
         atsakymas: String(trukme),
         atsakymasRodymui: `$${trukme}$ min`,
         sprendimas: `Nuo ${valandomis(pradziaMin)} iki ${valandomis(pabaigaMin)} praėjo ${trukme} ${minutesZodis(trukme)}.`,
+        brezinys: duLaikrodziai(pradziaMin, pabaigaMin, 'pradžia', 'pabaiga'),
       })
     },
 
@@ -841,11 +847,13 @@ function kurkLaika(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null {
     () => {
       const min = atsitiktinis(1, 11) * 5
       if (min === 60) return null
+      const rodo = atsitiktinis(7, 20) * 60 + min
       return uzdavinys('laikas', {
-        klausimas: `Laikrodis rodo ${valandomis(atsitiktinis(7, 20) * 60 + min)}. Kiek minučių liko iki pilnos valandos?`,
+        klausimas: 'Kiek minučių liko iki pilnos valandos?',
         atsakymas: String(60 - min),
         atsakymasRodymui: `$${60 - min}$ min`,
         sprendimas: `$60 - ${min} = ${60 - min}$ ${minutesZodis(60 - min)}.`,
+        brezinys: laikrodis(rodo),
       })
     },
 
@@ -860,6 +868,7 @@ function kurkLaika(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null {
         atsakymas: String(liko),
         atsakymasRodymui: `$${liko}$ min`,
         sprendimas: `Nuo ${valandomis(dabar)} iki ${valandomis(val * 60)} yra ${liko} ${minutesZodis(liko)}.`,
+        brezinys: duLaikrodziai(dabar, val * 60, 'dabar', 'išvyksta'),
       })
     },
   ])

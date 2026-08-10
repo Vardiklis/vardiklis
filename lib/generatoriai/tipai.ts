@@ -7,6 +7,33 @@ import type { Sritis } from './sritis'
 
 export type { Sritis }
 
+/**
+ * Kaip mokinys pateikia atsakymą.
+ *
+ * PUPP programa numato tris pateikimo būdus, o variklis mokėjo tik pirmąjį.
+ * I dalis (10 iš 50 taškų) yra vien pasirenkamojo atsakymo, tad be šių formatų
+ * egzamino lapas struktūriškai neatitiktų tikrovės.
+ *
+ *   `ivedimas`  — įrašomas skaičius ar žodis (buvęs vienintelis);
+ *   `pasirinkimas` — vienas teisingas iš kelių pateiktų;
+ *   `poros`     — kairės pusės teiginiai susiejami su dešinės;
+ *   `eiliskumas` — pateikti objektai surikiuojami.
+ */
+export type AtsakymoFormatas = 'ivedimas' | 'pasirinkimas' | 'poros' | 'eiliskumas'
+
+/** Vienas pasirinkimo variantas. Rodymui — su KaTeX. */
+export type Variantas = {
+  /** Raidė sąlygoje: A, B, C, D. */
+  raide: string
+  tekstas: string
+}
+
+/** Susiejimo pora: kairė lieka vietoje, dešinė maišoma. */
+export type Pora = {
+  kaire: string
+  desine: string
+}
+
 export type Uzdavinys = {
   id: string
   temaId: string
@@ -23,6 +50,26 @@ export type Uzdavinys = {
    * `var(--ink)`, `var(--orange)`, `var(--line)`, kad veiktų ir spausdinant.
    */
   brezinys?: string
+
+  /** Nenurodžius — `ivedimas`, kad visi seni generatoriai liktų nepakeisti. */
+  formatas?: AtsakymoFormatas
+  /**
+   * Domenui teisingi klaidingi atsakymai, jei generatorius juos žino.
+   *
+   * Automatiškai išvesti distraktoriai tinka ne visur: tikimybės atsakymui 1
+   * jie duotų 2 ir 10, o mokinys žino, kad tikimybė už vienetą didesnė nebūna.
+   * Nurodžius čia, `iPasirinkima` naudoja būtent šiuos.
+   */
+  distraktoriai?: string[]
+  /** Tik `pasirinkimas`: visi variantai maišyta tvarka, tarp jų ir teisingas. */
+  variantai?: Variantas[]
+  /**
+   * Tik `poros` ir `eiliskumas`: pradiniai duomenys.
+   * `poros` atveju dešinė pusė mokiniui rodoma sumaišyta, `eiliskumas` —
+   * `elementai` yra sumaišyta eilė, o `atsakymas` nurodo teisingą.
+   */
+  poros?: Pora[]
+  elementai?: string[]
 }
 
 /**

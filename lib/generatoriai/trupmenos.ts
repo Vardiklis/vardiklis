@@ -1,3 +1,4 @@
+import { atsitiktinumas } from '../sekla'
 import {
   atsitiktinis,
   mbk,
@@ -208,7 +209,7 @@ function kurkIsraiska(lygis: Lygis, klase?: number): Uzdavinys | null {
 
   let n1 = atsitiktinis(1, d1 - 1)
   let n2 = atsitiktinis(1, d2 - 1)
-  const atimtis = Math.random() < 0.5
+  const atimtis = atsitiktinumas() < 0.5
 
   if (atimtis) {
     // Rezultatas turi būti teigiamas — kitaip 6 klasei tai jau neigiami skaičiai.
@@ -275,7 +276,7 @@ function kurkMisru(): Uzdavinys | null {
   const sveikas = atsitiktinis(1, 3)
   const n1 = atsitiktinis(1, d1 - 1)
   const n2 = atsitiktinis(1, d2 - 1)
-  const atimtis = Math.random() < 0.6
+  const atimtis = atsitiktinumas() < 0.6
 
   const m = mbk(d1, d2)
   const pilnasSkaitiklis = sveikas * d1 + n1
@@ -409,7 +410,7 @@ function kurkDaugybosIsraiska(lygis: Lygis, klase?: number): Uzdavinys | null {
   const vardikliai = vyresne(klase) ? VARDIKLIAI_SUNKUS : VARDIKLIAI
 
   // 1 lygyje pusė uždavinių — trupmena kart sveikas skaičius.
-  if (lygis === 1 && Math.random() < 0.5) {
+  if (lygis === 1 && atsitiktinumas() < 0.5) {
     const d = pasirink(vardikliai)
     const n = atsitiktinis(1, d - 1)
     const k = atsitiktinis(2, 9)
@@ -431,7 +432,7 @@ function kurkDaugybosIsraiska(lygis: Lygis, klase?: number): Uzdavinys | null {
   const d2 = pasirink(vardikliai)
   const n1 = atsitiktinis(1, d1 - 1)
   const n2 = atsitiktinis(1, d2 - 1)
-  const dalyba = lygis >= 2 && Math.random() < 0.45
+  const dalyba = lygis >= 2 && atsitiktinumas() < 0.45
 
   const rez = dalyba ? suprastink(n1 * d2, d1 * n2) : suprastink(n1 * n2, d1 * d2)
   if (rez.vardiklis > riba) return null
@@ -598,7 +599,7 @@ function kurkBendravardiklinima(lygis: Lygis, klase?: number): Uzdavinys | null 
       const d = pasirink([2, 3, 4, 5, 6] as const)
       const k = atsitiktinis(2, 5)
       const n = atsitiktinis(1, d - 1)
-      const lygios = Math.random() < 0.5
+      const lygios = atsitiktinumas() < 0.5
       const skaitiklis = lygios ? n * k : n * k + 1
       if (!lygios && skaitiklis >= d * k) return null
       return uzdavinys('bendravardiklinimas', {

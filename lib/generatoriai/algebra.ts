@@ -1,4 +1,5 @@
 import { atsitiktinis, atsitiktinisBe, pasirink } from '../matematika'
+import { atsitiktinumas } from '../sekla'
 import { sk, suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
@@ -745,7 +746,7 @@ function kurkFunkcija(lygis: Lygis, klase?: number): Uzdavinys | null {
       const x = atsitiktinis(2, didink(9, klase))
       const y = k * x + b
       if (Math.abs(y) > virsus) return null
-      const tinka = Math.random() < 0.5
+      const tinka = atsitiktinumas() < 0.5
       const rodomasY = tinka ? y : y + atsitiktinis(1, 5)
       return uzdavinys('funkcijos', {
         klausimas: `Ar taškas $(${x}; ${rodomasY})$ priklauso funkcijos $y = ${narys(

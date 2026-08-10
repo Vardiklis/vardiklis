@@ -1,3 +1,4 @@
+import { atsitiktinumas } from '../sekla'
 import {
   funkcijos,
   greitosiosFormules,
@@ -30,9 +31,16 @@ import {
   trigonometrija,
 } from './geometrija'
 import { kvadratinesLygtys, tiesinesLygtys } from './lygtys'
+import { medzioAmzius, medzioAukstis, miskoSekla } from './miskas'
 import { laipsniai } from './laipsniai'
 import { neigiami } from './neigiami'
-import { vieta } from './vieta'
+import {
+  daiktuRikiavimas,
+  daugiauMaziau,
+  lyguNelygu,
+  skaiciuRasymas,
+  vieta,
+} from './pirmokams'
 import {
   dalumoPozymiai,
   logika,
@@ -152,9 +160,18 @@ export const generatoriai: Record<string, Generatorius> = {
 
   // 1 klasės erdviniai santykiai ir skaičių išdėstymas
   vieta,
+  'daiktu-rikiavimas': daiktuRikiavimas,
+  'skaiciu-rasymas': skaiciuRasymas,
+  'lygu-nelygu': lyguNelygu,
+  'daugiau-maziau': daugiauMaziau,
   simtalange,
   'skaiciu-tiese': skaiciuTiese,
   'gretimi-skaiciai': gretimiSkaiciai,
+
+  // Tyrinėju reiškinį „Miškas“ — sėklos, medžių aukštis, kelmo rievės
+  'misko-sekla': miskoSekla,
+  'medzio-aukstis': medzioAukstis,
+  'medzio-amzius': medzioAmzius,
 
   // Duomenys ir tikimybės
   vidurkis,
@@ -187,7 +204,7 @@ const PUPP_TEMOS = [
 ] as const
 
 generatoriai.pupp = (lygis, klase) => {
-  const vardas = PUPP_TEMOS[Math.floor(Math.random() * PUPP_TEMOS.length)]
+  const vardas = PUPP_TEMOS[Math.floor(atsitiktinumas() * PUPP_TEMOS.length)]
   return generatoriai[vardas](lygis, klase ?? 10)
 }
 
@@ -253,7 +270,7 @@ export function generuokRinkini(
   const sablonai = new Set<string>()
   const tikslus = new Set<string>()
 
-  pavidaluEile(Math.floor(Math.random() * 7))
+  pavidaluEile(Math.floor(atsitiktinumas() * 7))
   try {
     // 1 ratas — tik nauji šablonai.
     for (let i = 0; i < kiek * 12 && rinkinys.length < kiek; i += 1) {

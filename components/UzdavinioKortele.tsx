@@ -35,6 +35,8 @@ export function UzdavinioKortele({
 }: Props) {
   const [klaviatura, setKlaviatura] = useState(false)
 
+  /** Atsakymas raidėmis — pasirinkimas, poros ir rikiavimas. */
+  const raidinis = uzdavinys.formatas !== undefined && uzdavinys.formatas !== 'ivedimas'
   const kazkasIvesta = ivestis.trim() !== ''
   const teisinga = kazkasIvesta && arTeisingas(ivestis, uzdavinys.atsakymas)
   const vertinama = rodytiAtsakyma && kazkasIvesta
@@ -52,6 +54,54 @@ export function UzdavinioKortele({
         <div className="min-w-0 grow">
           {uzdavinys.brezinys && <Brezinys svg={uzdavinys.brezinys} className="mb-4" />}
 
+          {/* Pasirinkimo variantai, porų sąrašai ir rikiuojami elementai.
+              Be jų pasirenkamojo atsakymo uždavinys ekrane atrodė kaip
+              klausimas be atsakymų, o atskleidus rodydavo „B“ — raidę, kurios
+              mokinys niekur nematė. */}
+          {uzdavinys.formatas === 'pasirinkimas' && uzdavinys.variantai && (
+            <ul className="mb-4 flex flex-col gap-2">
+              {uzdavinys.variantai.map((v) => (
+                <li key={v.raide} className="flex items-baseline gap-2">
+                  <span className="font-mono text-[0.9375rem] font-semibold">{v.raide})</span>
+                  <Formule tekstas={v.tekstas} className="text-[1.0625rem]" />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {uzdavinys.formatas === 'poros' && uzdavinys.poros && (
+            <div className="mb-4 grid grid-cols-2 gap-x-6 gap-y-2">
+              <ul className="flex flex-col gap-2">
+                {uzdavinys.poros.map((p, i) => (
+                  <li key={`k-${i}`} className="flex items-baseline gap-2">
+                    <span className="font-mono text-[0.9375rem] font-semibold">
+                      {String.fromCharCode(65 + i)})
+                    </span>
+                    <Formule tekstas={p.kaire} className="text-[1.0625rem]" />
+                  </li>
+                ))}
+              </ul>
+              <ul className="flex flex-col gap-2">
+                {uzdavinys.poros.map((p, i) => (
+                  <li key={`d-${i}`} className="flex items-baseline gap-2">
+                    <span className="font-mono text-[0.9375rem] font-semibold">{i + 1})</span>
+                    <Formule tekstas={p.desine} className="text-[1.0625rem]" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {uzdavinys.formatas === 'eiliskumas' && uzdavinys.elementai && (
+            <ul className="mb-4 flex flex-wrap gap-x-5 gap-y-2">
+              {uzdavinys.elementai.map((e, i) => (
+                <li key={i}>
+                  <Formule tekstas={e} className="text-[1.0625rem]" />
+                </li>
+              ))}
+            </ul>
+          )}
+
           <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
             <Formule
               tekstas={uzdavinys.klausimas}
@@ -65,8 +115,9 @@ export function UzdavinioKortele({
               <input
                 id={`atsakymas-${uzdavinys.id}`}
                 type="text"
-                // Atidarius savą klaviatūrą, telefono klaviatūros nekviečiam.
-                inputMode={klaviatura ? 'none' : 'decimal'}
+                // Pasirinkimo ir rikiavimo atsakymai yra raidės, ne skaičiai,
+                // tad skaitinė telefono klaviatūra jiems netinka.
+                inputMode={klaviatura || raidinis ? 'none' : 'decimal'}
                 autoComplete="off"
                 value={ivestis}
                 onChange={(e) => onIvestis(e.target.value)}
@@ -83,6 +134,7 @@ export function UzdavinioKortele({
                 }`}
               />
 
+              {!raidinis && (
               <button
                 type="button"
                 onClick={() => setKlaviatura((v) => !v)}
@@ -96,6 +148,7 @@ export function UzdavinioKortele({
               >
                 <span aria-hidden="true">⌨</span>
               </button>
+              )}
 
               {/* Vertinimas rodomas tik atskleidus atsakymus — kitaip langelis
                   virstų viktorina ir uždaviniai nustotų būti darbo lapu. */}

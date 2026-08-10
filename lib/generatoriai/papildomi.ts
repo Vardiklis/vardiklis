@@ -2,6 +2,7 @@ import { derink } from '../lietuviu'
 import { atsitiktinis, nsd, pasirink, suprastink, trupmenaTeX } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
+import { skyriuBlokai } from './vaizdai'
 import type { Generatorius, Lygis, Sritis, Uzdavinys } from './tipai'
 
 /**
@@ -277,6 +278,7 @@ function kurkSkaitmenis(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null 
         atsakymas: String(Math.floor(n / 10)),
         atsakymasRodymui: `$${Math.floor(n / 10)}$`,
         sprendimas: `${n} yra ${Math.floor(n / 10)} ${desimtysZodis(Math.floor(n / 10))} ir dar ${n % 10} ${vienetaiZodis(n % 10)}.`,
+        brezinys: n <= 99 ? skyriuBlokai(Math.floor(n / 10), n % 10) : undefined,
       })
     },
 
@@ -289,6 +291,7 @@ function kurkSkaitmenis(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null 
         atsakymas: String(n % 10),
         atsakymasRodymui: `$${n % 10}$`,
         sprendimas: `${n} yra ${Math.floor(n / 10)} ${desimtysZodis(Math.floor(n / 10))} ir ${n % 10} ${vienetaiZodis(n % 10)}.`,
+        brezinys: n <= 99 ? skyriuBlokai(Math.floor(n / 10), n % 10) : undefined,
       })
     },
 
@@ -304,6 +307,7 @@ function kurkSkaitmenis(lygis: Lygis, sritis?: Sritis | null): Uzdavinys | null 
         atsakymas: String(n),
         atsakymasRodymui: `$${n}$`,
         sprendimas: `$${d} \\cdot 10 + ${v} = ${n}$.`,
+        brezinys: skyriuBlokai(d, v),
       })
     },
 

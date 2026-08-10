@@ -1,6 +1,7 @@
 import { atsitiktinis, pasirink } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { didink, vyresne } from './mastas'
+import { procentuJuosta } from './vaizdai'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -80,6 +81,7 @@ function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
         atsakymas: String(dalis),
         atsakymasRodymui: `$${dalis}$`,
         sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
+        brezinys: procentuJuosta(p, `visas dydis — ${visuma}`),
       })
     },
 
@@ -110,6 +112,7 @@ function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
         atsakymas: String(liko),
         atsakymasRodymui: `$${liko}$ €`,
         sprendimas: `${p} % nuo ${visuma} yra ${dalis}, tad $${visuma} - ${dalis} = ${liko}$ €.`,
+        brezinys: procentuJuosta(p, `nuolaida nuo ${visuma} €`),
       })
     },
 
@@ -130,6 +133,7 @@ function kurk(lygis: Lygis, klase?: number): Uzdavinys | null {
         atsakymas: String(dalis),
         atsakymasRodymui: `$${dalis}$`,
         sprendimas: `${p} % yra ${dalimis(p)}: $${visuma} \\cdot ${p} : 100 = ${dalis}$.`,
+        brezinys: procentuJuosta(p, `visas dydis — ${visuma}`),
       })
     },
 

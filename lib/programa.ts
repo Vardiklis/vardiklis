@@ -93,12 +93,14 @@ export const programa: ProgramosKlase[] = [
         pavadinimas: 'Žingsnis į pirmąją klasę',
         potemes: [
           { pavadinimas: 'Kur yra daiktas?', generatorius: 'vieta' },
-          { pavadinimas: 'Kaip surikiuoti daiktai?', generatorius: 'sekos' },
+          { pavadinimas: 'Kaip surikiuoti daiktai?', generatorius: 'daiktu-rikiavimas' },
           { pavadinimas: 'Pagal kokią taisyklę išrikiuoti skaičiai?', generatorius: 'sekos' },
-          'Kaip rašyti skaičius nuo 0 iki 4?',
-          'Kaip rašyti skaičius nuo 5 iki 9?',
-          'Lygu ar nelygu?',
-          'Daugiau ar mažiau?',
+          // Keturios potemės anksčiau dalijosi vienu `skaiciu-palyginimas`
+          // generatoriumi ir todėl nė viena negaudavo savo turinio.
+          { pavadinimas: 'Kaip rašyti skaičius nuo 0 iki 4?', generatorius: 'skaiciu-rasymas', lygis: 1 },
+          { pavadinimas: 'Kaip rašyti skaičius nuo 5 iki 9?', generatorius: 'skaiciu-rasymas', lygis: 2 },
+          { pavadinimas: 'Lygu ar nelygu?', generatorius: 'lygu-nelygu' },
+          { pavadinimas: 'Daugiau ar mažiau?', generatorius: 'daugiau-maziau' },
         ],
         generatorius: 'skaiciu-palyginimas',
         lygis: 1,
@@ -248,11 +250,14 @@ export const programa: ProgramosKlase[] = [
         sritis: { min: 0, max: 100 },
         pavadinimas: 'Tyrinėju reiškinį „Miškas“',
         potemes: [
-          'Kokia medžio sėklos masė?',
-          'Kaip išmatuoti medžio aukštį?',
-          { pavadinimas: 'Kaip apskaičiuoti medžio amžių?', generatorius: 'sudetis-atimtis' },
+          // Anksčiau sėklos ir aukštis ėjo per `matavimo-vienetai` (kilometrai,
+          // litrai), o amžius — per `sudetis-atimtis`, tad „medžio amžius"
+          // duodavo uždavinių apie žuvytes akvariume.
+          { pavadinimas: 'Kokia medžio sėklos masė?', generatorius: 'misko-sekla' },
+          { pavadinimas: 'Kaip išmatuoti medžio aukštį?', generatorius: 'medzio-aukstis' },
+          { pavadinimas: 'Kaip apskaičiuoti medžio amžių?', generatorius: 'medzio-amzius' },
         ],
-        generatorius: 'matavimo-vienetai',
+        generatorius: 'medzio-aukstis',
         lygis: 1,
       },
       {
