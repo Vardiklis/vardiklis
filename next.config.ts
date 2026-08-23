@@ -7,9 +7,6 @@ const saknis = fileURLToPath(new URL('.', import.meta.url))
 
 const nextConfig: NextConfig = {
   turbopack: { root: saknis },
-  // Savarankiškas serveris: `next build` sukuria .next/standalone/server.js.
-  // Hostinger „Other“ režimui reikia būtent tokio įėjimo failo.
-  output: 'standalone',
   outputFileTracingRoot: saknis,
 }
 
