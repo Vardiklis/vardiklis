@@ -176,6 +176,64 @@ export function scena(vietos: readonly Vieta[], plotis = 260, aukstis = 150): st
   return remas(plotis, aukstis, turinys)
 }
 
+/**
+ * Atvira dėžė iš šono ir daiktai joje.
+ *
+ * Nulio uždaviniui reikia dėžės, į kurią matyti. Uždara dėžė vaikui reiškia
+ * „nežinau, kas viduje“, o ne „tuščia“, tad atsakymas 0 atrodydavo kaip
+ * spėjimas.
+ *
+ * Dėžė brėžiama tiesiai piešinio koordinatėmis, o ne didinama ikona: ikonos
+ * linija didinama kartu su ja, ir tokio pločio dėžė išeidavo storesnė už pačius
+ * daiktus. Telpa iki keturių daiktų — tiek ir reikia skaičiams iki 4.
+ */
+export function dezeSuDaiktais(vardas: Daiktas, kiek: number): string {
+  const dydis = 32
+  const tarpas = 6
+  const eile = kiek * dydis + Math.max(0, kiek - 1) * tarpas
+  const pradzia = 95 - eile / 2
+
+  const deze =
+    `<g fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">` +
+    '<path d="M16 24V74a6 6 0 0 0 6 6h146a6 6 0 0 0 6-6V24"/>' +
+    '<path d="M6 24h178"/>' +
+    '</g>'
+
+  let turinys = ''
+  for (let i = 0; i < kiek; i += 1) {
+    turinys += daiktas(vardas, pradzia + i * (dydis + tarpas), 46, dydis)
+  }
+
+  return remas(190, 96, deze + turinys)
+}
+
+/**
+ * Daiktai su numeriais virš jų.
+ *
+ * „Trečias iš kairės“ pirmokui yra du uždaviniai viename: pirma reikia
+ * atsiminti, kur kairė, ir tik paskui skaičiuoti. Numeriai virš daiktų kairės
+ * klausimą nuima — lieka eilės tvarka, apie kurią potemė ir yra.
+ *
+ * Numeriai rašomi vienoje aukštumoje, o ne virš kiekvieno daikto viršaus: kai
+ * daiktai skirtingo dydžio, banguojanti skaičių eilė skaitosi sunkiau nei
+ * lygi.
+ */
+export function suNumeriais(
+  vietos: readonly Vieta[],
+  plotis = 260,
+  aukstis = 150,
+  numeriuY = 15,
+): string {
+  const turinys = vietos
+    .map((v, i) => {
+      const d = v.dydis ?? 44
+      const numeris = `<text x="${v.x + d / 2}" y="${numeriuY}" font-size="13" font-weight="600" fill="${MUTED}" text-anchor="middle">${i + 1}</text>`
+      return numeris + daiktas(v.daiktas, v.x, v.y, d, v.akcentas ? ORANGE : INK)
+    })
+    .join('')
+  return remas(plotis, aukstis, turinys)
+}
+
 /** Daikto pavadinimas po piešiniu — kai scenoje reikia įvardyti, kas yra kas. */
 export function suEtiketemis(
   vietos: readonly (Vieta & { etikete?: string })[],
@@ -204,6 +262,14 @@ export function suEtiketemis(
  */
 export type DaiktoZodis = {
   daiktas: Daiktas
+  /**
+   * Giminė: „v“ — vyriškoji, „m“ — moteriškoji.
+   *
+   * Be jos klausimai išeidavo su klaida: „kelinta kubelis“, „kelintas dėžė“.
+   * Būdvardis ir kelintinis skaitvardis derinami su daikto gimine, tad
+   * generatorius turi ją žinoti.
+   */
+  gimine: 'v' | 'm'
   /** Vardininkas: „kamuolys“. */
   v: string
   /** Kilmininkas: „kamuolio“. */
@@ -221,25 +287,25 @@ export type DaiktoZodis = {
 }
 
 export const DAIKTU_ZODYNAS: readonly DaiktoZodis[] = [
-  { daiktas: 'obuolys', v: 'obuolys', k: 'obuolio', g: 'obuolį', i: 'obuoliu', dgs: 'obuoliai', dgsK: 'obuolių' , dgsG: 'obuolius' },
-  { daiktas: 'kamuolys', v: 'kamuolys', k: 'kamuolio', g: 'kamuolį', i: 'kamuoliu', dgs: 'kamuoliai', dgsK: 'kamuolių' , dgsG: 'kamuolius' },
-  { daiktas: 'kriause', v: 'kriaušė', k: 'kriaušės', g: 'kriaušę', i: 'kriauše', dgs: 'kriaušės', dgsK: 'kriaušių' , dgsG: 'kriaušės' },
-  { daiktas: 'knyga', v: 'knyga', k: 'knygos', g: 'knygą', i: 'knyga', dgs: 'knygos', dgsK: 'knygų' , dgsG: 'knygos' },
-  { daiktas: 'piestukas', v: 'pieštukas', k: 'pieštuko', g: 'pieštuką', i: 'pieštuku', dgs: 'pieštukai', dgsK: 'pieštukų' , dgsG: 'pieštukus' },
-  { daiktas: 'kubelis', v: 'kubelis', k: 'kubelio', g: 'kubelį', i: 'kubeliu', dgs: 'kubeliai', dgsK: 'kubelių' , dgsG: 'kubelius' },
-  { daiktas: 'zvaigzde', v: 'žvaigždė', k: 'žvaigždės', g: 'žvaigždę', i: 'žvaigžde', dgs: 'žvaigždės', dgsK: 'žvaigždžių' , dgsG: 'žvaigždės' },
-  { daiktas: 'sausainis', v: 'sausainis', k: 'sausainio', g: 'sausainį', i: 'sausainiu', dgs: 'sausainiai', dgsK: 'sausainių' , dgsG: 'sausainius' },
-  { daiktas: 'balionas', v: 'balionas', k: 'baliono', g: 'balioną', i: 'balionu', dgs: 'balionai', dgsK: 'balionų' , dgsG: 'balionus' },
-  { daiktas: 'gele', v: 'gėlė', k: 'gėlės', g: 'gėlę', i: 'gėle', dgs: 'gėlės', dgsK: 'gėlių' , dgsG: 'gėlės' },
-  { daiktas: 'paukstis', v: 'paukštis', k: 'paukščio', g: 'paukštį', i: 'paukščiu', dgs: 'paukščiai', dgsK: 'paukščių' , dgsG: 'paukščius' },
-  { daiktas: 'kate', v: 'katė', k: 'katės', g: 'katę', i: 'kate', dgs: 'katės', dgsK: 'kačių' , dgsG: 'katės' },
-  { daiktas: 'deze', v: 'dėžė', k: 'dėžės', g: 'dėžę', i: 'dėže', dgs: 'dėžės', dgsK: 'dėžių' , dgsG: 'dėžės' },
-  { daiktas: 'medis', v: 'medis', k: 'medžio', g: 'medį', i: 'medžiu', dgs: 'medžiai', dgsK: 'medžių' , dgsG: 'medžius' },
-  { daiktas: 'dviratis', v: 'dviratis', k: 'dviračio', g: 'dviratį', i: 'dviračiu', dgs: 'dviračiai', dgsK: 'dviračių' , dgsG: 'dviračius' },
-  { daiktas: 'stalasBaldas', v: 'stalas', k: 'stalo', g: 'stalą', i: 'stalu', dgs: 'stalai', dgsK: 'stalų' , dgsG: 'stalus' },
-  { daiktas: 'suoliukasBaldas', v: 'suoliukas', k: 'suoliuko', g: 'suoliuką', i: 'suoliuku', dgs: 'suoliukai', dgsK: 'suoliukų' , dgsG: 'suoliukus' },
-  { daiktas: 'namas', v: 'namas', k: 'namo', g: 'namą', i: 'namu', dgs: 'namai', dgsK: 'namų', dgsG: 'namus' },
-  { daiktas: 'lele', v: 'lėlė', k: 'lėlės', g: 'lėlę', i: 'lėle', dgs: 'lėlės', dgsK: 'lėlių' , dgsG: 'lėlės' },
+  { daiktas: 'obuolys', gimine: 'v', v: 'obuolys', k: 'obuolio', g: 'obuolį', i: 'obuoliu', dgs: 'obuoliai', dgsK: 'obuolių' , dgsG: 'obuolius' },
+  { daiktas: 'kamuolys', gimine: 'v', v: 'kamuolys', k: 'kamuolio', g: 'kamuolį', i: 'kamuoliu', dgs: 'kamuoliai', dgsK: 'kamuolių' , dgsG: 'kamuolius' },
+  { daiktas: 'kriause', gimine: 'm', v: 'kriaušė', k: 'kriaušės', g: 'kriaušę', i: 'kriauše', dgs: 'kriaušės', dgsK: 'kriaušių' , dgsG: 'kriaušes' },
+  { daiktas: 'knyga', gimine: 'm', v: 'knyga', k: 'knygos', g: 'knygą', i: 'knyga', dgs: 'knygos', dgsK: 'knygų' , dgsG: 'knygas' },
+  { daiktas: 'piestukas', gimine: 'v', v: 'pieštukas', k: 'pieštuko', g: 'pieštuką', i: 'pieštuku', dgs: 'pieštukai', dgsK: 'pieštukų' , dgsG: 'pieštukus' },
+  { daiktas: 'kubelis', gimine: 'v', v: 'kubelis', k: 'kubelio', g: 'kubelį', i: 'kubeliu', dgs: 'kubeliai', dgsK: 'kubelių' , dgsG: 'kubelius' },
+  { daiktas: 'zvaigzde', gimine: 'm', v: 'žvaigždė', k: 'žvaigždės', g: 'žvaigždę', i: 'žvaigžde', dgs: 'žvaigždės', dgsK: 'žvaigždžių' , dgsG: 'žvaigždes' },
+  { daiktas: 'sausainis', gimine: 'v', v: 'sausainis', k: 'sausainio', g: 'sausainį', i: 'sausainiu', dgs: 'sausainiai', dgsK: 'sausainių' , dgsG: 'sausainius' },
+  { daiktas: 'balionas', gimine: 'v', v: 'balionas', k: 'baliono', g: 'balioną', i: 'balionu', dgs: 'balionai', dgsK: 'balionų' , dgsG: 'balionus' },
+  { daiktas: 'gele', gimine: 'm', v: 'gėlė', k: 'gėlės', g: 'gėlę', i: 'gėle', dgs: 'gėlės', dgsK: 'gėlių' , dgsG: 'gėles' },
+  { daiktas: 'paukstis', gimine: 'v', v: 'paukštis', k: 'paukščio', g: 'paukštį', i: 'paukščiu', dgs: 'paukščiai', dgsK: 'paukščių' , dgsG: 'paukščius' },
+  { daiktas: 'kate', gimine: 'm', v: 'katė', k: 'katės', g: 'katę', i: 'kate', dgs: 'katės', dgsK: 'kačių' , dgsG: 'kates' },
+  { daiktas: 'deze', gimine: 'm', v: 'dėžė', k: 'dėžės', g: 'dėžę', i: 'dėže', dgs: 'dėžės', dgsK: 'dėžių' , dgsG: 'dėžes' },
+  { daiktas: 'medis', gimine: 'v', v: 'medis', k: 'medžio', g: 'medį', i: 'medžiu', dgs: 'medžiai', dgsK: 'medžių' , dgsG: 'medžius' },
+  { daiktas: 'dviratis', gimine: 'v', v: 'dviratis', k: 'dviračio', g: 'dviratį', i: 'dviračiu', dgs: 'dviračiai', dgsK: 'dviračių' , dgsG: 'dviračius' },
+  { daiktas: 'stalasBaldas', gimine: 'v', v: 'stalas', k: 'stalo', g: 'stalą', i: 'stalu', dgs: 'stalai', dgsK: 'stalų' , dgsG: 'stalus' },
+  { daiktas: 'suoliukasBaldas', gimine: 'v', v: 'suoliukas', k: 'suoliuko', g: 'suoliuką', i: 'suoliuku', dgs: 'suoliukai', dgsK: 'suoliukų' , dgsG: 'suoliukus' },
+  { daiktas: 'namas', gimine: 'v', v: 'namas', k: 'namo', g: 'namą', i: 'namu', dgs: 'namai', dgsK: 'namų', dgsG: 'namus' },
+  { daiktas: 'lele', gimine: 'm', v: 'lėlė', k: 'lėlės', g: 'lėlę', i: 'lėle', dgs: 'lėlės', dgsK: 'lėlių' , dgsG: 'lėles' },
 ]
 
 /** Daiktas pagal vardą — kai generatorius nori konkretaus. */

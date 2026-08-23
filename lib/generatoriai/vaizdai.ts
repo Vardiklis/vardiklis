@@ -57,9 +57,12 @@ export function laikrodis(minutesNuoVidurnakcio: number, etikete?: string): stri
     const [x2, y2] = taskas(i * 30, r - 2)
     turinys += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stambus ? INK : LINE}" stroke-width="${stambus ? 2 : 1.5}"/>`
   }
-  for (const [i, zyme] of [[0, '12'], [3, '3'], [6, '6'], [9, '9']] as const) {
-    const [x, y] = taskas(i * 30, r - 20)
-    turinys += tekstas(x, y + 4, zyme, 11, MUTED)
+  // Visos dvylika valandų, o ne tik 12, 3, 6 ir 9. Vaikas, kuris dar mokosi
+  // skaityti laikrodį, valandą nuskaito iš skaičiaus, į kurį rodo trumpoji
+  // rodyklė; be užrašų jam tenka jį atskaičiuoti — tai jau kitas uždavinys.
+  for (let i = 0; i < 12; i += 1) {
+    const [x, y] = taskas(i * 30, r - 15)
+    turinys += tekstas(x, y + 4, String(i === 0 ? 12 : i), 10, INK)
   }
 
   const [vx, vy] = taskas(val * 30 + min * 0.5, r - 22)

@@ -3,9 +3,15 @@
 import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
 import Mygtukas from '@/components/Mygtukas'
-import { generuokRinkini, type Lygis, type Sritis, type Uzdavinys } from '@/lib/generatoriai'
+import { generuokTemosRinkini, type Lygis, type Sritis, type Uzdavinys } from '@/lib/generatoriai'
 import { uzdaviniuKiekis } from '@/lib/lietuviu'
-import { potemes, programa, type IsskleistaPotema, type ProgramosTema } from '@/lib/programa'
+import {
+  potemes,
+  programa,
+  temosGeneratoriai,
+  type IsskleistaPotema,
+  type ProgramosTema,
+} from '@/lib/programa'
 
 // KaTeX (JS + CSS) užkraunamas tik tada, kai uždaviniai iš tikrųjų sugeneruoti —
 // kitaip jis blokuotų tuščio puslapio piešimą.
@@ -13,7 +19,7 @@ const UzdavinioKortele = dynamic(() => import('@/components/UzdavinioKortele'), 
   ssr: false,
 })
 
-const KIEKIAI = [5, 10, 20] as const
+const POTEMES_KIEKIAI = [5, 10, 20] as const
 
 const LYGIAI: { reiksme: Lygis; etikete: string }[] = [
   { reiksme: 1, etikete: 'Vidutinis' },
@@ -24,11 +30,21 @@ const LYGIAI: { reiksme: Lygis; etikete: string }[] = [
 type Rinkinys = {
   antraste: string
   temosPavadinimas: string
-  generatorius: string
+  /**
+   * Iš ko sudaromas rinkinys. Potemei — vienas generatorius, visai temai —
+   * visų jos potemių sąrašas, kad lape atsidurtų po uždavinį iš kiekvienos.
+   */
+  generatoriai: string[]
   lygis: Lygis
   /** Temos ar potemės skaičių riba. `undefined` — klasės numatytoji. */
   sritis?: Sritis
   kiekis: number
+  /**
+   * Pasirenkami kiekiai. Temai jie skaičiuojami iš potemių skaičiaus: mažiausias
+   * variantas yra „po vieną iš kiekvienos“, todėl fiksuotas 5 ar 10 čia netiktų
+   * — dalis potemių tiesiog neišsitektų.
+   */
+  kiekiai: number[]
   uzdaviniai: Uzdavinys[]
   rodytiAtsakymus: boolean
 }
@@ -71,8 +87,8 @@ export function UzduociuGeneratorius() {
   ) {
     // Klasė lemia skaičių mastą, o sritis — griežtą ribą. Be srities pirmokas,
     // paspaudęs sunkesnį lygį, gaudavo skaičius iki 10 000.
-    const uzdaviniai = generuokRinkini(
-      pagrindas.generatorius,
+    const uzdaviniai = generuokTemosRinkini(
+      pagrindas.generatoriai,
       pagrindas.lygis,
       pagrindas.kiekis,
       klase,
@@ -135,14 +151,19 @@ export function UzduociuGeneratorius() {
   }
 
   function pasirinkTema(tema: ProgramosTema) {
-    if (!tema.generatorius) return
+    const sarasas = temosGeneratoriai(tema)
+    if (sarasas.length === 0) return
+    // Numatytasis kiekis — po vieną iš kiekvienos potemės; dvigubas variantas
+    // duoda po du. Mažiau nei potemių imti neleidžiama, nes tada tema liktų
+    // nepilnai apeita.
     perjunk(raktas(tema.numeris, null), {
       antraste: `${tema.numeris}. ${tema.pavadinimas}`,
       temosPavadinimas: tema.pavadinimas,
-      generatorius: tema.generatorius,
+      generatoriai: sarasas,
       lygis: tema.lygis ?? 2,
       sritis: tema.sritis,
-      kiekis: 10,
+      kiekis: sarasas.length,
+      kiekiai: [sarasas.length, sarasas.length * 2],
     })
   }
 
@@ -151,10 +172,11 @@ export function UzduociuGeneratorius() {
     perjunk(raktas(tema.numeris, p.numeris), {
       antraste: `${p.numeris}. ${p.pavadinimas}`,
       temosPavadinimas: tema.pavadinimas,
-      generatorius: p.generatorius,
+      generatoriai: [p.generatorius],
       lygis: p.lygis,
       sritis: p.sritis,
       kiekis: 10,
+      kiekiai: [...POTEMES_KIEKIAI],
     })
   }
 
@@ -201,6 +223,7 @@ export function UzduociuGeneratorius() {
               <h3 className="t-h3">{r.antraste}</h3>
               <p className="mt-1 t-small text-muted">
                 {klase} klasė · {uzdaviniuKiekis(r.uzdaviniai.length)}
+                {r.generatoriai.length > 1 && ' · po vieną iš kiekvienos potemės'}
               </p>
             </div>
 
@@ -241,7 +264,7 @@ export function UzduociuGeneratorius() {
             <div>
               <span className="block t-small font-semibold">Kiek uždavinių</span>
               <div className="mt-2 flex gap-2">
-                {KIEKIAI.map((k) => (
+                {r.kiekiai.map((k) => (
                   <button
                     key={k}
                     type="button"

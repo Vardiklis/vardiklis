@@ -8,16 +8,21 @@
  */
 
 import katex from 'katex'
-import { generatoriai, generuokRinkini } from '../lib/generatoriai/index'
+import { generatoriai, generuokRinkini, generuokTemosRinkini } from '../lib/generatoriai/index'
 import { sablonas } from '../lib/generatoriai/bendra'
 import { sritisKlasei, uzRibos, type Sritis } from '../lib/generatoriai/sritis'
 import type { Lygis, Uzdavinys } from '../lib/generatoriai/tipai'
 import { normalizuok } from '../lib/matematika'
-import { potemes, programa } from '../lib/programa'
+import { potemes, programa, temosGeneratoriai } from '../lib/programa'
 import { temos } from '../lib/temos'
 
 const KIEK = Number(process.argv[2] ?? 100)
 const RODYTI_PAVYZDZIUS = process.argv.includes('--pavyzdziai')
+
+/** Generatoriai, iš kurių sudaromi visos temos lapai — visų potemių sąrašas. */
+const POTEMIU_GENERATORIAI = new Set(
+  programa.flatMap((k) => k.temos.flatMap((t) => temosGeneratoriai(t))),
+)
 
 const klaidos: string[] = []
 const perspejimai: string[] = []
@@ -108,6 +113,17 @@ function kaipTrupmena(normalizuotas: string): { sk: number; vd: number } | null 
 
 function patikrinkUzdavini(u: Uzdavinys, vardas: string, lygis: Lygis): void {
   const kur = `${vardas} (lygis ${lygis})`
+
+  // Visos temos rinkinys nustato, iš kurios potemės uždavinys, būtent pagal
+  // `temaId`. Jei jis nesutampa su registro raktu, potemė lape atrodytų
+  // nepadengta, nors uždavinys ten yra.
+  //
+  // Tikrinami tik programos potemių generatoriai. Keli seni bendrieji
+  // generatoriai (`sveikieji`, `pupp`) tyčia deleguoja kitiems ir grąžina jų
+  // `temaId`; jie temų lapuose nebenaudojami, tad jiems taisyklė netaikoma.
+  if (POTEMIU_GENERATORIAI.has(vardas) && u.temaId !== vardas) {
+    klaidos.push(`${kur}: temaId "${u.temaId}" nesutampa su generatoriaus raktu`)
+  }
 
   for (const [laukas, reiksme] of [
     ['klausimas', u.klausimas],
@@ -265,10 +281,49 @@ function patikrinkPrograma(): void {
   }
 }
 
+/**
+ * Visos temos rinkinys turi paliesti kiekvieną potemę.
+ *
+ * Temos antraštė anksčiau turėjo vieną bendrąjį generatorių, tad „visos temos“
+ * lapas rodydavo tik vieno pavidalo uždavinius. Dabar jis sudaromas iš potemių
+ * sąrašo, ir šis patikrinimas saugo, kad nė viena potemė iš lapo neiškristų —
+ * nei pridėjus naują potemę, nei pakeitus kvotų dalybą.
+ */
+function patikrinkTemuRinkinius(): void {
+  for (const k of programa) {
+    for (const tema of k.temos) {
+      const saltiniai = temosGeneratoriai(tema)
+      if (saltiniai.length === 0) {
+        klaidos.push(`${k.klase} kl. ${tema.numeris}. „${tema.pavadinimas}" neturi nė vieno generatoriaus`)
+        continue
+      }
+
+      // Tikrinami abu sąsajoje siūlomi kiekiai: po vieną iš potemės ir po du.
+      for (const kiekis of [saltiniai.length, saltiniai.length * 2]) {
+        for (const lygis of [1, 2] as const) {
+          const rinkinys = generuokTemosRinkini(saltiniai, lygis, kiekis, k.klase, tema.sritis)
+          const kur = `${k.klase} kl. ${tema.numeris}. ${tema.pavadinimas} (visa tema, ${kiekis} uždaviniai, sunkumas ${lygis})`
+
+          if (rinkinys.length !== kiekis) {
+            klaidos.push(`${kur}: gauta ${rinkinys.length} uždavinių vietoj ${kiekis}`)
+          }
+
+          const padengta = new Set(rinkinys.map((u) => u.temaId))
+          const truksta = saltiniai.filter((g) => !padengta.has(g))
+          if (truksta.length > 0) {
+            klaidos.push(`${kur}: nė vieno uždavinio iš potemių ${truksta.join(', ')}`)
+          }
+        }
+      }
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 
 patikrinkGrafa()
 patikrinkPrograma()
+patikrinkTemuRinkinius()
 
 const suvestine: string[] = []
 

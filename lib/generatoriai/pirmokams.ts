@@ -2,7 +2,16 @@ import { derink } from '../lietuviu'
 import { atsitiktinis, naujasId, normalizuok, pasirink, sumaisyk } from '../matematika'
 import { suBandymais, uzdavinys, variacija } from './bendra'
 import { pasirinkimoUzdavinys } from './formatai'
-import { DAIKTU_ZODYNAS, daiktuEile, scena, suEtiketemis, zodis, type Daiktas } from './ikonos'
+import {
+  DAIKTU_ZODYNAS,
+  daiktuEile,
+  dezeSuDaiktais,
+  scena,
+  suEtiketemis,
+  suNumeriais,
+  zodis,
+  type Daiktas,
+} from './ikonos'
 import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 
 /**
@@ -178,17 +187,44 @@ function kurkVieta(lygis: Lygis): Uzdavinys | null {
 
 const A_RIKIAVIMAS = [
   {
-    klausimas: 'Kas stovi trečias iš kairės?',
+    klausimas: 'Koks daiktas yra trečias?',
     atsakymas: 'obuolys',
     atsakymasRodymui: 'obuolys',
-    sprendimas: 'Skaičiuojame iš kairės: pirmas, antras, trečias.',
+    sprendimas: 'Skaičiuojame: 1 — knyga, 2 — katė, 3 — obuolys.',
   },
 ] as const
 
 export const daiktuRikiavimas: Generatorius = (lygis) =>
   suBandymais(() => kurkRikiavima(lygis), A_RIKIAVIMAS, 'daiktu-rikiavimas')
 
+/** Kelintiniai skaitvardžiai vyriškajai giminei — jie eina prie žodžio „daiktas“. */
 const KELINTAS = ['pirmas', 'antras', 'trečias', 'ketvirtas', 'penktas'] as const
+
+/**
+ * Formos, kurios keičiasi pagal daikto giminę.
+ *
+ * „Kelinta kubelis“ ir „kelintas dėžė“ yra klaidos, o daiktas kiekvienam
+ * uždaviniui parenkamas atsitiktinai, tad sakinys sudedamas iš šitos lentelės,
+ * o ne rašomas viena fiksuota forma.
+ */
+const FORMOS = {
+  v: {
+    kelintas: 'Kelintas',
+    didziausias: 'didžiausias',
+    maziausias: 'mažiausias',
+    nuoMaziausio: 'nuo mažiausio iki didžiausio',
+    jis: 'jis',
+    pazymetas: 'pažymėtas',
+  },
+  m: {
+    kelintas: 'Kelinta',
+    didziausias: 'didžiausia',
+    maziausias: 'mažiausia',
+    nuoMaziausio: 'nuo mažiausios iki didžiausios',
+    jis: 'ji',
+    pazymetas: 'pažymėta',
+  },
+} as const
 
 function kurkRikiavima(lygis: Lygis): Uzdavinys | null {
   return variacija([
@@ -211,7 +247,7 @@ function kurkRikiavima(lygis: Lygis): Uzdavinys | null {
       return {
         id: naujasId('daiktu-rikiavimas'),
         temaId: 'daiktu-rikiavimas',
-        klausimas: `Sudėk ${z.dgsG} nuo mažiausio iki didžiausio. Įrašyk raides iš eilės.`,
+        klausimas: `Sudėk ${z.dgsG} ${FORMOS[z.gimine].nuoMaziausio}. Įrašyk raides iš eilės.`,
         atsakymas: normalizuok(teisinga),
         atsakymasRodymui: teisinga,
         sprendimas: 'Mažiausias yra žemiausias piešinys, didžiausias — aukščiausias.',
@@ -231,7 +267,7 @@ function kurkRikiavima(lygis: Lygis): Uzdavinys | null {
       }
     },
 
-    // 2. Kelintas iš kairės
+    // 2. Kelintas daiktas eilėje
     () => {
       const kiek = lygis === 1 ? 4 : 5
       const daiktai = sumaisyk(DAIKTU_ZODYNAS.filter((z) => SMULKUS.includes(z.daiktas))).slice(
@@ -240,18 +276,25 @@ function kurkRikiavima(lygis: Lygis): Uzdavinys | null {
       )
       if (daiktai.length < kiek) return null
       const vieta = atsitiktinis(1, kiek)
-      const brezinys = suEtiketemis(
+      // Vienintelis pavidalas be numerių: čia jie ir yra atsakymas. Suskaičiuoti
+      // ketvirtą daiktą — visas šio uždavinio darbas, o numeris virš daikto tą
+      // darbą padarytų už vaiką. Kur skaičiuoti pradėti, klausti nereikia:
+      // eilė skaitoma taip pat kaip sakinys, iš kairės.
+      const brezinys = scena(
         daiktai.map((z, i) => ({ daiktas: z.daiktas, x: 14 + i * 60, y: 14, dydis: 42 })),
         14 + kiek * 60,
         76,
       )
       return uzdavinys('daiktu-rikiavimas', {
-        klausimas: `Kas stovi ${KELINTAS[vieta - 1]} iš kairės?`,
+        // Klausiama apie „daiktą“, o ne „kas stovi“: „daiktas“ yra vyriškosios
+        // giminės, tad kelintinis skaitvardis dera visada, nesvarbu, ar
+        // atsakymas bus obuolys, ar gėlė.
+        klausimas: `Koks daiktas yra ${KELINTAS[vieta - 1]}?`,
         atsakymas: daiktai[vieta - 1].v,
         atsakymasRodymui: daiktai[vieta - 1].v,
-        sprendimas: `Skaičiuojame iš kairės: ${daiktai
+        sprendimas: `Skaičiuojame: ${daiktai
           .slice(0, vieta)
-          .map((z, i) => `${KELINTAS[i]} — ${z.v}`)
+          .map((z, i) => `${i + 1} — ${z.v}`)
           .join(', ')}.`,
         brezinys,
       })
@@ -261,18 +304,19 @@ function kurkRikiavima(lygis: Lygis): Uzdavinys | null {
     () => {
       const d = pasirink<Daiktas>(['knyga', 'kubelis', 'deze'])
       const z = zodis(d)
+      const f = FORMOS[z.gimine]
       const dydziai = sumaisyk([26, 38, 50])
-      const brezinys = scena(
-        dydziai.map((dy, i) => ({ daiktas: d, x: 20 + i * 66, y: 58 - dy / 2, dydis: dy })),
+      const brezinys = suNumeriais(
+        dydziai.map((dy, i) => ({ daiktas: d, x: 20 + i * 66, y: 70 - dy / 2, dydis: dy })),
         218,
-        84,
+        100,
       )
-      const vidurinis = [...dydziai].sort((a, b) => a - b)[1]
+      const nr = dydziai.indexOf([...dydziai].sort((a, b) => a - b)[1]) + 1
       return uzdavinys('daiktu-rikiavimas', {
-        klausimas: `Kelinta ${z.v} iš kairės yra vidutinio dydžio?`,
-        atsakymas: String(dydziai.indexOf(vidurinis) + 1),
-        atsakymasRodymui: `$${dydziai.indexOf(vidurinis) + 1}$`,
-        sprendimas: `Nei didžiausia, nei mažiausia — ji stovi ${KELINTAS[dydziai.indexOf(vidurinis)]} iš kairės.`,
+        klausimas: `${f.kelintas} ${z.v} yra vidutinio dydžio? Parašyk skaičių.`,
+        atsakymas: String(nr),
+        atsakymasRodymui: `$${nr}$`,
+        sprendimas: `Nei ${f.didziausias}, nei ${f.maziausias} — ${f.jis} ${f.pazymetas} skaičiumi ${nr}.`,
         brezinys,
       })
     },
@@ -281,18 +325,21 @@ function kurkRikiavima(lygis: Lygis): Uzdavinys | null {
     () => {
       const d = pasirink<Daiktas>(['kamuolys', 'zvaigzde', 'gele'])
       const z = zodis(d)
+      const f = FORMOS[z.gimine]
       const dydziai = sumaisyk([24, 34, 44, 54])
-      const didziausias = Math.max(...dydziai)
-      const brezinys = scena(
-        dydziai.map((dy, i) => ({ daiktas: d, x: 16 + i * 62, y: 62 - dy / 2, dydis: dy })),
+      const nr = dydziai.indexOf(Math.max(...dydziai)) + 1
+      const brezinys = suNumeriais(
+        dydziai.map((dy, i) => ({ daiktas: d, x: 16 + i * 62, y: 74 - dy / 2, dydis: dy })),
         260,
-        88,
+        104,
       )
       return uzdavinys('daiktu-rikiavimas', {
-        klausimas: `Kelinta ${z.v} iš kairės yra didžiausia?`,
-        atsakymas: String(dydziai.indexOf(didziausias) + 1),
-        atsakymasRodymui: `$${dydziai.indexOf(didziausias) + 1}$`,
-        sprendimas: `Didžiausia stovi ${KELINTAS[dydziai.indexOf(didziausias)]} iš kairės.`,
+        klausimas: `${f.kelintas} ${z.v} yra ${f.didziausias}? Parašyk skaičių.`,
+        atsakymas: String(nr),
+        atsakymasRodymui: `$${nr}$`,
+        // Galininkas „didžiausią“ abiem giminėms toks pat, tad sprendimo
+        // derinti nebereikia.
+        sprendimas: `Didžiausią rasi ties skaičiumi ${nr}.`,
         brezinys,
       })
     },
@@ -350,15 +397,24 @@ function kurkRasyma(lygis: Lygis, virsus: number): Uzdavinys | null {
       })
     },
 
-    // 3. Nulis — tuščia dėžė
+    // 3. Kiek daiktų dėžėje — čia atsiranda ir nulis
     () => {
       if (lygis !== 1) return null
+      // Anksčiau čia buvo uždara dėžė ir visada atsakymas 0. Vaikas nemato,
+      // kas viduje, tad ir teisingas atsakymas atrodo kaip spėjimas: dėžė
+      // uždaryta ne todėl, kad tuščia. Dabar dėžė atvira iš šono — tuščia
+      // matosi taip pat aiškiai kaip trys obuoliai — o daiktų skaičius
+      // kaskart kitas, tad nulis lieka tikras atsakymas, o ne šablonas.
+      const n = atsitiktinis(0, Math.min(4, maks))
       return uzdavinys('skaiciu-rasymas', {
         klausimas: `Kiek ${z.dgsK} dėžėje? Parašyk skaičių.`,
-        atsakymas: '0',
-        atsakymasRodymui: '$0$',
-        sprendimas: 'Dėžė tuščia, tad daiktų yra 0.',
-        brezinys: scena([{ daiktas: 'deze', x: 40, y: 20, dydis: 76 }], 156, 116),
+        atsakymas: String(n),
+        atsakymasRodymui: `$${n}$`,
+        sprendimas:
+          n === 0
+            ? 'Dėžė tuščia, tad daiktų yra 0.'
+            : `Dėžėje ${n} ${derink(n, { vns: z.v, dgs: z.dgs, kilm: z.dgsK })}.`,
+        brezinys: dezeSuDaiktais(d, n),
       })
     },
 

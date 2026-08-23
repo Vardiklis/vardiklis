@@ -227,6 +227,31 @@ function kurkSimtalange(lygis: Lygis, sritis: Sritis | null): Uzdavinys | null {
       })
     },
 
+    // 4b. Pilna šimtalangė su uždengtais langeliais
+    () => {
+      // Vadovėlyje kelis langelius uždengia paveikslėliai, o vaikas atkuria,
+      // kokie skaičiai po jais slepiasi. Uždengiami keli, o klausiama apie
+      // storesniu rėmeliu pažymėtą — taip uždavinys lieka vienareikšmis, bet
+      // aplinkinių skaičių atrama nebėra visa.
+      const uzdengti = new Set<number>()
+      while (uzdengti.size < 5) uzdengti.add(atsitiktinis(12, 99))
+      const visi = [...uzdengti]
+      const n = visi[0]
+      return uzdavinys('simtalange', {
+        klausimas: 'Keli šimtalangės langeliai uždengti. Koks skaičius slepiasi pažymėtame langelyje?',
+        atsakymas: String(n),
+        atsakymasRodymui: `$${n}$`,
+        sprendimas: `Eilutėje skaičiai didėja po 1, stulpelyje — po 10. Pažymėtame langelyje turi būti ${n}.`,
+        brezinys: tinklas({
+          eiluteNuo: 1,
+          eiluteIki: 10,
+          slepti: visi,
+          pazymeti: [n],
+          etiketes: true,
+        }),
+      })
+    },
+
     // 5. Eilutės pirmas arba paskutinis skaičius
     () => {
       const n = atsitiktinis(11, 100)
