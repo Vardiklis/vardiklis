@@ -1,3 +1,4 @@
+import sharp from 'sharp'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
@@ -32,6 +33,8 @@ export default buildConfig({
   },
   collections: [Straipsniai, Failai, Naudotojai],
   editor: lexicalEditor(),
+  // Būtinas paveikslėlių dydžiams (Failai.imageSizes) generuoti.
+  sharp,
   secret: process.env.PAYLOAD_SECRET || '',
   db: sqliteAdapter({
     client: {

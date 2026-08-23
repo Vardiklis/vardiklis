@@ -2,14 +2,18 @@
   "name": "vardiklis",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run paruosk-standalone",
     "start": "next start",
     "lint": "eslint .",
     "patikra": "tsx scripts/patikrink-generatorius.ts 100",
     "patikra:diagnostika": "tsx scripts/patikrink-diagnostika.ts",
-    "egzaminai": "tsx scripts/kurk-egzaminu-pdf.ts"
+    "egzaminai": "tsx scripts/kurk-egzaminu-pdf.ts",
+    "paruosk-standalone": "rm -rf .next/standalone/public .next/standalone/.next/static && cp -r public .next/standalone/public && cp -r .next/static .next/standalone/.next/static"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",
