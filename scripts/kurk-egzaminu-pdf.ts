@@ -13,12 +13,14 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { EGZAMINAI, sudarykLapa } from '../lib/egzaminai'
 import { atsakymuHtml, lapoHtml } from './egzamino-lapas'
 
-const KIEK = Number(process.argv[2] ?? 6)
+const ARGUMENTAI = process.argv.slice(2)
+const PERRASYTI = ARGUMENTAI.includes('--perrasyti')
+const KIEK = Number(ARGUMENTAI.find((a) => !a.startsWith('--')) ?? 6)
 const KATALOGAS = 'public/egzaminai'
 const LAIKINAS = '.egzaminai-laikini'
 
@@ -63,6 +65,20 @@ function iPdf(chrome: string, htmlKelias: string, pdfKelias: string): void {
 }
 
 function pagrindinis(): void {
+  // Kataloge gali gulėti ranka darytos užduotys tais pačiais vardais.
+  // Be šito patikrinimo `npm run egzaminai` jas tyliai perrašytų.
+  if (!PERRASYTI && existsSync(KATALOGAS)) {
+    const esami = readdirSync(KATALOGAS).filter((f) => f.endsWith('.pdf'))
+    if (esami.length > 0) {
+      console.error(
+        `Kataloge ${KATALOGAS} jau yra ${esami.length} PDF failai.\n` +
+          'Jie būtų perrašyti. Jei tikrai to nori:\n\n' +
+          '  npm run egzaminai -- --perrasyti\n',
+      )
+      process.exit(1)
+    }
+  }
+
   const chrome = rastChrome()
   mkdirSync(KATALOGAS, { recursive: true })
   mkdirSync(LAIKINAS, { recursive: true })

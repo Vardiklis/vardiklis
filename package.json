@@ -13,7 +13,8 @@
     "patikra": "tsx scripts/patikrink-generatorius.ts 100",
     "patikra:diagnostika": "tsx scripts/patikrink-diagnostika.ts",
     "egzaminai": "tsx scripts/kurk-egzaminu-pdf.ts",
-    "paruosk-standalone": "rm -rf .next/standalone/public .next/standalone/.next/static && cp -r public .next/standalone/public && cp -r .next/static .next/standalone/.next/static"
+    "paruosk-standalone": "rm -rf .next/standalone/public .next/standalone/.next/static && cp -r public .next/standalone/public && cp -r .next/static .next/standalone/.next/static",
+    "schema": "node scripts/kurk-schema.mjs"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",

@@ -9,6 +9,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { kelias: '/uzduotys', prioritetas: 0.8, daznis: 'monthly' as const },
     { kelias: '/testai', prioritetas: 0.8, daznis: 'monthly' as const },
     { kelias: '/egzaminai', prioritetas: 0.8, daznis: 'monthly' as const },
+    { kelias: '/egzaminai/nmpp', prioritetas: 0.8, daznis: 'monthly' as const },
+    { kelias: '/egzaminai/pupp', prioritetas: 0.8, daznis: 'monthly' as const },
     { kelias: '/apie', prioritetas: 0.6, daznis: 'yearly' as const },
     { kelias: '/privatumas', prioritetas: 0.2, daznis: 'yearly' as const },
   ]

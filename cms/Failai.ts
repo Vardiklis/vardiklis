@@ -10,6 +10,13 @@ import type { CollectionConfig } from 'payload'
  */
 export const Failai: CollectionConfig = {
   slug: 'failai',
+  /**
+   * Skaitymas viešas. Payload pagal nutylėjimą reikalauja prisijungimo, o tada
+   * lankytojas negautų nė vieno įkelto PDF ar paveikslėlio — failų adresai eina
+   * per `/api/failai/file/…` ir tikrina tą pačią `read` taisyklę. Kūrimas,
+   * keitimas ir trynimas lieka tik prisijungusiems.
+   */
+  access: { read: () => true },
   labels: { singular: 'Failas', plural: 'Failai' },
   upload: {
     staticDir: process.env.UPLOADS_DIR || 'public/ikelta',

@@ -34,3 +34,13 @@ export function uzdaviniuKiekis(n: number): string {
     kilm: 'uždavinių',
   })}`
 }
+
+/** „1 minutė", „5 minutės", „60 minučių". */
+export function minuciuKiekis(n: number): string {
+  return `${n} ${derink(n, { vns: 'minutė', dgs: 'minutės', kilm: 'minučių' })}`
+}
+
+/** „1 taškas", „5 taškai", „10 taškų". */
+export function taskuKiekis(n: number): string {
+  return `${n} ${derink(n, { vns: 'taškas', dgs: 'taškai', kilm: 'taškų' })}`
+}
