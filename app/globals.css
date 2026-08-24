@@ -227,3 +227,93 @@
     page-break-inside: avoid;
   }
 }
+
+/* ── Straipsnio turinys ───────────────────────────────────────────────────
+   Redaktorius atiduoda gryną HTML be klasių, todėl stilius rišamas prie
+   žymų. Pločio neribojam čia — jį duoda `.tekstas` aplink. */
+@layer components {
+  .straipsnio-turinys > * + * {
+    margin-top: 1.25rem;
+  }
+
+  .straipsnio-turinys p,
+  .straipsnio-turinys li {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+  }
+
+  .straipsnio-turinys h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    margin-top: 2.5rem;
+  }
+
+  .straipsnio-turinys h3 {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-top: 2rem;
+  }
+
+  .straipsnio-turinys ul,
+  .straipsnio-turinys ol {
+    padding-left: 1.5rem;
+  }
+
+  .straipsnio-turinys ul {
+    list-style: disc;
+  }
+
+  .straipsnio-turinys ol {
+    list-style: decimal;
+  }
+
+  .straipsnio-turinys li + li {
+    margin-top: 0.5rem;
+  }
+
+  .straipsnio-turinys a {
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--orange);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  .straipsnio-turinys a:hover {
+    color: var(--orange);
+  }
+
+  .straipsnio-turinys blockquote {
+    border-left: 2px solid var(--orange);
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    color: var(--muted);
+  }
+
+  .straipsnio-turinys hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin-block: 2.5rem;
+  }
+
+  /* Paveikslėlis straipsnio viduryje. Gali būti platesnis už tekstą. */
+  .straipsnio-turinys img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+
+  .straipsnio-turinys code {
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+}

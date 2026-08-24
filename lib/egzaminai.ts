@@ -33,6 +33,8 @@ export type Dalis = {
 
 export type Egzaminas = {
   id: string
+  /** Kuriam patikrinimui priklauso — pagal tai atrenka puslapiai. */
+  grupe: 'pupp' | 'nmpp'
   pavadinimas: string
   klase: number
   trukmeMin: number
@@ -51,6 +53,7 @@ export type Egzaminas = {
  */
 export const PUPP_MATEMATIKA: Egzaminas = {
   id: 'pupp-matematika',
+  grupe: 'pupp',
   pavadinimas: 'PUPP matematika',
   klase: 10,
   trukmeMin: 150,
@@ -128,7 +131,191 @@ export const PUPP_MATEMATIKA: Egzaminas = {
   ],
 }
 
-export const EGZAMINAI: Egzaminas[] = [PUPP_MATEMATIKA]
+/**
+ * NMPP matematika, 4 ir 8 klasė.
+ *
+ * KUO ŠIS APRAŠAS SKIRIASI NUO PUPP. PUPP programa viešai skelbia dalių
+ * skaičių, uždavinių tipus ir taškų pasiskirstymą, todėl lapas juos kartoja
+ * tiksliai. NMPP tokio viešo skaidymo neturi — NŠA skelbia užduočių aprašus,
+ * bet ne „tiek pasirenkamųjų, tiek trumpųjų, tiek taškų“. Todėl čia kartojama
+ * tik tai, kas paskelbta patikimai: TRUKMĖ (4 kl. — 60 min., 8 kl. — 90 min.)
+ * ir TURINIO SRITYS pagal atitinkamos klasės matematikos programą.
+ *
+ * Dalių sudėtis žemiau yra MŪSŲ pasirinkimas, o ne NŠA struktūra. Pilnojo
+ * sprendimo dalies nėra sąmoningai: NMPP vykdomas elektroniniu būdu ir
+ * vertinamas automatiškai, tad ilgų rašytinių sprendimų jame nebūna.
+ */
+export const NMPP_MATEMATIKA_4: Egzaminas = {
+  id: 'nmpp-matematika-4',
+  grupe: 'nmpp',
+  pavadinimas: 'NMPP matematika, 4 klasė',
+  klase: 4,
+  trukmeMin: 60,
+  taskai: 20,
+  dalys: [
+    {
+      numeris: 'I',
+      tipas: 'pasirenkamasis',
+      pavadinimas: 'Pasirenkamojo atsakymo uždaviniai',
+      uzdaviniu: 8,
+      taskai: 8,
+    },
+    {
+      numeris: 'II',
+      tipas: 'trumpasis',
+      pavadinimas: 'Trumpojo atsakymo uždaviniai',
+      uzdaviniu: 12,
+      taskai: 12,
+    },
+  ],
+  sritys: [
+    {
+      pavadinimas: 'Skaičiai ir skaičiavimai',
+      dalis: 0.45,
+      generatoriai: [
+        'skaiciai-iki-10000-4',
+        'sudetis-atimtis-10000-4',
+        'daugyba-dalyba-10000-4',
+        'tekstiniai-uzdaviniai-4',
+        'sudetis-100000',
+        'atimtis-100000',
+        'daugyba-100000',
+        'dalyba-100000',
+        'veiksmu-tvarka-4',
+        'trupmenos-kartojimas-4',
+        'misrieji-skaiciai',
+        'desimtainiai-skaiciai-4',
+        'mintinis-skaiciavimas',
+        'keliu-zingsniu-uzdavinys',
+      ],
+    },
+    {
+      pavadinimas: 'Geometrija, matai ir matavimai',
+      dalis: 0.35,
+      generatoriai: [
+        'plokstumos-figuros',
+        'trikampiai-pagal-krastines',
+        'staciakampio-plotas',
+        'sudetines-figuros-plotas',
+        'plotas-ir-perimetras',
+        'ploto-vienetai',
+        'matavimo-vieneto-parinkimas',
+        'turis-kubeliais',
+        'kubas-ir-gretasienis',
+        'laikrodzio-rodmenys',
+        'svarstykliu-rodmenys-4',
+      ],
+    },
+    {
+      pavadinimas: 'Duomenys, statistika ir tikimybė',
+      dalis: 0.2,
+      generatoriai: [
+        'linijines-diagramos-skaitymas',
+        'skritulines-diagramos-skaitymas',
+        'atsakymai-pagal-diagrama',
+        'tikimybe-skaiciumi',
+        'labiau-tiketina',
+        'bandymas-su-kauliuku',
+      ],
+    },
+  ],
+}
+
+export const NMPP_MATEMATIKA_8: Egzaminas = {
+  id: 'nmpp-matematika-8',
+  grupe: 'nmpp',
+  pavadinimas: 'NMPP matematika, 8 klasė',
+  klase: 8,
+  trukmeMin: 90,
+  taskai: 25,
+  dalys: [
+    {
+      numeris: 'I',
+      tipas: 'pasirenkamasis',
+      pavadinimas: 'Pasirenkamojo atsakymo uždaviniai',
+      uzdaviniu: 10,
+      taskai: 10,
+    },
+    {
+      numeris: 'II',
+      tipas: 'trumpasis',
+      pavadinimas: 'Trumpojo atsakymo uždaviniai',
+      uzdaviniu: 15,
+      taskai: 15,
+    },
+  ],
+  sritys: [
+    {
+      pavadinimas: 'Skaičiai ir skaičiavimai',
+      dalis: 0.3,
+      generatoriai: [
+        'kvadratine-saknis',
+        'saknu-palyginimas',
+        'realieji-skaiciai',
+        'veiksmai-su-realiaisiais',
+        'kartojimas-trupmenos',
+        'kartojimas-procentai',
+        'kartojimas-laipsniai',
+        'palukanu-rusys',
+        'valiutu-kursai',
+      ],
+    },
+    {
+      pavadinimas: 'Reiškiniai, lygtys ir sistemos',
+      dalis: 0.25,
+      generatoriai: [
+        'vienanaris-daugianaris',
+        'atskliautimas-8',
+        'daugianariu-daugyba',
+        'dvinario-kvadratas',
+        'greitosios-formules',
+        'lygciu-sistema-8',
+        'kartojimas-lygtys',
+        'kartojimas-nelygybes',
+        'tiesinis-sarysis',
+      ],
+    },
+    {
+      pavadinimas: 'Geometrija, matai ir matavimai',
+      dalis: 0.3,
+      generatoriai: [
+        'pitagoro-teorema',
+        'atvirkstine-pitagoro',
+        'atstumas-tarp-tasku',
+        'lygiasonis-lygiakrastis',
+        'trikampio-vidurio-linija',
+        'stacioji-prizme-8',
+        'taisyklingoji-piramide-8',
+        'ritinys-8',
+        'kartojimas-kampai',
+        'kartojimas-trikampiai',
+      ],
+    },
+    {
+      pavadinimas: 'Duomenys, statistika ir tikimybė',
+      dalis: 0.15,
+      generatoriai: [
+        'empirinis-skirstinys',
+        'sugrupuotu-diagrama',
+        'histograma-8',
+        'imties-charakteristikos',
+        'kartojimas-statistika',
+        'kartojimas-tikimybes',
+      ],
+    },
+  ],
+}
+
+export const EGZAMINAI: Egzaminas[] = [
+  PUPP_MATEMATIKA,
+  NMPP_MATEMATIKA_4,
+  NMPP_MATEMATIKA_8,
+]
+
+/** Vienos grupės egzaminai — PUPP arba NMPP puslapiui. */
+export function egzaminaiGrupei(grupe: Egzaminas['grupe']): Egzaminas[] {
+  return EGZAMINAI.filter((e) => e.grupe === grupe)
+}
 
 export type LapoUzdavinys = Uzdavinys & {
   /** Numeris lape: 1, 2, 3 … per visas dalis iš eilės. */

@@ -3,7 +3,7 @@ import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from 'next/font/
 import Navigacija from '@/components/Navigacija'
 import Poraste from '@/components/Poraste'
 import { svetaine } from '@/lib/kontaktai'
-import './globals.css'
+import '../globals.css'
 
 // `latin-ext` privalomas — be jo lūžta ą č ę ė į š ų ū ž.
 // Display naudojamas tik 600 svoriu — 400 nekraunam.

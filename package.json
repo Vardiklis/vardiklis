@@ -2,6 +2,10 @@
   "name": "vardiklis",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,16 +13,25 @@
     "lint": "eslint .",
     "patikra": "tsx scripts/patikrink-generatorius.ts 100",
     "patikra:diagnostika": "tsx scripts/patikrink-diagnostika.ts",
-    "egzaminai": "tsx scripts/kurk-egzaminu-pdf.ts"
+    "egzaminai": "tsx scripts/kurk-egzaminu-pdf.ts",
+    "schema": "node scripts/kurk-schema.mjs"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "^3.88.0",
+    "@payloadcms/db-sqlite": "^3.88.0",
+    "@payloadcms/next": "^3.88.0",
+    "@payloadcms/plugin-seo": "^3.88.0",
+    "@payloadcms/richtext-lexical": "^3.88.0",
     "@twemoji/svg": "^15.0.0",
     "@types/katex": "^0.16.8",
+    "graphql": "^16.14.2",
     "katex": "^0.18.1",
     "lucide-static": "^1.31.0",
     "next": "16.2.12",
+    "payload": "^3.88.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

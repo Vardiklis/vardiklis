@@ -216,3 +216,39 @@ Signature elementas — trupmenos brūkšnys (`components/Trupmena.tsx`,
 
 Oranžinė (`#FF5C00`) naudojama taupiai. Tekstas ant oranžinės rašomas tamsus (`--ink`),
 o ne baltas: balta ant šios oranžinės duoda 3.09:1 kontrastą ir nepraeina WCAG AA.
+
+## Diegimas į Hostinger
+
+Svetainė statoma kaip **savarankiškas (standalone) Node serveris**: `next build` sukuria
+`.next/standalone/server.js` — vieną įėjimo failą, kuriam nereikia `node_modules`.
+`npm run build` iš karto įkopijuoja ir `public/` bei `.next/static` (be jų nebūtų
+paveikslėlių, PDF ir stilių).
+
+### Hostinger nustatymai
+
+Jei hPanel rodo **„unsupported framework or invalid project structure"**, karkaso
+atpažinimas nepavyko — rinkis presetą **Other** ir suvesk laukus ranka:
+
+| Laukas | Reikšmė |
+| --- | --- |
+| Framework preset | `Other` (jei siūlo `Next.js` — irgi tinka) |
+| Node version | `22` |
+| Build command | `npm run build` |
+| Output directory | `.next` |
+| Entry file | `.next/standalone/server.js` |
+| Branch | `main` |
+| Root directory | palikti tuščią (projektas yra repo šaknyje) |
+
+### Aplinkos kintamieji
+
+Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
+
+- `PAYLOAD_SECRET` — ilga atsitiktinė eilutė. Pakeitus nustos galioti visos sesijos.
+- `DATABASE_URI` — pvz. `file:/home/<naudotojas>/duomenys/vardiklis.db`
+- `UPLOADS_DIR` — pvz. `/home/<naudotojas>/duomenys/ikelta`
+
+> **Svarbu.** `DATABASE_URI` ir `UPLOADS_DIR` privalo rodyti **už programos katalogo ribų**.
+> Kiekvienas diegimas iš GitHub perrašo programos katalogą — viduje laikoma duomenų bazė
+> ir įkelti failai dingtų.
+
+Serveris klauso `PORT` ir `HOSTNAME` kintamųjų; Hostinger juos nustato pats.
