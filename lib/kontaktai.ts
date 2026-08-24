@@ -19,3 +19,32 @@ export const svetaine = {
   prierasas: 'denominator (lot.) — tas, kuris įvardija',
   url: 'https://vardiklis.lt',
 } as const
+
+/**
+ * Pamokų kainos. Laikom čia, kad keičiant jas nereikėtų medžioti po puslapius.
+ * `eurai` — skaičius, ne tekstas: iš jo formuojam ir rodomą kainą, ir
+ * struktūrinius duomenis, kur Google laukia gryno skaičiaus.
+ */
+export const kainos = [
+  {
+    id: 'individuali',
+    pavadinimas: 'Individuali pamoka',
+    eurai: 25,
+    trukmeMin: 60,
+    paaiskinimas: 'Vienas mokinys, visas dėmesys jam',
+  },
+  {
+    id: 'grupine',
+    pavadinimas: 'Grupinė pamoka',
+    eurai: 20,
+    trukmeMin: 60,
+    paaiskinimas: 'Iki 3 mokinių grupėje, kaina vienam',
+  },
+] as const
+
+/**
+ * Nuolaida pirmajai pamokai, eurais. Naudojama ir juostelėje po navigacija,
+ * ir „Susisiekti“ puslapio kainų bloke — kad akcijos dydis būtų vienoje vietoje
+ * ir niekada nepradėtų skirtis dviejose vietose vienu metu.
+ */
+export const nuolaidaPirmajai = 5

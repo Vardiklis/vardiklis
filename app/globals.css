@@ -317,3 +317,12 @@
     padding: 0.1em 0.35em;
   }
 }
+
+/* ── Nuolaidos juostelė ───────────────────────────────────────────────────
+   Puslapiai statiniai, todėl atsiųstame HTML juostelė VISADA yra matoma —
+   net tam, kas ją jau uždarė. Jei slėptume tik React'u, ji sublyksėtų tol,
+   kol įvyksta hidratacija. Todėl žymę ant <html> uždeda blokuojantis
+   skriptas maketo galvoje, o slepiam grynu CSS — dar prieš pirmą piešimą. */
+html[data-juostele='uzdaryta'] .juostele-nuolaida {
+  display: none;
+}

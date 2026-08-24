@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from 'next/font/google'
 import Analitika from '@/components/Analitika'
+import JuosteleNuolaida from '@/components/JuosteleNuolaida'
 import Navigacija from '@/components/Navigacija'
 import Poraste from '@/components/Poraste'
 import { svetaine } from '@/lib/kontaktai'
@@ -63,9 +64,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       // Šis atributas leidžia Next'ui jį išjungti pereinant į kitą puslapį —
       // kitaip naršyklė lėtai nuslenka į viršų vietoj to, kad tiesiog atidarytų.
       data-scroll-behavior="smooth"
+      // Juostelės skriptas dar prieš hidrataciją uždeda `data-juostele`, kurio
+      // serverio HTML neturi — React tai palaikytų neatitikimu ir rėktų į konsolę.
+      // Slopinam būtent čia: galioja tik `<html>` atributams, vaikų netikrina.
+      suppressHydrationWarning
       className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
     >
       <body className="min-h-dvh bg-paper text-ink antialiased">
+        {/* Blokuojantis skriptas — turi suveikti PRIEŠ pirmą piešimą, kitaip jau
+            uždaryta juostelė sekundei blykstelėtų (statiniame HTML ji visada yra).
+            Pati juostelė slepiama CSS taisykle `globals.css` gale. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem('vardiklis-juostele-nuolaida')==='uzdaryta'){document.documentElement.dataset.juostele='uzdaryta'}}catch(e){}`,
+          }}
+        />
         <a
           href="#turinys"
           className="be-spausdinimo sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-60 focus:rounded-[6px] focus:border focus:border-line focus:bg-paper focus:px-4 focus:py-2"
@@ -73,9 +86,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Pereiti prie turinio
         </a>
         <Navigacija />
-        <main id="turinys" className="pt-16">
-          {children}
-        </main>
+        {/* `pt-16` atstoja fiksuotos navigacijos aukštį. Anksčiau jis buvo ant
+            `<main>`, bet juostelė turi būti PRIE navigacijos, ne po tarpu —
+            todėl tarpas perkeltas ant bendro apvalkalo. */}
+        <div className="pt-16">
+          <JuosteleNuolaida />
+          <main id="turinys">{children}</main>
+        </div>
         <Poraste />
         <Analitika />
       </body>

@@ -143,7 +143,7 @@ export default function Apie() {
             skaitiklis={<span className="t-body text-muted">tai, ką matote</span>}
             vardiklis={
               <span className="font-display text-xl font-semibold tracking-[-0.01em] md:text-2xl">
-                tai, kas po tuo
+                tai, kas paslėpta
               </span>
             }
           />
