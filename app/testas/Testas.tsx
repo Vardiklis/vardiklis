@@ -7,6 +7,7 @@ import Brezinys from '@/components/Brezinys'
 import Klaviatura from '@/components/Klaviatura'
 import Mygtukas from '@/components/Mygtukas'
 import Trupmena from '@/components/Trupmena'
+import UzdavinioFormatas, { atsakymoUzuomina } from '@/components/UzdavinioFormatas'
 import {
   atsakyk,
   dabartinisUzdavinys,
@@ -56,9 +57,21 @@ export function Testas() {
     setRysys(null)
   }
 
+  /**
+   * Vienas formos veiksmas dviem žingsniams: pirmas patikrina atsakymą, antras
+   * pereina prie kito uždavinio.
+   *
+   * Todėl `Enter` veikia visą testą be pelės: įrašai atsakymą, spaudi `Enter` —
+   * pamatai, ar teisingai; spaudi dar kartą — gauni kitą uždavinį.
+   */
   function tikrink(e: React.FormEvent) {
     e.preventDefault()
-    if (!uzdavinys || rysys || ivestis.trim() === '') return
+    if (!uzdavinys) return
+    if (rysys) {
+      toliau()
+      return
+    }
+    if (ivestis.trim() === '') return
     setRysys({
       teisinga: arTeisingas(ivestis, uzdavinys.atsakymas),
       teisingasAtsakymas: uzdavinys.atsakymasRodymui,
@@ -127,6 +140,11 @@ export function Testas() {
   const { atlikta, numatoma } = progresoSkaiciai(busena)
   const dabartinis = atlikta + 1
 
+  /** Atsakymas raidėmis — pasirinkimas, poros ir rikiavimas. */
+  const raidinis = uzdavinys.formatas !== undefined && uzdavinys.formatas !== 'ivedimas'
+  const pasirinkimas = uzdavinys.formatas === 'pasirinkimas' && Boolean(uzdavinys.variantai)
+  const uzuomina = atsakymoUzuomina(uzdavinys)
+
   return (
     <div className="mt-8 max-w-2xl">
       <div className="flex items-baseline justify-between gap-4">
@@ -160,50 +178,85 @@ export function Testas() {
           className="block font-mono text-xl leading-relaxed md:text-2xl"
         />
 
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <label htmlFor="atsakymas" className="sr-only">
-            Atsakymas
-          </label>
-          <input
-            id="atsakymas"
-            ref={laukas}
-            type="text"
-            // Kai atidaryta sava klaviatūra, telefono klaviatūros nekviečiam —
-            // kitaip abi grumtųsi dėl ekrano.
-            inputMode={klaviatura ? 'none' : 'decimal'}
-            autoComplete="off"
-            value={ivestis}
-            readOnly={rysys !== null}
-            onChange={(e) => setIvestis(e.target.value)}
-            placeholder="Atsakymas"
-            className="w-full rounded-[6px] border border-line bg-paper px-4 py-3 font-mono text-lg text-ink read-only:bg-paper-2 sm:w-56"
+        {/* Variantai, poros ir rikiuojami elementai. Be jų pasirenkamojo
+            atsakymo uždavinys buvo neįmanomas: klausimas rodomas, o raidės,
+            kurios prašoma atsakyme, niekur nėra. */}
+        <div className="mt-6">
+          <UzdavinioFormatas
+            uzdavinys={uzdavinys}
+            dydis="text-lg"
+            raidesDydis="text-base"
+            onPasirinkti={pasirinkimas ? setIvestis : undefined}
+            pasirinkta={ivestis}
+            isjungta={rysys !== null}
           />
+        </div>
 
+        {uzuomina && !pasirinkimas && <p className="mt-2 t-small text-muted">{uzuomina}</p>}
+
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          {/* Pasirinkus raidę mygtuku, teksto laukelio nebereikia — jis tik
+              kviestų vaiką rašyti tai, ką jau paspaudė. */}
+          {!pasirinkimas && (
+            <>
+              <label htmlFor="atsakymas" className="sr-only">
+                Atsakymas
+              </label>
+              <input
+                id="atsakymas"
+                ref={laukas}
+                type="text"
+                // Kai atidaryta sava klaviatūra, telefono klaviatūros nekviečiam —
+                // kitaip abi grumtųsi dėl ekrano. Raidiniam atsakymui skaitinė
+                // klaviatūra irgi netinka.
+                inputMode={klaviatura || raidinis ? 'none' : 'decimal'}
+                autoComplete="off"
+                value={ivestis}
+                readOnly={rysys !== null}
+                onChange={(e) => setIvestis(e.target.value)}
+                placeholder="Atsakymas"
+                className="w-full rounded-[6px] border border-line bg-paper px-4 py-3 font-mono text-lg text-ink read-only:bg-paper-2 sm:w-56"
+              />
+            </>
+          )}
+
+          {/* Abu mygtukai — `submit`, tad formą pasiunčia ir pelė, ir `Enter`.
+              Skirtingi `key` reikalingi tam, kad React sukurtų naują mygtuką,
+              o ne perpieštų senąjį: tik naujai atsiradęs elementas gauna
+              `autoFocus`, o be jo `Enter` po atsakymo neturėtų kur nukristi —
+              pasirenkamojo atsakymo uždavinyje fokusas lieka ant varianto. */}
           {rysys ? (
-            <Mygtukas onClick={toliau} dydis="didelis">
+            <Mygtukas key="toliau" type="submit" dydis="didelis" autoFocus>
               Toliau
             </Mygtukas>
           ) : (
-            <Mygtukas type="submit" dydis="didelis" disabled={ivestis.trim() === ''}>
+            <Mygtukas
+              key="tikrinti"
+              type="submit"
+              dydis="didelis"
+              disabled={ivestis.trim() === ''}
+            >
               Tikrinti
             </Mygtukas>
           )}
 
-          <button
-            type="button"
-            onClick={() => setKlaviatura((v) => !v)}
-            aria-expanded={klaviatura}
-            aria-controls="matematikos-klaviatura"
-            className="inline-flex items-center gap-2 rounded-[6px] border border-line bg-paper px-4 py-3 t-small transition-colors hover:border-ink"
-          >
-            <span aria-hidden="true" className="font-mono text-base leading-none">
-              ⌨
-            </span>
-            Klaviatūra
-          </button>
+          {!raidinis && (
+            <button
+              type="button"
+              onClick={() => setKlaviatura((v) => !v)}
+              aria-expanded={klaviatura}
+              aria-controls="matematikos-klaviatura"
+              className="inline-flex items-center gap-2 rounded-[6px] border border-line bg-paper px-4 py-3 t-small transition-colors hover:border-ink"
+            >
+              <span aria-hidden="true" className="font-mono text-base leading-none">
+                ⌨
+              </span>
+              Klaviatūra
+            </button>
+          )}
         </div>
 
-        {klaviatura && (
+        {klaviatura && !raidinis && (
           <div id="matematikos-klaviatura">
             <Klaviatura
               reiksme={ivestis}

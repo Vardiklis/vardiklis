@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import Mygtukas from '@/components/Mygtukas'
 import { generuok, type Uzdavinys } from '@/lib/generatoriai'
 import { pasirink } from '@/lib/matematika'
-import { temos } from '@/lib/temos'
+import { temos } from '@/lib/diagnostikos-temos'
 
 const UzdavinioKortele = dynamic(() => import('@/components/UzdavinioKortele'), {
   ssr: false,
@@ -57,7 +57,10 @@ export function PasiruosimoRinkinys({ ikiKlases, minutes, kiek, id }: Props) {
       const t = pasirink(tinkamos)
       // Senesnės klasės temos duodamos sunkesniu lygiu — jos jau turi būti tvirtos.
       const lygis = t.klase >= ikiKlases - 1 ? 1 : 2
-      const u = generuok(t.generatorius, lygis, ikiKlases)
+      // Potemė renkama atsitiktinai, o klasė ir sritis imamos temos — taip
+      // rinkinys lieka tos klasės masto, kurios ta tema iš tikrųjų yra.
+      const vardas = pasirink(t.generatoriai)
+      const u = generuok(vardas, lygis, t.klase, t.skaiciuSritis)
       if (matyti.has(u.klausimas)) continue
       matyti.add(u.klausimas)
       nauji.push(u)

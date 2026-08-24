@@ -1,16 +1,29 @@
-import { generuokRinkini, type Uzdavinys } from './generatoriai'
-import { temos, type Tema } from './temos'
+import { generuokTemosRinkini, type Uzdavinys } from './generatoriai'
+import { klasesTemos, tema, temos, type Tema } from './diagnostikos-temos'
 
 /**
  * Adaptyvi diagnostika (8.2).
  *
  * Gryna logika — jokio React. Būsena nekintama: kiekviena funkcija grąžina
  * naują objektą, kad ją būtų galima laikyti `useState`.
+ *
+ * Uždaviniai imami iš tos pačios bibliotekos, kurią mokinys mato uždavinių
+ * puslapyje: tikrinimo vienetas yra programos tema, o trys jos uždaviniai —
+ * iš skirtingų tos temos potemių. Todėl testas niekada neparodo turinio, kurio
+ * vaiko programoje nėra.
  */
 
 const UZDAVINIU_TEMAI = 3
 const REIKIA_TEISINGU = 2
-const MAKS_GYLIS = 4
+/**
+ * Kiek klasių leidžiama nusileisti nuo pradinės temos.
+ *
+ * Vienas žingsnis dabar yra visa klasė, tad devynių pakanka keliui nuo
+ * dešimtos klasės iki pirmos. Anksčiau grafe buvo vienuolika stambių temų ir
+ * keturių žingsnių užtekdavo; su programos temomis toks limitas nusileidimą
+ * nutraukdavo dar prieš pasiekiant tikrąją priežastį.
+ */
+const MAKS_GYLIS = 9
 /**
  * Testas visada duoda lygiai tiek uždavinių. Anksčiau skaičius buvo vertinamas
  * ir augdavo eigos metu (18 → 21 → 24), o tėvui tai atrodė kaip klaida.
@@ -41,19 +54,17 @@ export type Busena = {
   baigta: boolean
 }
 
-function tema(id: string): Tema | undefined {
-  return temos.find((t) => t.id === id)
-}
-
 /**
- * Pradinės temos — vaiko klasės ir vienos klasės anksčiau.
- * Jei tokių nėra (grafas prasideda nuo 3 klasės), imamos žemiausios turimos.
+ * Pradinės temos — visos vaiko klasės temos programos tvarka.
+ *
+ * Anksčiau į pradžią būdavo dedama ir viena klasė žemiau, bet dabar vienetų
+ * yra tiek pat, kiek programos temų, tad žemesnė klasė vis tiek nebūtų
+ * pasiekta: ji pasiekiama tik leidžiantis nuo neišlaikytos temos, o būtent to
+ * diagnostika ir ieško.
  */
 function pradinesTemos(klase: number): string[] {
-  const savos = temos.filter((t) => t.klase === klase || t.klase === klase - 1)
-  if (savos.length > 0) {
-    return [...savos].sort((a, b) => b.klase - a.klase).map((t) => t.id)
-  }
+  const savos = klasesTemos(klase)
+  if (savos.length > 0) return savos.map((t) => t.id)
 
   const zemesnes = temos.filter((t) => t.klase <= klase)
   if (zemesnes.length > 0) {
@@ -94,7 +105,16 @@ function uzkraukTema(b: Busena): Busena {
       eile,
       dabartine: {
         temaId,
-        uzdaviniai: generuokRinkini(t.generatorius, TIKRINIMO_LYGIS, UZDAVINIU_TEMAI, b.klase),
+        // Klasė imama temos, o ne vaiko: leidžiantis į trečios klasės daugybą
+        // uždaviniai turi būti trečios klasės masto, nors testą laiko
+        // septintokas. Sritis — temos riba iš programos.
+        uzdaviniai: generuokTemosRinkini(
+          t.generatoriai,
+          TIKRINIMO_LYGIS,
+          UZDAVINIU_TEMAI,
+          t.klase,
+          t.skaiciuSritis,
+        ),
         indeksas: 0,
         teisingi: 0,
       },
@@ -160,13 +180,19 @@ export function atsakyk(b: Busena, teisinga: boolean): Busena {
 
   // Neišlaikius temos, leidžiamės į jos prielaidas. Išlaikius — netikrinam,
   // nes prielaidos akivaizdžiai tvarkoje.
+  //
+  // Prielaida dedama į eilės PRADŽIĄ, o ne pabaigą. Eilėje laukia visos vaiko
+  // klasės temos, tad į pabaigą įdėtos prielaidos nebūtų pasiektos per
+  // dvidešimt penkis uždavinius — o būtent jų diagnostika ir ieško. Dabar,
+  // temai nepavykus, iškart nusileidžiama prie jos priežasties ir tik paskui
+  // grįžtama prie likusių klasės temų.
   if (!islaikyta) {
     const gylis = (b.gyliai[temaId] ?? 0) + 1
     if (gylis <= MAKS_GYLIS) {
       for (const prielaidaId of tema(temaId)?.priklausoNuo ?? []) {
         if (rezultatai[prielaidaId]) continue
         if (eile.includes(prielaidaId)) continue
-        eile.push(prielaidaId)
+        eile.unshift(prielaidaId)
         gyliai[prielaidaId] = Math.min(gyliai[prielaidaId] ?? gylis, gylis)
       }
     }
@@ -307,7 +333,12 @@ export function ataskaita(b: Busena): Ataskaita {
     saknines,
     neislaikytos,
     islaikytos,
-    blokuojamos: priklausantys(new Set(saknines.map((t) => t.id))),
+    // Rodomos tik tos temos, kurias vaikas jau turėtų mokėti. Grandinė kyla
+    // iki dešimtos klasės, bet trečiokui pranešti, kad spraga blokuoja
+    // trigonometriją, būtų daugiau gąsdinimas nei informacija.
+    blokuojamos: priklausantys(new Set(saknines.map((t) => t.id))).filter(
+      (t) => t.klase <= b.klase,
+    ),
     grandine: sudarykGrandine(b, pagrindine, neislaikytos),
     // Specifikacijos 6.3 formulė: savaitės = spragų skaičius × 3.
     savaites: neislaikytos.length * 3,

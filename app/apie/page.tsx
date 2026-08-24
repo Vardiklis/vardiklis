@@ -6,7 +6,7 @@ import BruksnysDivider from '@/components/BruksnysDivider'
 import Mygtukas from '@/components/Mygtukas'
 import Trupmena from '@/components/Trupmena'
 import { kontaktai, svetaine } from '@/lib/kontaktai'
-import { temos } from '@/lib/temos'
+import { temos } from '@/lib/diagnostikos-temos'
 
 export const metadata: Metadata = {
   title: 'Apie Modestą ir metodiką',
@@ -20,9 +20,9 @@ export const metadata: Metadata = {
 }
 
 export default function Apie() {
-  const pavyzdys = temos.filter((t) =>
-    ['tiesines-lygtys', 'trupmenu-sudetis', 'bendravardiklinimas', 'dalumas'].includes(t.id),
-  )
+  // Grandinė iš tikrųjų egzistuoja duomenyse: 7.4 remiasi į 6.8, 6.8 — į 5.5,
+  // o 5.5 — į 5.3. Todėl pavyzdys puslapyje ir diagnostikos elgesys sutampa.
+  const pavyzdys = temos.filter((t) => ['7.4', '6.8', '5.5', '5.3'].includes(t.id))
 
   return (
     <div className="turinys sekcija">

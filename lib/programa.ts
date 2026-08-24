@@ -1,7 +1,7 @@
 /**
  * Matematikos programa 1–10 klasėms.
  *
- * ŠIS FAILAS YRA DUOMENYS, NE LOGIKA — kaip ir `lib/temos.ts`.
+ * ŠIS FAILAS YRA DUOMENYS, NE LOGIKA — kaip ir `lib/temu-sritys.ts`.
  * Surašyta pagal `uzdaviniu-temos.md`. Stambieji punktai (1., 2., 3.) yra
  * programos skyriai; jie rodomi paryškinti. `potemes` — smulkesnis skirstymas.
  *

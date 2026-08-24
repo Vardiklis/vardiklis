@@ -14,7 +14,8 @@ import { sritisKlasei, uzRibos, type Sritis } from '../lib/generatoriai/sritis'
 import type { Lygis, Uzdavinys } from '../lib/generatoriai/tipai'
 import { normalizuok } from '../lib/matematika'
 import { potemes, programa, temosGeneratoriai } from '../lib/programa'
-import { temos } from '../lib/temos'
+import { temos } from '../lib/diagnostikos-temos'
+import { TEMU_SRITYS } from '../lib/temu-sritys'
 
 const KIEK = Number(process.argv[2] ?? 100)
 const RODYTI_PAVYZDZIUS = process.argv.includes('--pavyzdziai')
@@ -36,9 +37,29 @@ const skola: string[] = []
 function patikrinkGrafa(): void {
   const id = new Set(temos.map((t) => t.id))
 
+  // Sričių lentelė turi dengti visą programą ir neturėti likučių: be srities
+  // tema iškrenta iš grandinės, o likutis rodo, kad tema buvo pervadinta.
+  for (const k of programa) {
+    for (const t of k.temos) {
+      if (!TEMU_SRITYS[`${k.klase}.${t.numeris}`]) {
+        klaidos.push(
+          `Sričių lentelėje trūksta temos "${k.klase}.${t.numeris}" — ${k.klase} kl. „${t.pavadinimas}"`,
+        )
+      }
+    }
+  }
+  for (const raktas of Object.keys(TEMU_SRITYS)) {
+    if (!id.has(raktas)) klaidos.push(`Sričių lentelėje yra nebeegzistuojanti tema "${raktas}"`)
+  }
+
   for (const t of temos) {
-    if (!(t.generatorius in generatoriai)) {
-      klaidos.push(`Tema "${t.id}" nurodo neegzistuojantį generatorių "${t.generatorius}"`)
+    if (t.generatoriai.length === 0) {
+      klaidos.push(`Tema "${t.id}" neturi nė vieno potemės generatoriaus`)
+    }
+    for (const g of t.generatoriai) {
+      if (!(g in generatoriai)) {
+        klaidos.push(`Tema "${t.id}" nurodo neegzistuojantį generatorių "${g}"`)
+      }
     }
     for (const p of t.priklausoNuo) {
       if (!id.has(p)) klaidos.push(`Tema "${t.id}" priklauso nuo nežinomos temos "${p}"`)
@@ -68,8 +89,8 @@ function patikrinkGrafa(): void {
   }
   for (const t of temos) zemyn(t.id, [])
 
-  // Generatorius naudojamas arba diagnostikos grafe, arba uždavinių bibliotekoje.
-  // Generatorius gali būti naudojamas ir tik potemėje — tada jis irgi naudojamas.
+  // Diagnostikos grafas dabar išvedamas iš programos, tad naudojimą lemia tik
+  // ji. Generatorius gali būti naudojamas ir tik potemėje — tada jis naudojamas.
   const programosGeneratoriai = new Set(
     programa.flatMap((k) =>
       k.temos.flatMap((t) => [
@@ -78,9 +99,7 @@ function patikrinkGrafa(): void {
       ]),
     ),
   )
-  const nenaudojami = Object.keys(generatoriai).filter(
-    (g) => !temos.some((t) => t.generatorius === g) && !programosGeneratoriai.has(g),
-  )
+  const nenaudojami = Object.keys(generatoriai).filter((g) => !programosGeneratoriai.has(g))
   if (nenaudojami.length > 0) {
     perspejimai.push(`Generatoriai be temos: ${nenaudojami.join(', ')}`)
   }

@@ -1096,10 +1096,10 @@ import type { Generatorius, Lygis, Uzdavinys } from './tipai'
 export type { Generatorius, Lygis, Sritis, Uzdavinys }
 
 /**
- * Generatorių registras. Raktas naudojamas `lib/temos.ts` (diagnostikos grafe)
- * ir `lib/programa.ts` (uždavinių bibliotekoje).
+ * Generatorių registras. Raktas nurodomas `lib/programa.ts` potemėje — iš ten
+ * jį paima ir uždavinių biblioteka, ir diagnostika.
  *
- * Pridedant naują generatorių pakanka įrašyti jį čia ir nurodyti raktą temoje.
+ * Pridedant naują generatorių pakanka įrašyti jį čia ir nurodyti raktą potemėje.
  */
 export const generatoriai: Record<string, Generatorius> = {
   // Aritmetika ir pradinės klasės
