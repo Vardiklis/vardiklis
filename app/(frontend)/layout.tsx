@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from 'next/font/google'
+import Analitika from '@/components/Analitika'
 import Navigacija from '@/components/Navigacija'
 import Poraste from '@/components/Poraste'
 import { svetaine } from '@/lib/kontaktai'
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <Poraste />
+        <Analitika />
       </body>
     </html>
   )

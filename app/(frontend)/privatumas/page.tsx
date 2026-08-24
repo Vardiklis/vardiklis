@@ -5,7 +5,7 @@ import { kontaktai } from '@/lib/kontaktai'
 export const metadata: Metadata = {
   title: 'Privatumas',
   description:
-    'Vardiklis nerenka ir nesaugo jokių duomenų: nėra registracijos, analitikos, slapukų ar trečiųjų šalių skriptų. Testo rezultatai lieka tik jūsų naršyklėje.',
+    'Vardiklis nerenka asmens duomenų ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje. Lankomumui matuoti naudojama Google Analytics.',
 }
 
 export default function Privatumas() {
@@ -42,8 +42,15 @@ export default function Privatumas() {
         <section>
           <h2 className="t-h3">Slapukai ir analitika</h2>
           <p className="mt-3 t-body text-muted">
-            Svetainė nenaudoja slapukų, analitikos, reklamos tinklų ar trečiųjų šalių skriptų.
-            Todėl nėra ir sutikimo lango — nėra dėl ko sutikti.
+            Svetainėje veikia Google Analytics — jis skaičiuoja, kiek žmonių apsilanko ir kurie
+            puslapiai naudingiausi. Renkami tik apibendrinti lankomumo duomenys: puslapio adresas,
+            apytikslė vietovė, naršyklė ir įrenginio tipas. Nei vardas, nei testo atsakymai, nei
+            rezultatai ten nepatenka.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Šiam skaičiavimui Google naudoja slapukus. Reklamos tinklų svetainėje nėra ir duomenų
+            niekam neparduodame. Nenorintys būti skaičiuojami gali įjungti naršyklės sekimo
+            blokavimą arba naudoti privatų langą.
           </p>
         </section>
 

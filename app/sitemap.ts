@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { kelias: '/egzaminai/pupp', prioritetas: 0.8, daznis: 'monthly' as const },
     { kelias: '/straipsniai', prioritetas: 0.7, daznis: 'weekly' as const },
     { kelias: '/apie', prioritetas: 0.6, daznis: 'yearly' as const },
+    { kelias: '/susisiekti', prioritetas: 0.6, daznis: 'yearly' as const },
     { kelias: '/privatumas', prioritetas: 0.2, daznis: 'yearly' as const },
   ]
 
