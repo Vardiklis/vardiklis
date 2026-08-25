@@ -61,65 +61,67 @@ export default async function StraipsnioPuslapis({ params, searchParams }: Props
   }
 
   return (
-    <article className="turinys sekcija">
-      {perziura && <GyvaPerziura />}
+    <article className="straipsnio-lapas">
+      <div className="straipsnio-stulpelis sekcija">
+        {perziura && <GyvaPerziura />}
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(struktura) }}
-      />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(struktura) }}
+        />
 
-      <p className="t-small text-muted">
-        <Link href="/straipsniai" className="underline underline-offset-4 hover:text-orange">
-          Straipsniai
-        </Link>
-      </p>
+        <p className="t-small text-muted">
+          <Link href="/straipsniai" className="underline underline-offset-4 hover:text-orange">
+            Straipsniai
+          </Link>
+        </p>
 
-      <h1 className="mt-4 t-display-l">{s.pavadinimas}</h1>
+        <h1 className="mt-4 display-l">{s.pavadinimas}</h1>
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-        {s.paskelbta && (
-          <time dateTime={s.paskelbta} className="font-mono t-small text-muted">
-            {data(s.paskelbta)}
-          </time>
-        )}
-        {s.klases.length > 0 && (
-          <span className="t-small text-muted">
-            {s.klases.length === 1 ? `${s.klases[0]} klasei` : `${s.klases.join(', ')} klasėms`}
-          </span>
-        )}
-      </div>
-
-      <p className="tekstas mt-6 t-body text-muted">{s.santrauka}</p>
-
-      {s.virselis && (
-        <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-[8px] border border-line bg-paper-2">
-          <Image
-            src={s.virselis.url}
-            alt={s.virselis.alt}
-            fill
-            sizes="(min-width: 1024px) 60rem, 100vw"
-            priority
-            className="object-cover"
-          />
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {s.paskelbta && (
+            <time dateTime={s.paskelbta} className="font-mono t-small text-muted">
+              {data(s.paskelbta)}
+            </time>
+          )}
+          {s.klases.length > 0 && (
+            <span className="t-small text-muted">
+              {s.klases.length === 1 ? `${s.klases[0]} klasei` : `${s.klases.join(', ')} klasėms`}
+            </span>
+          )}
         </div>
-      )}
 
-      <BruksnysDivider className="my-10" />
+        <p className="straipsnio-santrauka mt-6">{s.santrauka}</p>
 
-      <StraipsnioTurinys turinys={s.turinys} />
+        {s.virselis && (
+          <div className="relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-[8px] border border-line bg-paper-2">
+            <Image
+              src={s.virselis.url}
+              alt={s.virselis.alt}
+              fill
+              sizes="(min-width: 768px) 46rem, 100vw"
+              priority
+              className="object-cover"
+            />
+          </div>
+        )}
 
-      <PoStraipsnio saltinis={`${svetaine.url}/straipsniai/${s.nuoroda}`} />
+        <BruksnysDivider className="my-10" />
 
-      <BruksnysDivider className="mt-14 mb-8" />
-      <p>
-        <Link
-          href="/straipsniai"
-          className="t-body font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange"
-        >
-          Visi straipsniai
-        </Link>
-      </p>
+        <StraipsnioTurinys turinys={s.turinys} />
+
+        <PoStraipsnio saltinis={`${svetaine.url}/straipsniai/${s.nuoroda}`} />
+
+        <BruksnysDivider className="mt-14 mb-8" />
+        <p>
+          <Link
+            href="/straipsniai"
+            className="t-body font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange"
+          >
+            Visi straipsniai
+          </Link>
+        </p>
+      </div>
     </article>
   )
 }

@@ -317,6 +317,38 @@
     padding: 0.1em 0.35em;
   }
 
+  /* ── Straipsnio lapas ───────────────────────────────────────────────────
+     Baltas fonas per visą puslapio plotį — straipsnis skaitosi kaip popieriaus
+     lapas, padėtas ant dramblio kaulo stalo. */
+  .straipsnio-lapas {
+    background: #ffffff;
+    border-block: 1px solid var(--line);
+  }
+
+  /* Vienas centruotas stulpelis VISKAM: antraštei, tekstui, kainoms ir formai.
+     Anksčiau tekstą ribojo `.tekstas` (40rem) ir jis gulė į kairį kraštą, o
+     kvietimas driekėsi per visą 68rem plotį — dėl to straipsnis atrodė perpus
+     siauresnis už puslapį ir nulipęs į šoną. */
+  .straipsnio-stulpelis {
+    width: 100%;
+    max-width: 48rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  /* Lape atskiro teksto ribojimo nebereikia — plotį jau nustato stulpelis. */
+  .straipsnio-lapas .tekstas {
+    max-width: none;
+  }
+
+  /* Įžanga po antrašte: didesnė už tekstą ir juoda, ne pilka. */
+  .straipsnio-santrauka {
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
   /* Spalvotas blokas, įdedamas redaktoriuje per „/“.
      Fono ir rėmelio spalva ateina inline iš `cms/stiliai.ts` — čia tik forma. */
   .straipsnio-blokas {
