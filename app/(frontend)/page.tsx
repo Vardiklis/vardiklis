@@ -1,11 +1,29 @@
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import modestaNuotrauka from '@/public/Modesta.jpg'
 import Antraste from '@/components/Antraste'
+import Atsiliepimai from '@/components/Atsiliepimai'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import JsonLd from '@/components/JsonLd'
 import Mygtukas from '@/components/Mygtukas'
 import Trupmena from '@/components/Trupmena'
+
+// `absolute` — kitaip `layout.tsx` šabloną pritaikytų dar kartą ir gale
+// atsirastų antras „— Vardiklis".
+export const metadata: Metadata = {
+  title: {
+    absolute: 'Matematikos korepetitorė internetu 1 - 10kl. | Diagnostika ir pamokos - Vardiklis',
+  },
+  description:
+    'Matematikos korepetitorė internetu 1–10 klasių mokiniams. Nemokama diagnostika parodo, kurioje klasėje pradėjo formuotis spragos — ir kiek laiko prireiks jas pašalinti.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Matematikos korepetitorė internetu 1–10 kl. | Diagnostika ir pamokos',
+    description:
+      'Nemokama diagnostika parodo, kurioje klasėje vaikui iš tikrųjų nutrūko matematika. Individualios ir grupinės pamokos nuotoliu.',
+  },
+}
 
 const priezastys = [
   {
@@ -55,11 +73,19 @@ export default function Pradzia() {
 
       {/* Hero */}
       <section className="turinys pt-16 pb-20 md:pt-24 md:pb-28">
-        <h1 className="display-xl max-w-[15ch]">
-          Šiandienos dvejetas – nepašalinta spraga prieš dvejus metus.
-          </h1>
+        <h1 className="display-xl max-w-[16ch]">
+          Matematikos korepetitorė 1 – 10 klasių mokiniams
+        </h1>
+
+        {/* Ne antraštė, o šūkis: `display-l` duoda dydį, bet hierarchijos
+            nekuria — h2 čia atimtų svorį iš tikrųjų sekcijų antraščių. */}
+        <p className="display-l mt-6 max-w-[22ch] text-balance">
+          Šiandienos dvejetas gali būti nepašalinta spraga prieš dvejus metus.
+        </p>
+
         <p className="tekstas mt-7 t-body text-muted">
-           Nemokama diagnostika parodo, kurioje klasėje pradėjo formuotis matematikos spragos — ir kiek laiko prireiks jas pašalinti
+          Nemokama diagnostika parodo, kurioje klasėje pradėjo formuotis matematikos spragos — ir
+          kiek laiko prireiks jas pašalinti
         </p>
 
         {/* Signature trupmena — produkto tezė, ne dekoracija (5.3) */}
@@ -180,7 +206,7 @@ export default function Pradzia() {
               </p>
               <p className="mt-6">
                 <Link
-                  href="/apie"
+                  href="/matematikos-korepetitore"
                   className="t-body font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange"
                 >
                   Plačiau apie mane ir metodiką
@@ -188,6 +214,13 @@ export default function Pradzia() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Atsiliepimai */}
+      <section>
+        <div className="turinys sekcija pt-0">
+          <Atsiliepimai />
         </div>
       </section>
 

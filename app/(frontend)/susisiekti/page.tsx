@@ -126,7 +126,7 @@ export default function Susisiekti() {
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Mygtukas href="/testas">Pradėti diagnostiką</Mygtukas>
-          <Mygtukas href="/apie" variantas="konturas">
+          <Mygtukas href="/matematikos-korepetitore" variantas="konturas">
             Apie Modestą
           </Mygtukas>
         </div>

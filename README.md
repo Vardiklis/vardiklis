@@ -108,9 +108,29 @@ Pridedant naują temą:
 Vienintelė vieta, kur nurodytas el. paštas, telefonas ir vietovė. Pakeitus čia,
 pasikeičia navigacijoje, poraštėje, ataskaitoje ir struktūriniuose duomenyse.
 
+### Atsiliepimai — `lib/atsiliepimai.ts`
+
+Atsiliepimai iš [paslaugos.lt profilio](https://paslaugos.lt/modesta-mm4002), perrašyti
+ranka — svetainė ten nesilanko ir nieko netraukia. Tekstai laikomi **pažodžiui**, su
+originalo rašybos klaidomis: taisyti svetimą atsiliepimą reikštų jį perrašyti.
+
+Sąrašas surikiuotas nuo naujausio — nuo jo pradžios karuselė ir pradedama.
+Vienas failas maitina ir korteles (`components/Atsiliepimai.tsx`), ir struktūrinius
+duomenis (`components/JsonLd.tsx`) — pridėjus įrašą, jis atsiranda abiejose vietose ir
+persiskaičiuoja `aggregateRating`.
+
+Karuselė slenkama į šoną ir sukasi ratu: serveris atiduoda VIENĄ komplektą kortelių (tad
+Google mato kiekvieną atsiliepimą po vieną kartą, o be JS lieka paprastas slenkamas
+sąrašas), o po hidratacijos komplektų tampa trys. Išėjus iš vidurinio, `scrollLeft`
+tyliai peršoka per vieną komplektą atgal — turinys kartojasi būtent tuo periodu, tad
+siūlės pamatyti neįmanoma.
+
+Vardo kairėje — apvalus ženklas: yra nuotrauka (`public/atsiliepimai/`), rodoma ji, nėra —
+vardo ir pavardės inicialai.
+
 ### Nuotrauka — `public/Modesta.jpg`
 
-Naudojama `/apie` puslapyje. Pakeitus failą tuo pačiu vardu, daugiau nieko keisti nereikia.
+Naudojama `/matematikos-korepetitore` puslapyje. Pakeitus failą tuo pačiu vardu, daugiau nieko keisti nereikia.
 
 ### Socialinio tinklo paveikslėlis — `public/og.png`
 
@@ -223,7 +243,8 @@ app/
   testas/rezultatas/          ataskaita, noindex
   uzduotys/                   uždavinių generatorius
   testai/                     NMPP ir PUPP
-  apie/  privatumas/
+  matematikos-korepetitore/   paslaugų puslapis (buv. `apie/`, 308 iš `/apie`)
+  privatumas/
   sitemap.ts  robots.ts
 components/                   savi komponentai, be UI bibliotekų
 lib/

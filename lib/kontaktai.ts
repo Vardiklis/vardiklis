@@ -8,6 +8,7 @@ export const kontaktai = {
   telefonas: '+370 636 65873',
   telefonasNuoroda: '+37063665873',
   messenger: '',
+  facebook: 'https://www.facebook.com/profile.php?id=61593980331864',
   // TODO(Modesta): jei dirbama ir gyvai konkrečiame mieste — įrašyk jį čia,
   // tada jis atsiras poraštėje, „Apie" puslapyje ir struktūriniuose duomenyse.
   miestas: '',

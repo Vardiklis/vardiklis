@@ -14,6 +14,13 @@ const PUSLAPIO_KESAS = 'public, max-age=0, s-maxage=60, must-revalidate'
 const nextConfig: NextConfig = {
   turbopack: { root: saknis },
   outputFileTracingRoot: saknis,
+  async redirects() {
+    return [
+      // `/apie` gyveno sitemap'e ir yra išdalintas nuorodomis. 308 (permanent)
+      // perduoda visą surinktą svorį naujam adresui ir nepalieka 404.
+      { source: '/apie', destination: '/matematikos-korepetitore', permanent: true },
+    ]
+  },
   async headers() {
     return [
       { source: '/', headers: [{ key: 'Cache-Control', value: PUSLAPIO_KESAS }] },

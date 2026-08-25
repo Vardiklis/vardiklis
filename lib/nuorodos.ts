@@ -9,6 +9,6 @@ export const nuorodos = [
   { href: '/testai', tekstas: 'Testai' },
   { href: '/egzaminai', tekstas: 'NMPP ir PUPP' },
   { href: '/straipsniai', tekstas: 'Straipsniai' },
-  { href: '/apie', tekstas: 'Apie' },
+  { href: '/matematikos-korepetitore', tekstas: 'Apie' },
   { href: '/susisiekti', tekstas: 'Susisiekti' },
 ] as const
