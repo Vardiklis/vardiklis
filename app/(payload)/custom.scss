@@ -1,0 +1,16 @@
+/**
+ * CMS skydelio priedai.
+ *
+ * Redaktoriuje pasirenkami šriftai (`cms/stiliai.ts`) remiasi kintamaisiais,
+ * kuriuos svetainėje sukuria `next/font`. Admin skydelyje `next/font` nesisuka,
+ * tad be šito teksto šriftas ten nepasikeistų ir pasirinkimas atrodytų
+ * neveikiantis. Šriftai imami iš Google — tik CMS pusėje; lankytojo puslapiui
+ * tai nekainuoja nieko.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@400&display=swap');
+
+:root {
+  --font-bricolage: 'Bricolage Grotesque';
+  --font-instrument: 'Instrument Sans';
+  --font-jetbrains: 'JetBrains Mono';
+}

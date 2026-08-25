@@ -83,13 +83,45 @@ export async function visiStraipsniai(): Promise<StraipsnioSantrauka[]> {
   }
 }
 
-/** Vienas straipsnis pagal adreso dalį. `null`, jei nėra arba dar juodraštis. */
-export async function rastStraipsni(nuoroda: string): Promise<Straipsnis | null> {
+/**
+ * Prisijungęs CMS naudotojas — arba `null`.
+ *
+ * `next/headers` importuojamas tingiai: jis paverstų dinaminiu kiekvieną
+ * puslapį, kuris ką nors ima iš šio failo (pvz. sitemap).
+ */
+async function prisijungesNaudotojas() {
+  try {
+    const [{ headers }, payload] = await Promise.all([import('next/headers'), payloadas()])
+    const { user } = await payload.auth({ headers: await headers() })
+    return user ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Vienas straipsnis pagal adreso dalį. `null`, jei nėra arba dar juodraštis.
+ *
+ * `perziura` įjungiama tik iš CMS (`?perziura=1`) ir rodo naujausią juodraštį
+ * — bet tik prisijungusiam naudotojui. Neprisijungusiam tas pats adresas
+ * grąžina įprastą paskelbtą versiją, tad nuoroda nieko nepraskleidžia.
+ */
+export async function rastStraipsni(
+  nuoroda: string,
+  perziura = false,
+): Promise<Straipsnis | null> {
   try {
     const payload = await payloadas()
+    const naudotojas = perziura ? await prisijungesNaudotojas() : null
+    const juodrastis = Boolean(naudotojas)
+
     const r = await payload.find({
       collection: 'straipsniai',
-      where: { nuoroda: { equals: nuoroda }, busena: { equals: 'paskelbta' } },
+      where: juodrastis
+        ? { nuoroda: { equals: nuoroda } }
+        : { nuoroda: { equals: nuoroda }, busena: { equals: 'paskelbta' } },
+      draft: juodrastis,
+      user: naudotojas ?? undefined,
       depth: 2,
       limit: 1,
       overrideAccess: false,

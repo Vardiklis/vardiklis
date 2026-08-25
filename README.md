@@ -119,6 +119,34 @@ Jei keiti — išlaikyk tuos pačius matmenis.
 
 ---
 
+### Kainos ir kvietimas po straipsniais — CMS
+
+Kainų lentelė, užrašas apie nuolaidą ir registracijos forma po **kiekvienu** straipsniu
+imami iš Payload globalo **„Kainos ir kvietimas“** (`/admin/globals/nustatymai`,
+aprašas — `cms/Nustatymai.ts`). Neįrašius nė vienos kainos, lentelė nerodoma visai;
+išjungus „Rodyti po straipsniais“ — dingsta ir forma.
+
+Forma nieko nesiunčia ir neįrašo: ji atidaro lankytojo pašto programą su paruoštu
+laišku, kaip ir diagnostikos ataskaita (`components/RegistracijosForma.tsx`).
+
+### Straipsnio spalvos, šriftai ir blokai — `cms/stiliai.ts`
+
+Vienas failas dviem pusėms: iš jo redaktorius gauna pasirinkimus (pažymėjus tekstą —
+spalva, paryškinimo fonas, šriftas; per „/“ — spalvotas blokas), o svetainė — CSS.
+Straipsnio JSON'e lieka tik raktas (`spalva: "oranzine"`), tad pakeitus atspalvį čia
+persidažo ir visi seni straipsniai.
+
+Pridėjus naują spalvą ar bloką duomenų bazės keisti nereikia — visa tai gyvena
+`turinys` lauko JSON'e.
+
+### Gyva peržiūra
+
+Straipsnio redagavimo lange yra peržiūra su tikru puslapiu (ne tik SEO kortele).
+Tekstas saugomas automatiškai kas sekundę, o `components/GyvaPerziura.tsx` po kiekvieno
+išsaugojimo perkrauna peržiūros langą. Adresas — `/straipsniai/<nuoroda>?perziura=1`;
+juodraštį jis parodo **tik prisijungusiam** CMS naudotojui, visiems kitiems tas pats
+adresas grąžina paskelbtą versiją.
+
 ## Kaip pridėti naują uždavinių generatorių
 
 1. **Sukurk failą** `lib/generatoriai/mano-tema.ts`:
@@ -246,6 +274,14 @@ Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
 - `PAYLOAD_SECRET` — ilga atsitiktinė eilutė. Pakeitus nustos galioti visos sesijos.
 - `DATABASE_URI` — pvz. `file:/home/<naudotojas>/duomenys/vardiklis.db`
 - `UPLOADS_DIR` — pvz. `/home/<naudotojas>/duomenys/ikelta`
+
+### Pakeitus kolekcijų ar globalų laukus
+
+1. `npm run dev` — vietinė bazė atsinaujina pati;
+2. `npm run schema` — schema perrašoma į `cms/pradine-schema.ts`;
+3. jei atsirado **nauja lentelė** (naujas globalas ar kolekcija), į `payload.config.ts`
+   `prodMigrations` sąrašą pridedamas naujas įrašas nauju pavadinimu — serveryje jau
+   įvykdyta migracija antrą kartą nepaleidžiama, tad be to lentelė ten neatsirastų.
 
 > **Svarbu.** `DATABASE_URI` ir `UPLOADS_DIR` privalo rodyti **už programos katalogo ribų**.
 > Kiekvienas diegimas iš GitHub perrašo programos katalogą — viduje laikoma duomenų bazė

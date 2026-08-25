@@ -2,13 +2,21 @@ import sharp from 'sharp'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { sql, sqliteAdapter } from '@payloadcms/db-sqlite'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import {
+  BlocksFeature,
+  FixedToolbarFeature,
+  lexicalEditor,
+  TextStateFeature,
+} from '@payloadcms/richtext-lexical'
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import { buildConfig } from 'payload'
+import { straipsnioBlokai } from './cms/blokai'
 import { Failai } from './cms/Failai'
 import { Naudotojai } from './cms/Naudotojai'
+import { Nustatymai } from './cms/Nustatymai'
 import { PRADINE_SCHEMA } from './cms/pradine-schema'
-import { Straipsniai } from './cms/Straipsniai'
+import { straipsnioAdresas, Straipsniai } from './cms/Straipsniai'
+import { TEKSTO_BUSENOS } from './cms/stiliai'
 
 const katalogas = path.dirname(fileURLToPath(import.meta.url))
 
@@ -31,9 +39,42 @@ export default buildConfig({
     meta: {
       titleSuffix: ' · Vardiklis',
     },
+    /**
+     * GYVA PERŽIŪRA. Redaguojant straipsnį šalia teksto rodomas tikras
+     * puslapis — ne tik SEO kortelė. Adresas santykinis: CMS ir svetainė
+     * sukasi tame pačiame Next serveryje, tad joks `SERVER_URL` nereikalingas.
+     *
+     * Rodomas juodraštis, o ne paskelbta versija — todėl adrese `?perziura=1`
+     * (žr. `lib/straipsniai.ts`; juodraštį parodo tik prisijungusiam).
+     */
+    livePreview: {
+      collections: ['straipsniai'],
+      url: ({ data }) => straipsnioAdresas(data as { nuoroda?: string | null }),
+      breakpoints: [
+        { name: 'telefonas', label: 'Telefonas', width: 390, height: 844 },
+        { name: 'planset', label: 'Planšetė', width: 834, height: 1112 },
+        { name: 'kompiuteris', label: 'Kompiuteris', width: 1440, height: 900 },
+      ],
+    },
   },
   collections: [Straipsniai, Failai, Naudotojai],
-  editor: lexicalEditor(),
+  globals: [Nustatymai],
+  /**
+   * Redaktoriaus galimybės. Prie numatytųjų pridėta:
+   *   • `TextStateFeature` — teksto spalva, paryškinimo fonas ir šriftas;
+   *   • `BlocksFeature` — spalvoto bloko įdėjimas per „/“;
+   *   • `FixedToolbarFeature` — nuolatinė juosta redaktoriaus viršuje. Be jos
+   *     spalvų mygtukas pasirodo tik pažymėjus tekstą, ir jo tenka ieškoti.
+   * Pačios spalvos aprašytos `cms/stiliai.ts`.
+   */
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [
+      ...defaultFeatures,
+      FixedToolbarFeature(),
+      TextStateFeature({ state: TEKSTO_BUSENOS }),
+      BlocksFeature({ blocks: straipsnioBlokai }),
+    ],
+  }),
   // Būtinas paveikslėlių dydžiams (Failai.imageSizes) generuoti.
   sharp,
   secret: process.env.PAYLOAD_SECRET || '',
@@ -59,6 +100,25 @@ export default buildConfig({
           }
         },
         // Atgal nesukam sąmoningai: tai reikštų visų lentelių trynimą.
+        down: async () => {},
+      },
+      /**
+       * Atsiradus NAUJAI lentelei (pvz. globalui „Kainos ir kvietimas“)
+       * neužtenka perkurti `PRADINE_SCHEMA` — serveryje migracija tuo pačiu
+       * pavadinimu jau įvykdyta ir antrą kartą nebepaleidžiama. Todėl
+       * pridedamas naujas įrašas, kuris praleidžia tą pačią schemą dar kartą:
+       * sakiniai su `IF NOT EXISTS`, tad esamoms lentelėms nieko nedaro.
+       *
+       * DĖMESIO: taip atsiranda tik naujos LENTELĖS. Pridėjus lauką į jau
+       * esamą lentelę, reikia atskiro `ALTER TABLE` sakinio.
+       */
+      {
+        name: 'schema-2026-08-kainos',
+        up: async ({ db }) => {
+          for (const sakinys of PRADINE_SCHEMA) {
+            await db.run(sql.raw(sakinys))
+          }
+        },
         down: async () => {},
       },
     ],

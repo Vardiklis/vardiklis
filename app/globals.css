@@ -316,6 +316,25 @@
     border-radius: 4px;
     padding: 0.1em 0.35em;
   }
+
+  /* Spalvotas blokas, įdedamas redaktoriuje per „/“.
+     Fono ir rėmelio spalva ateina inline iš `cms/stiliai.ts` — čia tik forma. */
+  .straipsnio-blokas {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .straipsnio-blokas > * + * {
+    margin-top: 1rem;
+  }
+
+  .straipsnio-blokas__antraste {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
 }
 
 /* ── Nuolaidos juostelė ───────────────────────────────────────────────────

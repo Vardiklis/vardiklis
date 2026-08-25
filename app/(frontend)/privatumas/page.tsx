@@ -57,7 +57,9 @@ export default function Privatumas() {
         <section>
           <h2 className="t-h3">Registracija</h2>
           <p className="mt-3 t-body text-muted">
-            Paskyrų nėra. Prisijungti ar registruotis nereikia ir negalima.
+            Paskyrų nėra. Prisijungti ar registruotis nereikia ir negalima. Straipsnių apačioje
+            esanti registracijos į pamoką forma duomenų niekur nesiunčia ir neįrašo: paspaudus
+            mygtuką atsidaro jūsų pašto programa su paruoštu laišku, o išsiunčiate jį patys.
           </p>
         </section>
 

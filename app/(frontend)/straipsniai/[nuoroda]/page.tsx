@@ -1,13 +1,19 @@
-import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import BruksnysDivider from '@/components/BruksnysDivider'
+import GyvaPerziura from '@/components/GyvaPerziura'
+import PoStraipsnio from '@/components/PoStraipsnio'
+import StraipsnioTurinys from '@/components/StraipsnioTurinys'
 import { svetaine } from '@/lib/kontaktai'
 import { data, rastStraipsni } from '@/lib/straipsniai'
 
-type Props = { params: Promise<{ nuoroda: string }> }
+type Props = {
+  params: Promise<{ nuoroda: string }>
+  /** `?perziura=1` ateina iš CMS — rodo juodraštį prisijungusiam redaktoriui. */
+  searchParams: Promise<{ [raktas: string]: string | string[] | undefined }>
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -36,9 +42,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function StraipsnioPuslapis({ params }: Props) {
+export default async function StraipsnioPuslapis({ params, searchParams }: Props) {
   const { nuoroda } = await params
-  const s = await rastStraipsni(nuoroda)
+  const perziura = (await searchParams).perziura === '1'
+  const s = await rastStraipsni(nuoroda, perziura)
   if (!s) notFound()
 
   const struktura = {
@@ -55,6 +62,8 @@ export default async function StraipsnioPuslapis({ params }: Props) {
 
   return (
     <article className="turinys sekcija">
+      {perziura && <GyvaPerziura />}
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(struktura) }}
@@ -98,9 +107,9 @@ export default async function StraipsnioPuslapis({ params }: Props) {
 
       <BruksnysDivider className="my-10" />
 
-      <div className="straipsnio-turinys tekstas">
-        <RichText data={s.turinys as never} />
-      </div>
+      <StraipsnioTurinys turinys={s.turinys} />
+
+      <PoStraipsnio saltinis={`${svetaine.url}/straipsniai/${s.nuoroda}`} />
 
       <BruksnysDivider className="mt-14 mb-8" />
       <p>

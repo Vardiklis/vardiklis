@@ -1,6 +1,14 @@
 import type { CollectionConfig } from 'payload'
 
 /**
+ * Straipsnio adresas peržiūrai. `?perziura=1` įjungia juodraščio rodymą —
+ * jį parodo tik prisijungusiam naudotojui (žr. `lib/straipsniai.ts`).
+ */
+export function straipsnioAdresas(dok: { nuoroda?: string | null }): string {
+  return dok?.nuoroda ? `/straipsniai/${dok.nuoroda}?perziura=1` : '/straipsniai'
+}
+
+/**
  * Straipsniai — tinklaraštis.
  *
  * Nuoroda (`nuoroda`) yra atskiras laukas, o ne išvedama iš pavadinimo:
@@ -14,12 +22,25 @@ export const Straipsniai: CollectionConfig = {
     useAsTitle: 'pavadinimas',
     defaultColumns: ['pavadinimas', 'busena', 'paskelbta'],
     description: 'Tinklaraščio įrašai. Juodraščiai svetainėje nerodomi.',
+    // Mygtukas „Peržiūra“ — atidaro juodraštį atskirame lange.
+    preview: (dok) => straipsnioAdresas(dok as { nuoroda?: string | null }),
   },
   // Skaityti gali visi, bet tik paskelbtus; kurti ir taisyti — prisijungę.
   access: {
     read: ({ req }) => (req.user ? true : { busena: { equals: 'paskelbta' } }),
   },
-  versions: { drafts: true },
+  /**
+   * Juodraščiai su automatiniu išsaugojimu. Autosave čia reikalingas ne dėl
+   * saugumo, o dėl gyvos peržiūros: ji rodo serveryje atvaizduotą puslapį,
+   * tad tekstas ekrane atsinaujina po kiekvieno išsaugojimo. Sekundės tarpas
+   * yra kompromisas tarp „gyva“ ir „neplaka serverio kas raidę“.
+   *
+   * Versijų kiekis ribojamas — antraip kas sekundę saugant bazė augtų sparčiai.
+   */
+  versions: {
+    drafts: { autosave: { interval: 1000 } },
+    maxPerDoc: 25,
+  },
   fields: [
     { name: 'pavadinimas', type: 'text', label: 'Pavadinimas', required: true },
     {
