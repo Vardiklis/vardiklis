@@ -21,6 +21,17 @@ import { TEKSTO_BUSENOS } from './cms/stiliai'
 const katalogas = path.dirname(fileURLToPath(import.meta.url))
 
 /**
+ * Stulpeliai, kurių `PRADINE_SCHEMA` nesugeba pridėti į jau egzistuojančias
+ * lenteles (žr. `prodMigrations` komentarą žemiau).
+ *
+ * `autosave` atsirado įjungus automatinį juodraščių saugojimą straipsniuose —
+ * be jo Payload versijų lentelės nebeperskaito.
+ */
+const TRUKSTAMI_STULPELIAI: string[] = [
+  'ALTER TABLE `_straipsniai_v` ADD `autosave` integer',
+]
+
+/**
  * Payload CMS — straipsniai, SEO laukai ir PDF failai.
  *
  * DUOMENŲ BAZĖ. Naudojamas SQLite, nes visa sistema turi gyventi Hostinger'yje,
@@ -103,18 +114,30 @@ export default buildConfig({
         down: async () => {},
       },
       /**
-       * Atsiradus NAUJAI lentelei (pvz. globalui „Kainos ir kvietimas“)
-       * neužtenka perkurti `PRADINE_SCHEMA` — serveryje migracija tuo pačiu
-       * pavadinimu jau įvykdyta ir antrą kartą nebepaleidžiama. Todėl
-       * pridedamas naujas įrašas, kuris praleidžia tą pačią schemą dar kartą:
-       * sakiniai su `IF NOT EXISTS`, tad esamoms lentelėms nieko nedaro.
+       * Atsiradus NAUJAI lentelei (globalas „Kainos ir kvietimas“) neužtenka
+       * perkurti `PRADINE_SCHEMA` — serveryje migracija tuo pačiu pavadinimu
+       * jau įvykdyta ir antrą kartą nebepaleidžiama. Todėl pridedamas naujas
+       * įrašas, kuris praleidžia tą pačią schemą dar kartą: sakiniai su
+       * `IF NOT EXISTS`, tad esamoms lentelėms nieko nedaro.
        *
-       * DĖMESIO: taip atsiranda tik naujos LENTELĖS. Pridėjus lauką į jau
-       * esamą lentelę, reikia atskiro `ALTER TABLE` sakinio.
+       * O TAI, KO `IF NOT EXISTS` NEPADARO — nauji stulpeliai jau esamose
+       * lentelėse. `CREATE TABLE IF NOT EXISTS` seną lentelę tiesiog praleidžia,
+       * tad stulpelis niekada neatsirastų, o paskui jį minintis indeksas
+       * nulaužtų visą migraciją ir Payload nebepakiltų. Todėl stulpeliai
+       * pridedami atskirai ir PIRMIAU už schemą.
        */
       {
         name: 'schema-2026-08-kainos',
         up: async ({ db }) => {
+          for (const sakinys of TRUKSTAMI_STULPELIAI) {
+            try {
+              await db.run(sql.raw(sakinys))
+            } catch (klaida) {
+              // Švarioje bazėje stulpelis jau sukurtas kartu su lentele —
+              // tada SQLite skundžiasi dublikatu, ir tai yra gerai.
+              if (!/duplicate column/i.test(String(klaida))) throw klaida
+            }
+          }
           for (const sakinys of PRADINE_SCHEMA) {
             await db.run(sql.raw(sakinys))
           }

@@ -281,7 +281,20 @@ Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
 2. `npm run schema` — schema perrašoma į `cms/pradine-schema.ts`;
 3. jei atsirado **nauja lentelė** (naujas globalas ar kolekcija), į `payload.config.ts`
    `prodMigrations` sąrašą pridedamas naujas įrašas nauju pavadinimu — serveryje jau
-   įvykdyta migracija antrą kartą nepaleidžiama, tad be to lentelė ten neatsirastų.
+   įvykdyta migracija antrą kartą nepaleidžiama, tad be to lentelė ten neatsirastų;
+4. jei atsirado **naujas stulpelis jau esamoje lentelėje** (pvz. įjungus autosave, į
+   `_straipsniai_v` atsiranda `autosave`), jis surašomas į `TRUKSTAMI_STULPELIAI`
+   sąrašą `payload.config.ts`.
+
+> `CREATE TABLE IF NOT EXISTS` seną lentelę tiesiog praleidžia, tad naujas stulpelis į ją
+> savaime nepatenka. Blogiausia, kad jį minintis indeksas tada nulaužia visą migraciją —
+> Payload nebepakyla ir **visi** CMS bei straipsnių puslapiai atsako 503, nors statiniai
+> puslapiai atrodo sveiki. Būtent taip ir atrodo pamiršta 4 punkto eilutė.
+
+Ar migracija tikrai veikia serverio bazei, galima patikrinti nepaliečiant serverio:
+nusikopijuoti bazę, iš kopijos ištrinti naujus stulpelius bei lenteles, `payload_migrations`
+palikti tik senus įrašus ir paleisti Payload su `NODE_ENV=production` ir `DATABASE_URI`,
+rodančiu į tą kopiją.
 
 > **Svarbu.** `DATABASE_URI` ir `UPLOADS_DIR` privalo rodyti **už programos katalogo ribų**.
 > Kiekvienas diegimas iš GitHub perrašo programos katalogą — viduje laikoma duomenų bazė
