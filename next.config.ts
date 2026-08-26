@@ -14,6 +14,16 @@ const PUSLAPIO_KESAS = 'public, max-age=0, s-maxage=60, must-revalidate'
 const nextConfig: NextConfig = {
   turbopack: { root: saknis },
   outputFileTracingRoot: saknis,
+  images: {
+    // Numatytoje eilėje tarp 384 ir 640 nieko nėra, o telefone hero nuotraukai
+    // reikia ~420 px (≈210 CSS px × 2 DPR). Naršyklė tada šoka į 640 ir parsiunčia
+    // beveik dvigubai daugiau pikselių, nei rodo. 480 tą tarpą užpildo.
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 480],
+    // Numatytai Next atiduoda tik WebP. AVIF tą patį kadrą supakuoja maždaug
+    // trečdaliu mažiau; naršyklė, jo nemokanti, `Accept` antraštėje jo
+    // neprašo ir gauna WebP, tad rizikos nėra.
+    formats: ['image/avif', 'image/webp'],
+  },
   async redirects() {
     return [
       // `/apie` gyveno sitemap'e ir yra išdalintas nuorodomis. 308 (permanent)

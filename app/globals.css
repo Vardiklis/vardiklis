@@ -162,6 +162,149 @@
   }
 }
 
+/* ── Pradžios hero ───────────────────────────────────────────────────────
+   Šviesus dramblio kaulo laukas, iškirpta figūra ir nubėgę dažai apačioje.
+   Viskas grynu CSS ir viena nuotrauka — jokių dekoratyvinių failų. */
+@layer components {
+  .hero-fonas {
+    /* Dekorui reikia `position`, kad juosta turėtų prie ko kabintis. */
+    position: relative;
+    /* Apačia baigiasi tiksliai kitos sekcijos spalva (`--paper-2`): perėjimą
+       žymi ne riba, o ženklų juosta. */
+    background-image:
+      radial-gradient(64% 42% at 4% 62%, rgba(255, 92, 0, 0.07), rgba(255, 92, 0, 0) 72%),
+      linear-gradient(180deg, #fdf9ee 0%, #f8f1de 54%, var(--paper-2) 100%);
+  }
+
+  /* Apatinė juosta: vietoj bendrinės dekoracijos — pati matematika. Ženklai
+     ir skaičiai, kiekvienas savaip pakreiptas, dalis jų nurėžta sekcijos
+     krašto. Naudojamas antraščių šriftas, kuris viršuje jau ir taip
+     parsiųstas — jokių papildomų baitų, jokių paveikslėlių. */
+  .hero-dekoras {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 74px;
+    overflow: hidden;
+    pointer-events: none;
+    /* Ženklų dydžiai inline duoti `em`, ne `rem`, todėl visą juostą galima
+       sumažinti telefone viena eilute — inline stiliaus `font-size` klasėmis
+       vis tiek neperrašytum. */
+    font-size: 0.72rem;
+  }
+
+  .hero-dekoras span {
+    position: absolute;
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1;
+    /* `transform-origin` prie centro — kitaip pasukus ženklas nuslystų nuo
+       jam paskirtos vietos. */
+    transform-origin: 50% 50%;
+  }
+
+  /* Siauresniame ekrane 19 ženklų sulipa į kruvą — pusė jų paliekama tik
+     stalviršiui. */
+  .hero-dekoras__platus {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .hero-dekoras {
+      height: 96px;
+      font-size: 1rem;
+    }
+
+    .hero-dekoras__platus {
+      display: block;
+    }
+  }
+
+  /* Mobilus: nuotrauka plaukioja dešinėje, o šūkis ją apgaubia — pereina virš
+     galvos, nusileidžia palei siluetą ir susieina apačioje. */
+  .hero-foto {
+    float: right;
+    width: 56%;
+    max-width: 18rem;
+    /* Paraštės nulinės sąmoningai: be `<shape-box>` raktažodžio (jo Lightning
+       CSS neprapraleidžia) `shape-outside` atskaitos rėmas yra margin-box, ir
+       bet kokia paraštė nustumtų daugiakampį nuo pačios figūros. Tarpą iki
+       teksto duoda `shape-margin`. */
+    margin: 0;
+    /* Daugiakampis, o ne `url()`: paveikslėlio variantas priverstų naršyklę
+       parsisiųsti dar vieną, per `next/image` neoptimizuotą to paties failo
+       kopiją. Taškai nuskaityti iš pačios kaukės — kairysis siluetas leidžiasi
+       nuo 47 % ties galva iki 25 % ties striuke. Viršus pradedamas ne ties
+       galva (30 %), o ties 36 %: tuos 6 % suvalgo `shape-margin`, ir virš
+       galvos telpa vientisa per visą plotį einanti eilutė. */
+    shape-outside: polygon(47% 36%, 100% 36%, 100% 100%, 25% 100%, 25% 89%, 27% 82%, 29% 73%, 30% 68%, 36% 59%, 40% 54%, 43% 50%, 45% 41%);
+    shape-margin: 0.9rem;
+  }
+
+  /* Šešėlis dedamas ant apvalkalo, o ne ant paties <img>: CSS filtrai
+     skaičiuojami PRIEŠ kaukę, tad ant nuotraukos jis nupieštų stačiakampį.
+     Ant tėvo jis seka iškirptą siluetą — figūra atsistoja priešais foną. */
+  .hero-foto__silueta {
+    filter: drop-shadow(-12px 16px 26px rgba(92, 70, 40, 0.16));
+  }
+
+  /* Kadras apačioje nukirstas per striukę — be ištirpimo ten liktų tiesi
+     riba. Kitų kraštų kaukė nebeliečia: fono nuotraukoje nebėra. */
+  .hero-foto img {
+    -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 80%, transparent 100%);
+  }
+
+  .hero-tekstas {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Trupmena privalo nusileisti PO plaukiojančia nuotrauka, ne apeiti jos. */
+  .hero-nuo-naujo {
+    clear: both;
+  }
+
+  /* Nuo planšetės nuotrauka iškeliama iš srauto į dešinį konteinerio kraštą —
+     apgaubimo nebelieka, vietos sraute ji nebeužima. Tekstui paliktas `pr`
+     toks, kad eilučių galai priartėtų prie figūros per ~90 px: pirštas rodo į
+     tekstą, bet jo neužkloja. Lūžis ties 1088 px, o ne ties `lg`, nes būtent
+     nuo tiek `.turinys` nustoja plėstis ir procentai ima reikšti kitką. */
+  @media (min-width: 768px) {
+    .hero-foto {
+      position: absolute;
+      top: 0;
+      right: 4%;
+      width: 40%;
+      max-width: none;
+      float: none;
+      shape-outside: none;
+    }
+
+    .hero-tekstas {
+      padding-right: 36%;
+    }
+
+    /* `.tekstas` bendra 40rem riba čia per plati — pastraipa nueitų po
+       figūros striuke. Hero stulpelyje ji siauresnė. */
+    .hero-tekstas .tekstas {
+      max-width: 32rem;
+    }
+  }
+
+  @media (min-width: 1088px) {
+    .hero-foto {
+      right: 11%;
+      width: 42%;
+    }
+
+    .hero-tekstas {
+      padding-right: 34%;
+    }
+  }
+}
+
 /* KaTeX derinamas prie aplinkinio teksto, ne atvirkščiai */
 .katex {
   font-size: 1.05em;
@@ -223,6 +366,17 @@
 
   .be-spausdinimo {
     display: none !important;
+  }
+
+  /* Hero dekoracija į popierių nekeliauja: gelsvas fonas suėstų rašalą, o
+     nuotrauka neneša jokios informacijos. */
+  .hero-fonas {
+    background: none;
+  }
+
+  .hero-fonas::after,
+  .hero-foto {
+    display: none;
   }
 
   body {

@@ -216,10 +216,14 @@ export function Atsiliepimai({ className = '' }: { className?: string }) {
 
           `snap-proximity`, ne `mandatory`: ratas kartais pastumia `scrollLeft`
           ranka, o griežtas snap tokį šuolį bandytų persverti. */}
+      {/* `role="region"` čia buvo, bet jis perrašydavo numatytąjį `<ul>` vaidmenį
+          `list`, ir prieinamumo medyje `<li>` likdavo be sąrašo tėvo (axe
+          `listitem`, 0/1 abiejose Lighthouse ataskaitose). `tabIndex` su
+          `aria-label` ir be jo padaro slenkamą sritį fokusuojamą bei
+          įvardintą, o sąrašo semantika išlieka. */}
       <ul
         ref={takelis}
         tabIndex={0}
-        role="region"
         aria-label="Atsiliepimai, slenkami į šoną"
         className="slinktis-be-juostos -mx-5 mt-10 flex snap-x snap-proximity items-start gap-5 overflow-x-auto px-5 pb-2 md:items-stretch"
       >

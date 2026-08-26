@@ -7,7 +7,7 @@ export const nuorodos = [
   { href: '/testas', tekstas: 'Diagnostika' },
   { href: '/uzduotys', tekstas: 'Uždaviniai' },
   { href: '/testai', tekstas: 'Testai' },
-  { href: '/egzaminai', tekstas: 'NMPP ir PUPP' },
+  { href: '/egzaminai', tekstas: 'NMPP PUPP' },
   { href: '/straipsniai', tekstas: 'Straipsniai' },
   { href: '/matematikos-korepetitore', tekstas: 'Apie' },
   { href: '/susisiekti', tekstas: 'Susisiekti' },
