@@ -1,18 +1,16 @@
-import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import Antraste from '@/components/Antraste'
+import { meta } from '@/lib/metaduomenys'
 import { data, visiStraipsniai } from '@/lib/straipsniai'
 
-export const metadata: Metadata = {
-  title: 'Straipsniai apie matematikos mokymąsi',
-  description:
+export const metadata = meta({
+  antraste: 'Straipsniai apie matematikos mokymąsi',
+  aprasymas:
     'Praktiniai patarimai tėvams ir mokytojams: kaip padėti vaikui su matematika, ką reiškia pasiekimų lygiai, kaip ruoštis NMPP ir PUPP.',
-  openGraph: {
-    title: 'Straipsniai — Vardiklis',
-    description: 'Praktiniai patarimai apie matematikos mokymąsi, NMPP ir PUPP.',
-  },
-}
+  kelias: '/straipsniai',
+  ogAprasymas: 'Praktiniai patarimai apie matematikos mokymąsi, NMPP ir PUPP.',
+})
 
 /**
  * Atvaizduojama užklausos metu, nes turinys ateina iš Payload.

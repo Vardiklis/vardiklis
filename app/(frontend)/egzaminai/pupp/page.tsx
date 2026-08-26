@@ -1,15 +1,12 @@
-import type { Metadata } from 'next'
+import { meta } from '@/lib/metaduomenys'
 import { PUPP } from '@/lib/patikrinimai'
 import PatikrinimoPuslapis from '../PatikrinimoPuslapis'
 
-export const metadata: Metadata = {
-  title: PUPP.metaAntraste,
-  description: PUPP.metaAprasymas,
-  openGraph: {
-    title: `${PUPP.pavadinimas} — Vardiklis`,
-    description: PUPP.metaAprasymas,
-  },
-}
+export const metadata = meta({
+  antraste: PUPP.metaAntraste,
+  aprasymas: PUPP.metaAprasymas,
+  kelias: '/egzaminai/pupp',
+})
 
 /**
  * Atvaizduojama užklausos metu, nes dalis kortelių ateina iš Payload.

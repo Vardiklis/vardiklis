@@ -1,4 +1,3 @@
-import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import modestaNuotrauka from '@/public/Modesta.jpg'
@@ -7,23 +6,30 @@ import Atsiliepimai from '@/components/Atsiliepimai'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import JsonLd from '@/components/JsonLd'
 import Mygtukas from '@/components/Mygtukas'
+import { meta } from '@/lib/metaduomenys'
 import Trupmena from '@/components/Trupmena'
 
-// `absolute` — kitaip `layout.tsx` šabloną pritaikytų dar kartą ir gale
-// atsirastų antras „— Vardiklis".
-export const metadata: Metadata = {
-  title: {
-    absolute: 'Matematikos korepetitorė internetu 1 - 10kl. | Diagnostika ir pamokos - Vardiklis',
-  },
-  description:
-    'Matematikos korepetitorė internetu 1–10 klasių mokiniams. Nemokama diagnostika parodo, kurioje klasėje pradėjo formuotis spragos — ir kiek laiko prireiks jas pašalinti.',
-  alternates: { canonical: '/' },
-  openGraph: {
-    title: 'Matematikos korepetitorė internetu 1–10 kl. | Diagnostika ir pamokos',
-    description:
-      'Nemokama diagnostika parodo, kurioje klasėje vaikui iš tikrųjų nutrūko matematika. Individualios ir grupinės pamokos nuotoliu.',
-  },
-}
+/**
+ * Pradinis taikosi į DIAGNOSTIKĄ, ne į „matematikos korepetitorę".
+ *
+ * Anksčiau ir šis, ir `/matematikos-korepetitore` taikėsi į tą pačią frazę,
+ * todėl Google negalėdavo apsispręsti, kurį rodyti, ir nukentėdavo abu. Kadangi
+ * `/matematikos-korepetitore` turi kur kas daugiau turinio apie pamokas
+ * (kainos, metodika, atsiliepimai, registracija), korepetitorės užklausos
+ * paliktos jam, o pradinis paimtas unikaliam dalykui, kurio neturi nė vienas
+ * konkurentas — spragos paieškai. Keičiant čia antraštę bendrinti su tuo
+ * puslapiu nebeverta: tada konkurencija tarp savų puslapių grįžtų.
+ */
+export const metadata = meta({
+  // 42 ženklai. Ties ~60 Google antraštę nukerpa, o nukirsta antraštė paieškoje
+  // atrodo kaip klaida — likusi mintis perkelta į aprašymą.
+  pilna: 'Matematikos spragos 1–10 klasei | Vardiklis',
+  aprasymas:
+    'Nemokamas testas 1–10 klasių mokiniams parodo, kurioje klasėje pradėjo formuotis matematikos spragos — ir kiek laiko prireiks jas pašalinti. Be registracijos, apie 15 minučių.',
+  kelias: '/',
+  ogAprasymas:
+    'Nemokama diagnostika parodo, kurioje klasėje vaikui iš tikrųjų nutrūko matematika. Trunka apie 15 minučių.',
+})
 
 const priezastys = [
   {
@@ -73,8 +79,10 @@ export default function Pradzia() {
 
       {/* Hero */}
       <section className="turinys pt-16 pb-20 md:pt-24 md:pb-28">
+{/* H1 apie diagnostiką, ne apie korepetitorę — kitaip jis vėl konkuruotų
+            su `/matematikos-korepetitore`. Žr. `metadata` komentarą aukščiau. */}
         <h1 className="display-xl max-w-[16ch]">
-          Matematikos korepetitorė 1 – 10 klasių mokiniams
+          Matematikos diagnostika 1 – 10 klasių mokiniams
         </h1>
 
         {/* Ne antraštė, o šūkis: `display-l` duoda dydį, bet hierarchijos

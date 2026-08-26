@@ -1,15 +1,12 @@
-import type { Metadata } from 'next'
+import { meta } from '@/lib/metaduomenys'
 import { NMPP } from '@/lib/patikrinimai'
 import PatikrinimoPuslapis from '../PatikrinimoPuslapis'
 
-export const metadata: Metadata = {
-  title: NMPP.metaAntraste,
-  description: NMPP.metaAprasymas,
-  openGraph: {
-    title: `${NMPP.pavadinimas} — Vardiklis`,
-    description: NMPP.metaAprasymas,
-  },
-}
+export const metadata = meta({
+  antraste: NMPP.metaAntraste,
+  aprasymas: NMPP.metaAprasymas,
+  kelias: '/egzaminai/nmpp',
+})
 
 /**
  * Atvaizduojama užklausos metu, nes dalis kortelių ateina iš Payload.

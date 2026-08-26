@@ -1,22 +1,20 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import Antraste from '@/components/Antraste'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import Mygtukas from '@/components/Mygtukas'
 import { egzaminaiGrupei } from '@/lib/egzaminai'
 import { minuciuKiekis, taskuKiekis } from '@/lib/lietuviu'
+import { meta } from '@/lib/metaduomenys'
 import { NMPP, PUPP, type Patikrinimas } from '@/lib/patikrinimai'
 
-export const metadata: Metadata = {
-  title: 'NMPP ir PUPP matematika — kas tai, kada vyksta ir kaip pasiruošti',
-  description:
+export const metadata = meta({
+  antraste: 'NMPP ir PUPP matematika: kas tai ir kaip pasiruošti',
+  aprasymas:
     'Kas yra NMPP ir PUPP matematikos patikrinimai, kurioms klasėms, kada vyksta, kiek trunka, kokia struktūra ir ką reiškia pasiekimų lygiai. Nemokamos pasiruošimo užduotys PDF.',
-  openGraph: {
-    title: 'NMPP ir PUPP matematika — Vardiklis',
-    description:
-      'Kas yra NMPP ir PUPP, kurioms klasėms, kada vyksta ir ką reiškia lygiai. Pasiruošimo užduotys PDF.',
-  },
-}
+  kelias: '/testai',
+  ogAprasymas:
+    'Kas yra NMPP ir PUPP, kurioms klasėms, kada vyksta ir ką reiškia lygiai. Pasiruošimo užduotys PDF.',
+})
 
 const nuorodosStilius =
   't-body font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange'

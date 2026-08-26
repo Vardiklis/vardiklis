@@ -13,6 +13,15 @@ type Props = {
   numeris: number
   rodytiAtsakyma: boolean
   /**
+   * Įvertinti įrašytą atsakymą NEATSKLEIDŽIANT teisingo.
+   *
+   * Generatoriuje vertinimas ateina kartu su atsakymais, ir to pakanka — ten
+   * lapas kuriamas spausdinti. Klasių puslapiuose atsakymai matomi iš karto,
+   * tad juos paslėpus turi likti būdas pasitikrinti; kitaip mygtukas
+   * „Patikrinti atsakymus" tiesiog parodytų atsakymą ir nieko nepatikrintų.
+   */
+  patikrinta?: boolean
+  /**
    * Įvestis laikoma ne kortelėje, o aukščiau — kitaip uždarius temą atsakymai
    * dingtų kartu su komponentu.
    */
@@ -31,6 +40,7 @@ export function UzdavinioKortele({
   uzdavinys,
   numeris,
   rodytiAtsakyma,
+  patikrinta = false,
   ivestis,
   onIvestis,
 }: Props) {
@@ -40,7 +50,7 @@ export function UzdavinioKortele({
   const raidinis = uzdavinys.formatas !== undefined && uzdavinys.formatas !== 'ivedimas'
   const kazkasIvesta = ivestis.trim() !== ''
   const teisinga = kazkasIvesta && arTeisingas(ivestis, uzdavinys.atsakymas)
-  const vertinama = rodytiAtsakyma && kazkasIvesta
+  const vertinama = (rodytiAtsakyma || patikrinta) && kazkasIvesta
 
   return (
     <li className="spausdinimo-blokas rounded-[8px] border border-line bg-paper p-5 md:p-6">

@@ -62,7 +62,7 @@ export const NMPP: Patikrinimas = {
   pilnas: 'Nacionaliniai mokinių pasiekimų patikrinimai',
   paantraste:
     'Pasiruošimo užduotys 4 ir 8 klasės matematikos NMPP: tokia pati trukmė ir tos pačios turinio sritys. Kiekvienas variantas — su atsakymais.',
-  metaAntraste: 'NMPP matematikos pasiruošimo užduotys — 4 ir 8 klasė, PDF',
+  metaAntraste: 'NMPP matematika: užduotys 4 ir 8 klasei su atsakymais',
   metaAprasymas:
     'Nemokamos pasiruošimo užduotys NMPP matematikai: 4 klasei 60 min., 8 klasei 90 min., tos pačios turinio sritys. Atsisiųsk PDF su atsakymais.',
   ivadas: [
@@ -134,7 +134,7 @@ export const PUPP: Patikrinimas = {
   pilnas: 'Pagrindinio ugdymo pasiekimų patikrinimas',
   paantraste:
     'Pasiruošimo užduotys, sudarytos pagal tą pačią struktūrą kaip patikrinimas: trys dalys, 50 taškų, 150 minučių. Kiekvienas variantas — su atsakymais ir sprendimais.',
-  metaAntraste: 'PUPP matematikos pasiruošimo užduotys — PDF biblioteka',
+  metaAntraste: 'PUPP matematikos pasiruošimo užduotys su atsakymais',
   metaAprasymas:
     'Nemokamos pasiruošimo užduotys PUPP matematikai: tos pačios struktūros kaip patikrinime — trys dalys, 50 taškų, 150 minučių. Atsisiųsk PDF su atsakymais ir sprendimais.',
   ivadas: [

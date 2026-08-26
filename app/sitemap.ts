@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { svetaine } from '@/lib/kontaktai'
 import { visiStraipsniai } from '@/lib/straipsniai'
+import { KLASES, klasesNuoroda } from '@/lib/uzduotys-klasems'
 
 /**
  * `/testas/rezultatas` čia nerašomas — jis pažymėtas `noindex`.
@@ -27,9 +28,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { kelias: '/privatumas', prioritetas: 0.2, daznis: 'yearly' as const },
   ]
 
+  // Klasių puslapiai — po vieną kiekvienai klasei. Būtent jie taikosi į
+  // „N klasės uždaviniai", tad sitemap'e jiems duodam ne mažesnį svorį nei
+  // generatoriui, kuris pats pagal tokias užklausas rangeuotis negali.
+  const klasiuPuslapiai = KLASES.map((k) => ({
+    kelias: `/uzduotys/${klasesNuoroda(k)}`,
+    prioritetas: 0.8,
+    daznis: 'monthly' as const,
+  }))
+
   const dabar = new Date()
 
-  const statiniai = puslapiai.map((p) => ({
+  const statiniai = [...puslapiai, ...klasiuPuslapiai].map((p) => ({
     url: `${svetaine.url}${p.kelias}`,
     lastModified: dabar,
     changeFrequency: p.daznis,

@@ -7,6 +7,7 @@ import GyvaPerziura from '@/components/GyvaPerziura'
 import PoStraipsnio from '@/components/PoStraipsnio'
 import StraipsnioTurinys from '@/components/StraipsnioTurinys'
 import { svetaine } from '@/lib/kontaktai'
+import { meta } from '@/lib/metaduomenys'
 import { data, rastStraipsni } from '@/lib/straipsniai'
 
 type Props = {
@@ -27,19 +28,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const aprasymas = s.meta.description || s.santrauka
   const paveikslelis = s.meta.image || s.virselis?.url
 
-  return {
-    title: antraste,
-    description: aprasymas,
-    alternates: { canonical: `${svetaine.url}/straipsniai/${s.nuoroda}` },
-    openGraph: {
-      type: 'article',
-      title: antraste,
-      description: aprasymas,
-      url: `${svetaine.url}/straipsniai/${s.nuoroda}`,
-      ...(s.paskelbta ? { publishedTime: s.paskelbta } : {}),
-      ...(paveikslelis ? { images: [{ url: paveikslelis }] } : {}),
-    },
-  }
+  // Per `meta()`, kad straipsnis nepamestų `og:site_name`, `og:locale` ir —
+  // neturintiems viršelio — atsarginio `/og.png`.
+  return meta({
+    pilna: antraste,
+    aprasymas,
+    kelias: `/straipsniai/${s.nuoroda}`,
+    tipas: 'article',
+    ...(s.paskelbta ? { paskelbta: s.paskelbta } : {}),
+    ...(paveikslelis ? { paveikslelis } : {}),
+  })
 }
 
 export default async function StraipsnioPuslapis({ params, searchParams }: Props) {

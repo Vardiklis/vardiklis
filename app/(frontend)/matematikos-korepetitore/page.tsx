@@ -1,4 +1,3 @@
-import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import modestaNuotrauka from '@/public/Modesta.jpg'
@@ -11,21 +10,21 @@ import RegistracijosForma from '@/components/RegistracijosForma'
 import Trupmena from '@/components/Trupmena'
 import { temos } from '@/lib/diagnostikos-temos'
 import { kainos, kontaktai, nuolaidaPirmajai, svetaine } from '@/lib/kontaktai'
+import { meta } from '@/lib/metaduomenys'
 import { PATIKRINIMAI } from '@/lib/patikrinimai'
 
 // `absolute` — antraštę nurodė užsakovė, tad `layout.tsx` šablono
 // („%s — Vardiklis") čia netaikom.
-export const metadata: Metadata = {
-  title: { absolute: 'Matematikos korepetitorė internetu | 1-10 klasė | Vardiklis' },
-  description:
+// Šis puslapis yra svetainės „matematikos korepetitorė" puslapis — pradinis
+// tos frazės sąmoningai nebetaiko, kad du savi puslapiai nekonkuruotų.
+export const metadata = meta({
+  pilna: 'Matematikos korepetitorė internetu | 1-10 klasė | Vardiklis',
+  aprasymas:
     'Matematikos korepetitorė internetu 1–10 klasių mokiniams: individualios ir grupinės pamokos, pasiruošimas NMPP ir PUPP. Pamoka pradedama nuo diagnostikos — nuo spragos, o ne nuo šios savaitės temos.',
-  alternates: { canonical: '/matematikos-korepetitore' },
-  openGraph: {
-    title: 'Matematikos korepetitorė internetu 1–10 klasėms — Vardiklis',
-    description:
-      'Individualios ir grupinės pamokos nuotoliu, pasiruošimas NMPP ir PUPP. Kaina, metodika ir registracija.',
-  },
-}
+  kelias: '/matematikos-korepetitore',
+  ogAprasymas:
+    'Individualios ir grupinės pamokos nuotoliu, pasiruošimas NMPP ir PUPP. Kaina, metodika ir registracija.',
+})
 
 const pamokuTipai = [
   {

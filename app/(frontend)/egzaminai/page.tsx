@@ -1,19 +1,17 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import Antraste from '@/components/Antraste'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import { egzaminaiGrupei } from '@/lib/egzaminai'
+import { meta } from '@/lib/metaduomenys'
 import { PATIKRINIMAI } from '@/lib/patikrinimai'
 
-export const metadata: Metadata = {
-  title: 'NMPP ir PUPP pasiruošimo užduotys — PDF biblioteka',
-  description:
+export const metadata = meta({
+  antraste: 'NMPP ir PUPP pasiruošimo užduotys su atsakymais',
+  aprasymas:
     'Nemokamos pasiruošimo užduotys NMPP (4 ir 8 klasė) ir PUPP matematikai. Tokia pati trukmė ir tos pačios turinio sritys, PDF su atsakymais.',
-  openGraph: {
-    title: 'NMPP ir PUPP pasiruošimo užduotys — Vardiklis',
-    description: 'PDF biblioteka: NMPP 4 ir 8 klasei bei PUPP matematikai, su atsakymais.',
-  },
-}
+  kelias: '/egzaminai',
+  ogAprasymas: 'PDF biblioteka: NMPP 4 ir 8 klasei bei PUPP matematikai, su atsakymais.',
+})
 
 export default function Egzaminai() {
   return (

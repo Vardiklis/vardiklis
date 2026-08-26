@@ -1,19 +1,17 @@
-import type { Metadata } from 'next'
 import Antraste from '@/components/Antraste'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import Mygtukas from '@/components/Mygtukas'
 import { kainos, kontaktai, nuolaidaPirmajai } from '@/lib/kontaktai'
+import { meta } from '@/lib/metaduomenys'
 
-export const metadata: Metadata = {
-  title: 'Susisiekti',
-  description:
+export const metadata = meta({
+  antraste: 'Susisiekti',
+  aprasymas:
     'Matematikos korepetitorės Modestos telefonas ir el. paštas. Individuali pamoka — 25 €/60 min, grupinė — 20 €/60 min.',
-  openGraph: {
-    title: 'Susisiekti — Vardiklis',
-    description:
-      'Matematikos korepetitorės Modestos kontaktai ir pamokų kainos. 1–10 klasių mokiniams.',
-  },
-}
+  kelias: '/susisiekti',
+  ogAprasymas:
+    'Matematikos korepetitorės Modestos kontaktai ir pamokų kainos. 1–10 klasių mokiniams.',
+})
 
 // Visa kortelė yra viena nuoroda — telefone pataikyti į patį numerį sunku,
 // tad taikinys yra visas plotas, o ne tekstas.
