@@ -5,10 +5,16 @@ import { kainos, kontaktai, svetaine } from '@/lib/kontaktai'
  * Struktūrinti duomenys landing puslapiui (9 skyrius).
  * `LocalBusiness` — korepetitorė dirba konkrečioje vietovėje ir nuotoliu.
  *
- * Atsiliepimai surašyti su `publisher` — jie surinkti paslaugos.lt, ne šioje
- * svetainėje. Tai ne smulkmena: savo paties svetainėje pačių susirinktus
- * atsiliepimus Google laiko „self-serving" ir jų nerodo, o nurodžius tikrą
- * šaltinį duomenys lieka teisingi ir tikrinami.
+ * ATSILIEPIMAI IR ŽVAIGŽDUTĖS. `aggregateRating` ir `review` čia palikti, nes
+ * jie teisingi ir naudingi kitiems duomenų skaitytojams, BET Google žvaigždučių
+ * iš jų nerodys ir nerodys niekada. Google taisyklė: jei atsiliepimus apie save
+ * valdo pati įmonė, jos puslapiai su `LocalBusiness` (ar bet kuriuo kitu
+ * `Organization` potipiu) yra „ineligible for star review feature“. `publisher:
+ * paslaugos.lt` to NEIŠSPRENDŽIA — taisyklė aiškiai apima ir per trečiąją šalį
+ * surinktus atsiliepimus, perkeltus į savo svetainę.
+ * https://developers.google.com/search/docs/appearance/structured-data/review-snippet
+ *
+ * Tikros žvaigždutės paieškoje ateina iš Google Verslo Profilio, ne iš čia.
  */
 export function JsonLd() {
   const duomenys = {
@@ -22,6 +28,11 @@ export function JsonLd() {
     email: kontaktai.elPastas,
     telephone: kontaktai.telefonas,
     image: `${svetaine.url}/og.png`,
+    // Kvadratinis ženklas žinių skydeliui — Google reikalauja bent 112×112 ir
+    // kad gerai atrodytų ant balto fono. Imamas iš `public/`, o ne `app/icon.png`,
+    // nes Next'as prie `app/` ikonų prikabina turinio maišą (`?abc123`), o Google
+    // prašo stabilaus adreso.
+    logo: `${svetaine.url}/logotipas.png`,
     priceRange: `${Math.min(...kainos.map((k) => k.eurai))}–${Math.max(
       ...kainos.map((k) => k.eurai),
     )} €`,
