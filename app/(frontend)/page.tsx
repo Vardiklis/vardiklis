@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import modestaNuotrauka from '@/public/Modesta.jpg'
-import heroNuotrauka from '@/public/heroimg.avif'
+import heroNuotrauka from '@/public/heronew.avif'
 import Antraste from '@/components/Antraste'
 import Atsiliepimai from '@/components/Atsiliepimai'
 import BruksnysDivider from '@/components/BruksnysDivider'
@@ -148,12 +148,13 @@ export default function Pradzia() {
               <Image
                 src={heroNuotrauka}
                 alt=""
-                // Next iš šio AVIF matmenų neperskaito (jo antraštė paženklinta
-                // kaip `heif`), ir statiniam importui prikiša atsarginius
-                // 100×100 — proporcija tampa kvadratu ir sulūžta visas hero.
-                // Todėl tikri matmenys duodami ranka.
-                width={4344}
-                height={5792}
+                // Next iš šio AVIF matmenų neperskaito ir statiniam importui
+                // prikiša atsarginius — todėl tikri duodami ranka. Jie privalo
+                // atitikti failą: `h-auto` aukštį skaičiuoja iš tikros
+                // nuotraukos, o vietą iš anksto rezervuoja pagal ŠIUOS skaičius,
+                // tad neatitikimas duotų šuolį (CLS) pasibaigus krovimui.
+                width={1024}
+                height={1024}
                 // Hero nuotrauka yra LCP kandidatė — be `priority` Next jos
                 // nepreloadintų ir ji atkeliautų po pirmo piešimo. `priority`
                 // vienas `fetchpriority="high"` ant preload'o NEUŽDEDA — jį

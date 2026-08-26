@@ -225,20 +225,18 @@
      galvos, nusileidžia palei siluetą ir susieina apačioje. */
   .hero-foto {
     float: right;
-    width: 56%;
-    max-width: 18rem;
-    /* Paraštės nulinės sąmoningai: be `<shape-box>` raktažodžio (jo Lightning
-       CSS neprapraleidžia) `shape-outside` atskaitos rėmas yra margin-box, ir
-       bet kokia paraštė nustumtų daugiakampį nuo pačios figūros. Tarpą iki
-       teksto duoda `shape-margin`. */
-    margin: 0;
-    /* Daugiakampis, o ne `url()`: paveikslėlio variantas priverstų naršyklę
-       parsisiųsti dar vieną, per `next/image` neoptimizuotą to paties failo
-       kopiją. Taškai nuskaityti iš pačios kaukės — kairysis siluetas leidžiasi
-       nuo 47 % ties galva iki 25 % ties striuke. Viršus pradedamas ne ties
-       galva (30 %), o ties 36 %: tuos 6 % suvalgo `shape-margin`, ir virš
-       galvos telpa vientisa per visą plotį einanti eilutė. */
-    shape-outside: polygon(47% 36%, 100% 36%, 100% 100%, 25% 100%, 25% 89%, 27% 82%, 29% 73%, 30% 68%, 36% 59%, 40% 54%, 43% 50%, 45% 41%);
+    width: 52%;
+    max-width: 17rem;
+    /* Šoninių paraščių nėra: be `<shape-box>` raktažodžio (jo Lightning CSS
+       neprapraleidžia) `shape-outside` atskaitos rėmas yra margin-box, ir
+       kiekviena paraštė daugiakampį nuslenka nuo pačios figūros. Viršutinė vis
+       dėlto reikalinga — nuotrauka turi nusileisti žemiau antraštės — todėl į
+       daugiakampio y reikšmes ji jau įskaičiuota (žr. žemiau). */
+    margin: 1.25rem 0 0;
+    /* Taškai nuskaityti iš pačios kaukės ir perskaičiuoti margin-box'ui
+       (≈ 0,10 + 0,90·y). Kairysis kraštas: plaukai ties 41 %, per vidurį
+       ranka iššoka į 7 % (ten pirštas), žemiau striukė plečiasi iki 3 %. */
+    shape-outside: polygon(41% 20%, 100% 20%, 100% 100%, 3% 100%, 5% 91%, 9% 82%, 12% 74%, 14% 59%, 10% 54%, 7% 51%, 32% 49%, 34% 39%, 37% 27%, 41% 22%);
     shape-margin: 0.9rem;
   }
 
@@ -274,9 +272,9 @@
   @media (min-width: 768px) {
     .hero-foto {
       position: absolute;
-      top: 0;
-      right: 4%;
-      width: 40%;
+      top: 1rem;
+      right: 1%;
+      width: 42%;
       max-width: none;
       float: none;
       shape-outside: none;
@@ -295,7 +293,8 @@
 
   @media (min-width: 1088px) {
     .hero-foto {
-      right: 11%;
+      top: 1.25rem;
+      right: 4.5%;
       width: 42%;
     }
 
