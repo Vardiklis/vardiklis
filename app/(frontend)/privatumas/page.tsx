@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 import Antraste from '@/components/Antraste'
+import { SlapukuPasirinkimas } from '@/components/SlapukuSutikimas'
 import { kontaktai } from '@/lib/kontaktai'
 
 export const metadata: Metadata = {
   title: 'Privatumas',
   description:
-    'Vardiklis nerenka asmens duomenų ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje. Lankomumui matuoti naudojama Google Analytics.',
+    'Vardiklis nerenka asmens duomenų ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje. Google Analytics įsijungia tik jums sutikus.',
 }
 
 export default function Privatumas() {
@@ -42,16 +43,23 @@ export default function Privatumas() {
         <section>
           <h2 className="t-h3">Slapukai ir analitika</h2>
           <p className="mt-3 t-body text-muted">
-            Svetainėje veikia Google Analytics — jis skaičiuoja, kiek žmonių apsilanko ir kurie
+            Būtini slapukai — tai tik pačios naršyklės atmintis: nebaigto testo eiga, uždaryta
+            nuolaidos juostelė ir jūsų atsakymas dėl slapukų. Jie niekur nesiunčiami, be jų
+            svetainė paprasčiausiai neveiktų, todėl sutikimo nereikalauja.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Analitikos slapukai įsijungia tik jums paspaudus „Sutinku“ apatinėje juostoje. Tada
+            pradeda veikti Google Analytics — jis skaičiuoja, kiek žmonių apsilanko ir kurie
             puslapiai naudingiausi. Renkami tik apibendrinti lankomumo duomenys: puslapio adresas,
             apytikslė vietovė, naršyklė ir įrenginio tipas. Nei vardas, nei testo atsakymai, nei
             rezultatai ten nepatenka.
           </p>
           <p className="mt-3 t-body text-muted">
-            Šiam skaičiavimui Google naudoja slapukus. Reklamos tinklų svetainėje nėra ir duomenų
-            niekam neparduodame. Nenorintys būti skaičiuojami gali įjungti naršyklės sekimo
-            blokavimą arba naudoti privatų langą.
+            Kol nesutinkate, į Google neiškeliauja nė viena užklausa ir jokių jo slapukų jūsų
+            naršyklėje neatsiranda. Reklamai skirtos Google funkcijos išjungtos visam laikui —
+            reklamos tinklų svetainėje nėra ir duomenų niekam neparduodame.
           </p>
+          <SlapukuPasirinkimas />
         </section>
 
         <section>

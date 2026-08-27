@@ -4,6 +4,7 @@ import Analitika from '@/components/Analitika'
 import JuosteleNuolaida from '@/components/JuosteleNuolaida'
 import Navigacija from '@/components/Navigacija'
 import Poraste from '@/components/Poraste'
+import SlapukuSutikimas from '@/components/SlapukuSutikimas'
 import { svetaine } from '@/lib/kontaktai'
 import '../globals.css'
 
@@ -72,11 +73,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-dvh bg-paper text-ink antialiased">
         {/* Blokuojantis skriptas — turi suveikti PRIEŠ pirmą piešimą, kitaip jau
-            uždaryta juostelė sekundei blykstelėtų (statiniame HTML ji visada yra).
-            Pati juostelė slepiama CSS taisykle `globals.css` gale. */}
+            uždaryta juostelė ir jau atsakyta slapukų juosta sekundei blykstelėtų
+            (statiniame HTML jos visada yra). Abi slepiamos CSS taisyklėmis
+            `globals.css` gale. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem('vardiklis-juostele-nuolaida')==='uzdaryta'){document.documentElement.dataset.juostele='uzdaryta'}}catch(e){}`,
+            __html: `try{if(localStorage.getItem('vardiklis-juostele-nuolaida')==='uzdaryta'){document.documentElement.dataset.juostele='uzdaryta'}if(localStorage.getItem('vardiklis-slapuku-sutikimas')){document.documentElement.dataset.slapukai='atsakyta'}}catch(e){}`,
           }}
         />
         <a
@@ -94,6 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main id="turinys">{children}</main>
         </div>
         <Poraste />
+        <SlapukuSutikimas />
         <Analitika />
       </body>
     </html>

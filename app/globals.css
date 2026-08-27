@@ -542,3 +542,12 @@
 html[data-juostele='uzdaryta'] .juostele-nuolaida {
   display: none;
 }
+
+/* ── Slapukų juosta ───────────────────────────────────────────────────────
+   Ta pati problema kaip su nuolaidos juostele: puslapiai statiniai, tad
+   atsiųstame HTML juosta VISADA yra — net tam, kas jau atsakė. Žymę ant <html>
+   uždeda blokuojantis maketo skriptas, o slepiam grynu CSS dar prieš pirmą
+   piešimą. Paspaudus „Pakeisti pasirinkimą" žymė nuimama ir juosta grįžta. */
+html[data-slapukai='atsakyta'] .juosta-slapukai {
+  display: none;
+}
