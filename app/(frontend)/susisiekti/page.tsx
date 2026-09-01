@@ -1,6 +1,7 @@
 import Antraste from '@/components/Antraste'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import Mygtukas from '@/components/Mygtukas'
+import RegistracijosForma from '@/components/RegistracijosForma'
 import { kainos, kontaktai, nuolaidaPirmajai } from '@/lib/kontaktai'
 import { meta } from '@/lib/metaduomenys'
 
@@ -59,6 +60,22 @@ export default function Susisiekti() {
       </ul>
 
       <p className="mt-6 t-small text-muted">{kontaktai.vietove}</p>
+
+      {/* ── Registracija ───────────────────────────────────────────────────── */}
+      {/* Ta pati forma kaip „Apie Modestą" puslapyje — laiškas atidaromas
+          lankytojo pašto programoje, svetainė nieko neįrašo. */}
+      <section id="registracija" className="mt-20 scroll-mt-24">
+        <BruksnysDivider className="mb-8" />
+        <h2 className="t-h2">Registracija į pamoką</h2>
+
+        <p className="tekstas mt-6 t-body text-muted">
+          Jei rašyti patogiau nei skambinti — užpildykite laukelius žemiau.
+        </p>
+
+        <div className="max-w-2xl">
+          <RegistracijosForma saltinis="Susisiekti" />
+        </div>
+      </section>
 
       {/* ── Kaina ──────────────────────────────────────────────────────────── */}
       <section className="mt-20">
