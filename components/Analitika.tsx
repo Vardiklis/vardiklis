@@ -2,10 +2,8 @@
 
 import Script from 'next/script'
 import { useSyncExternalStore } from 'react'
+import { ADS_ID, GA_ID } from '@/lib/analitika'
 import { prenumeruokSutikima, serveryjeNeatsakyta, skaitykSutikima } from '@/lib/slapukai'
-
-/** Google Analytics 4 matavimo ID. Viešas — jį matyti ir naršyklės kode. */
-export const GA_ID = 'G-YTHQ4HB2G4'
 
 /**
  * Google tag (gtag.js) visai svetainei.
@@ -22,10 +20,17 @@ export const GA_ID = 'G-YTHQ4HB2G4'
  *   • „Lighthouse“ ir „PageSpeed“ svetainę mato be sutikimo, tad trečiųjų šalių
  *     slapukų sąraše nebelieka nieko ir „Best practices“ įspėjimas dingsta.
  *
- * Sutikus leidžiam TIK `analytics_storage`. Reklamos raktai lieka `denied`, nes
- * svetainėje reklamos nėra — o būtent jie versdavo gtag'ą kviesti
- * `www.google.com/ccm/collect` ir tempti visą Google paskyros slapukų puokštę
- * (`__Secure-3PSID`, `NID`, `COMPASS` ir kt.). Su `denied` to skambučio nebėra.
+ * Sutikus leidžiam `analytics_storage`, `ad_storage` ir `ad_user_data`. Pastarųjų
+ * dviejų reikia todėl, kad svetainė reklamuojasi Google Ads: be jų konversija
+ * (užpildyta registracijos forma) lieka nepriskirta jokiam paspaudimui, ir už
+ * reklamą mokama nematant, kuris skelbimas atveda žmones.
+ *
+ * Kaina žinoma ir priimta sąmoningai: būtent šie raktai verčia gtag'ą kviesti
+ * `www.google.com/ccm/collect` ir atsitempti Google paskyros slapukų puokštę
+ * (`__Secure-3PSID`, `NID`, `COMPASS` ir kt.). Iki sutikimo jų nėra nė vieno.
+ *
+ * `ad_personalization` lieka `denied` — jo reikia tik remarketingo auditorijoms,
+ * o jų nenaudojam. Prašom tik to, be ko konversijų matavimas neveiktų.
  *
  * `afterInteractive` — Next'o rekomendacija analitikai: kraunama anksti, bet po
  * pirmojo puslapio atvaizdavimo, kad nestabdytų turinio.
@@ -52,13 +57,14 @@ export function Analitika() {
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('consent', 'default', {
-  ad_storage: 'denied',
-  ad_user_data: 'denied',
+  ad_storage: 'granted',
+  ad_user_data: 'granted',
   ad_personalization: 'denied',
   analytics_storage: 'granted'
 });
 gtag('js', new Date());
-gtag('config', '${GA_ID}');`}
+gtag('config', '${GA_ID}');
+gtag('config', '${ADS_ID}');`}
       </Script>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

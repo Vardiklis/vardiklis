@@ -6,7 +6,7 @@ import { kontaktai } from '@/lib/kontaktai'
 export const metadata: Metadata = {
   title: 'Privatumas',
   description:
-    'Vardiklis neturi duomenų bazės apie lankytojus ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje, registracijos forma duomenis tik persiunčia laišku. Google Analytics įsijungia tik jums sutikus.',
+    'Vardiklis neturi duomenų bazės apie lankytojus ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje, registracijos forma duomenis tik persiunčia laišku. Google Analytics ir Ads matavimas įsijungia tik jums sutikus.',
 }
 
 export default function Privatumas() {
@@ -57,8 +57,18 @@ export default function Privatumas() {
           </p>
           <p className="mt-3 t-body text-muted">
             Kol nesutinkate, į Google neiškeliauja nė viena užklausa ir jokių jo slapukų jūsų
-            naršyklėje neatsiranda. Reklamai skirtos Google funkcijos išjungtos visam laikui —
-            reklamos tinklų svetainėje nėra ir duomenų niekam neparduodame.
+            naršyklėje neatsiranda.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Sutikus veikia ir Google Ads konversijų matavimas. Jis reikalingas todėl, kad
+            svetainė reklamuojasi Google paieškoje: užpildžius registracijos formą į Google
+            iškeliauja žinutė, kad forma buvo užpildyta. Taip matyti, ar reklama tikrai atveda
+            žmones. Pats užklausos turinys — vardas, kontaktas, klasė ir žinutė — į Google
+            nepatenka niekada; jis keliauja tik į Modestos pašto dėžutę.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Personalizuotos reklamos funkcijos lieka išjungtos: remarketingo auditorijų
+            nekuriame, reklamų pačioje svetainėje nėra ir duomenų niekam neparduodame.
           </p>
           <SlapukuPasirinkimas />
         </section>

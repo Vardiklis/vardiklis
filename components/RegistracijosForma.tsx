@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import Mygtukas from '@/components/Mygtukas'
+import { praneskUzklausosKonversija } from '@/lib/analitika'
 import { kontaktai } from '@/lib/kontaktai'
 import { siuskUzklausa } from '@/lib/uzklausa'
 import { PRADINE_BUSENA } from '@/lib/uzklausos-busena'
@@ -31,6 +32,24 @@ export function RegistracijosForma({ saltinis }: Props) {
   const [klase, setKlase] = useState('')
   const [zinute, setZinute] = useState('')
   const [sutinku, setSutinku] = useState(false)
+
+  /**
+   * Konversija pranešama tik pavykus, ir tik kartą.
+   *
+   * Ne mygtuko paspaudimas: jis dar nieko nereiškia — užklausa gali nepraeiti
+   * patikrinimų arba gali nulūžti siuntimas. Būsena `pavyko` reiškia, kad
+   * laiškas jau Modestos dėžutėje.
+   *
+   * `useRef` sargas — griežtame režime efektas paleidžiamas du kartus, o
+   * dviguba konversija iškraipytų reklamos statistiką.
+   */
+  const konversijaPranesta = useRef(false)
+
+  useEffect(() => {
+    if (busena.bukle !== 'pavyko' || konversijaPranesta.current) return
+    konversijaPranesta.current = true
+    praneskUzklausosKonversija()
+  }, [busena.bukle])
 
   const laukas = 'w-full rounded-[6px] border border-line bg-paper px-3 py-2.5 t-body text-ink'
   const klaidosTekstas = 'mt-2 t-small font-semibold text-klaidinga'

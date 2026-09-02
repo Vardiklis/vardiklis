@@ -18,6 +18,10 @@ import {
  * juosta nėra dekoracija: „Tik būtini“ iš tikrųjų reiškia, kad į Google
  * neiškeliauja jokia užklausa ir slapukų neatsiranda.
  *
+ * Tekste minimas ir reklamos matavimas: sutikus įsijungia ne tik Analytics, bet
+ * ir Google Ads konversija (žr. `Analitika`). Sutikimas galioja tik tam, apie ką
+ * čia parašyta, tad tylėti apie reklamą būtų negalima.
+ *
  * „Būtini“ šioje svetainėje — tik pačios naršyklės atmintis: testo eiga
  * (`sessionStorage`), uždaryta nuolaidos juostelė ir šis pats atsakymas.
  * Jie sutikimo nereikalauja, nes be jų puslapis tiesiog neveiktų.
@@ -51,8 +55,9 @@ export function SlapukuSutikimas() {
         <p className="t-small text-muted md:max-w-2xl">
           Svetainėje naudojame tik būtinus slapukus. Su jūsų sutikimu papildomai
           įjungtume Google Analytics — jis apibendrintai suskaičiuoja, kiek žmonių
-          apsilanko ir kurie puslapiai naudingiausi. Testo atsakymai ir rezultatai
-          ten nepatenka niekada.{' '}
+          apsilanko ir kurie puslapiai naudingiausi — ir Google Ads matavimą, kuris
+          parodo, ar užklausa atėjo per reklamą. Testo atsakymai, rezultatai ir
+          formos turinys ten nepatenka niekada.{' '}
           <Link
             href="/privatumas"
             className="font-semibold underline decoration-orange decoration-2 underline-offset-4 hover:text-orange"
@@ -92,7 +97,7 @@ export function SlapukuPasirinkimas() {
 
   const busena =
     sutikimas === 'sutikta'
-      ? 'Dabar esate sutikę su analitikos slapukais.'
+      ? 'Dabar esate sutikę su analitikos ir reklamos matavimo slapukais.'
       : sutikimas === 'atmesta'
         ? 'Dabar veikia tik būtini slapukai.'
         : 'Kol neatsakėte — veikia tik būtini slapukai.'
