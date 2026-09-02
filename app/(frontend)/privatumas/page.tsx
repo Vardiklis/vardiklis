@@ -6,7 +6,7 @@ import { kontaktai } from '@/lib/kontaktai'
 export const metadata: Metadata = {
   title: 'Privatumas',
   description:
-    'Vardiklis nerenka asmens duomenų ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje. Google Analytics įsijungia tik jums sutikus.',
+    'Vardiklis neturi duomenų bazės apie lankytojus ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje, registracijos forma duomenis tik persiunčia laišku. Google Analytics įsijungia tik jums sutikus.',
 }
 
 export default function Privatumas() {
@@ -15,7 +15,7 @@ export default function Privatumas() {
       <Antraste
         lygis={1}
         dydis="display-l"
-        paantraste="Trumpai: nieko nerenkame ir nieko nesaugome."
+        paantraste="Trumpai: jokios duomenų bazės apie jus nėra. Ką parašote formoje, ateina Modestai į paštą ir lieka tik ten."
       >
         Privatumas
       </Antraste>
@@ -34,9 +34,10 @@ export default function Privatumas() {
         <section>
           <h2 className="t-h3">Vaikų duomenys</h2>
           <p className="mt-3 t-body text-muted">
-            Neprašome vaiko vardo, amžiaus, mokyklos ar bet kokių kitų asmens duomenų. Vienintelis
-            klausiamas dalykas — klasė, ir ji naudojama tik uždaviniams parinkti. Ji taip pat
-            niekur nesiunčiama.
+            Neprašome vaiko vardo, amžiaus, mokyklos ar bet kokių kitų asmens duomenų. Darant
+            diagnostiką klausiama tik klasės, ir ji naudojama tik uždaviniams parinkti — iš
+            naršyklės ji niekur neiškeliauja. Į laišką klasė patenka tik tuo atveju, jei patys ją
+            nurodote registracijos formoje.
           </p>
         </section>
 
@@ -65,9 +66,21 @@ export default function Privatumas() {
         <section>
           <h2 className="t-h3">Registracija</h2>
           <p className="mt-3 t-body text-muted">
-            Paskyrų nėra. Prisijungti ar registruotis nereikia ir negalima. Straipsnių apačioje
-            esanti registracijos į pamoką forma duomenų niekur nesiunčia ir neįrašo: paspaudus
-            mygtuką atsidaro jūsų pašto programa su paruoštu laišku, o išsiunčiate jį patys.
+            Paskyrų nėra. Prisijungti ar registruotis nereikia ir negalima. Registracijos į pamoką
+            formoje įrašytus duomenis — vardą, kontaktą, klasę ir žinutę — svetainės serveris
+            išsiunčia el. laišku Modestai ir daugiau su jais nedaro nieko: į duomenų bazę jie
+            nepatenka, rinkmenose neįrašomi, tretiesiems asmenims neperduodami. Vienintelė vieta,
+            kur jie lieka, yra Modestos pašto dėžutė, ir naudojami jie tik tam, kad būtų galima
+            atsakyti.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="t-h3">Apsauga nuo šlamšto</h2>
+          <p className="mt-3 t-body text-muted">
+            Kad formos nespamintų automatiniai skriptai, serverio atmintyje dešimčiai minučių
+            lieka siuntėjo IP adresas ir siuntimų skaičius. Daugiau nieko prie jo neprisegama, į
+            diską jis nerašomas ir perkrovus serverį dingsta.
           </p>
         </section>
 

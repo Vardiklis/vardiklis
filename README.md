@@ -295,6 +295,16 @@ Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
 - `PAYLOAD_SECRET` — ilga atsitiktinė eilutė. Pakeitus nustos galioti visos sesijos.
 - `DATABASE_URI` — pvz. `file:/home/<naudotojas>/duomenys/vardiklis.db`
 - `UPLOADS_DIR` — pvz. `/home/<naudotojas>/duomenys/ikelta`
+- `SMTP_USER`, `SMTP_PASS` — registracijos formos laiškams (`lib/uzklausa.ts`). Gmail'ui
+  reikia ne paskyros slaptažodžio, o **App password**: Google paskyra → Security →
+  2-Step Verification → App passwords.
+- `SMTP_HOST`, `SMTP_PORT` — nebūtini, numatytai `smtp.gmail.com` ir `587`
+  (STARTTLS). 465 nenaudojamas sąmoningai: tinkle su neveikiančiu IPv6 jis lūžta
+  ties `ECONNREFUSED`, nes prie jau užmegzto TLS nodemailer nebepersijungia į IPv4.
+- `UZKLAUSU_PASTAS` — nebūtinas, kam ateina užklausos. Nenurodžius — tas pats `SMTP_USER`.
+
+> Be `SMTP_USER` ir `SMTP_PASS` forma siuntimo nebando: parodo telefoną bei el. paštą ir
+> įrašo priežastį į serverio žurnalą. Tyliai užklausa nedingsta, bet ir neateina.
 
 ### Pakeitus kolekcijų ar globalų laukus
 
