@@ -129,7 +129,23 @@ export function arLaikas(tekstas: unknown): boolean {
 }
 
 /** `2026-09-05` → `rugsėjo 5 d. (šeštadienis)`. */
-const MENESIAI = [
+/** Vardininkas — mėnesių sąrašui („Rugsėjis“). Kilmininkas — `MENESIAI`. */
+export const MENESIU_VARDAI = [
+  'Sausis',
+  'Vasaris',
+  'Kovas',
+  'Balandis',
+  'Gegužė',
+  'Birželis',
+  'Liepa',
+  'Rugpjūtis',
+  'Rugsėjis',
+  'Spalis',
+  'Lapkritis',
+  'Gruodis',
+]
+
+export const MENESIAI = [
   'sausio',
   'vasario',
   'kovo',

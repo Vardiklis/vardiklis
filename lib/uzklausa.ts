@@ -1,6 +1,7 @@
 'use server'
 
 import { headers } from 'next/headers'
+import { ATRODO_KAIP_PASTAS, perDaznai, saugiEilute } from '@/lib/greicio-riba'
 import { kontaktai } from '@/lib/kontaktai'
 import { pastoNustatymai, pastoSiuntejas } from '@/lib/pastas'
 import type { UzklausosBusena } from '@/lib/uzklausos-busena'
@@ -8,39 +9,6 @@ import type { UzklausosBusena } from '@/lib/uzklausos-busena'
 /** Kiek užklausų iš vieno IP leidžiama per langą. */
 const RIBA = 5
 const LANGAS_MS = 10 * 60 * 1000
-
-/**
- * Paprastas greičio ribotuvas atmintyje. Perkrovus serverį atsistato ir
- * kiekvienas procesas skaičiuoja atskirai — tikram DDoS neapsaugotų, bet
- * botui, kuris tą pačią formą siunčia šimtą kartų, užtenka.
- */
-const zurnalas = new Map<string, number[]>()
-
-function perDaznai(ip: string): boolean {
-  const dabar = Date.now()
-  const buve = (zurnalas.get(ip) ?? []).filter((t) => dabar - t < LANGAS_MS)
-  if (buve.length >= RIBA) {
-    zurnalas.set(ip, buve)
-    return true
-  }
-  buve.push(dabar)
-  zurnalas.set(ip, buve)
-
-  // Kad Map neaugtų be galo — retkarčiais išvalom pasenusius įrašus.
-  if (zurnalas.size > 500) {
-    for (const [raktas, laikai] of zurnalas) {
-      if (laikai.every((t) => dabar - t >= LANGAS_MS)) zurnalas.delete(raktas)
-    }
-  }
-  return false
-}
-
-/** Naujos eilutės antraštėse leidžia įterpti savo `Bcc:` — iškerpam. */
-function saugiEilute(tekstas: string, ilgis: number): string {
-  return tekstas.replace(/[\r\n]+/g, ' ').trim().slice(0, ilgis)
-}
-
-const ATRODO_KAIP_PASTAS = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 const NEPAVYKO = `Nepavyko išsiųsti. Paskambinkite ${kontaktai.telefonas} arba parašykite ${kontaktai.elPastas}.`
 
@@ -91,7 +59,7 @@ export async function siuskUzklausa(
 
   const antrastes = await headers()
   const ip = antrastes.get('x-forwarded-for')?.split(',')[0]?.trim() || 'nezinomas'
-  if (perDaznai(ip)) {
+  if (perDaznai('uzklausa', ip, RIBA, LANGAS_MS)) {
     return {
       bukle: 'klaida',
       pranesimas: `Per daug užklausų iš eilės. Palaukite arba paskambinkite ${kontaktai.telefonas}.`,

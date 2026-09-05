@@ -72,6 +72,7 @@ export interface Config {
     naudotojai: Naudotojai;
     mokiniai: Mokiniai;
     zurnalas: Zurnala;
+    rezervacijos: Rezervacijo;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +85,7 @@ export interface Config {
     naudotojai: NaudotojaiSelect<false> | NaudotojaiSelect<true>;
     mokiniai: MokiniaiSelect<false> | MokiniaiSelect<true>;
     zurnalas: ZurnalasSelect<false> | ZurnalasSelect<true>;
+    rezervacijos: RezervacijosSelect<false> | RezervacijosSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -96,10 +98,12 @@ export interface Config {
   globals: {
     nustatymai: Nustatymai;
     priminimai: Priminimai;
+    tvarkarastis: Tvarkarasti;
   };
   globalsSelect: {
     nustatymai: NustatymaiSelect<false> | NustatymaiSelect<true>;
     priminimai: PriminimaiSelect<false> | PriminimaiSelect<true>;
+    tvarkarastis: TvarkarastisSelect<false> | TvarkarastisSelect<true>;
   };
   locale: 'lt';
   widgets: {
@@ -340,6 +344,34 @@ export interface Zurnala {
   createdAt: string;
 }
 /**
+ * Ką lankytojai užsisakė svetainės kalendoriuje.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rezervacijos".
+ */
+export interface Rezervacijo {
+  id: number;
+  /**
+   * Sudaroma automatiškai.
+   */
+  santrauka?: string | null;
+  /**
+   * „Nauja“ ir „Patvirtinta“ laiką kalendoriuje laiko užimtą. „Atmesta“ jį vėl atlaisvina.
+   */
+  busena?: ('nauja' | 'patvirtinta' | 'atmesta') | null;
+  data: string;
+  laikas: string;
+  tevoVardas: string;
+  vaikoVardas: string;
+  klase?: string | null;
+  elPastas: string;
+  telefonas?: string | null;
+  saltinis?: string | null;
+  pastabos?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -382,6 +414,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'zurnalas';
         value: number | Zurnala;
+      } | null)
+    | ({
+        relationTo: 'rezervacijos';
+        value: number | Rezervacijo;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -564,6 +600,25 @@ export interface ZurnalasSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rezervacijos_select".
+ */
+export interface RezervacijosSelect<T extends boolean = true> {
+  santrauka?: T;
+  busena?: T;
+  data?: T;
+  laikas?: T;
+  tevoVardas?: T;
+  vaikoVardas?: T;
+  klase?: T;
+  elPastas?: T;
+  telefonas?: T;
+  saltinis?: T;
+  pastabos?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -686,6 +741,59 @@ export interface Priminimai {
   createdAt?: string | null;
 }
 /**
+ * Kalendorius po registracijos forma. Užimtumas imamas iš „Mokinių“.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tvarkarastis".
+ */
+export interface Tvarkarasti {
+  id: number;
+  rodyti?: boolean | null;
+  antraste?: string | null;
+  /**
+   * Anksčiausia pamokos pradžia.
+   */
+  nuo: string;
+  /**
+   * Vėliausia pamokos pradžia. Ši eilutė lentelėje dar rodoma.
+   */
+  iki: string;
+  zingsnis?: ('30' | '60') | null;
+  dienos?: ('1' | '2' | '3' | '4' | '5' | '6' | '7')[] | null;
+  /**
+   * Tiek savaičių lankytojas galės pervartyti pirmyn. 26 — maždaug pusmetis, 52 — metai.
+   */
+  savaiciu?: number | null;
+  /**
+   * Išjungus, kalendorius lieka, bet tampa tik informacinis — laikai nebespaudžiami.
+   */
+  leistiRegistruotis?: boolean | null;
+  /**
+   * Arčiau nei prieš tiek valandų užsiregistruoti nebegalima — kad neatsirastų užsakymas pamokai po dvidešimties minučių.
+   */
+  ispejimasVal?: number | null;
+  /**
+   * Galioja PO to, kai užimtumas suskaičiuojamas iš mokinių sąrašo, tad gali ir uždaryti laisvą langą, ir atlaisvinti užstatytą.
+   */
+  pakeitimai?:
+    | {
+        savaitesDiena: '1' | '2' | '3' | '4' | '5' | '6' | '7';
+        nuo: string;
+        iki: string;
+        busena: 'uzimta' | 'laisva';
+        /**
+         * Svetainėje nerodoma. Kad po mėnesio būtų aišku, kam tai buvo.
+         */
+        pastaba?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  pastabaLaikai?: string | null;
+  pastabaGrupine?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "nustatymai_select".
  */
@@ -721,6 +829,36 @@ export interface PriminimaiSelect<T extends boolean = true> {
   parasas?: T;
   santraukaSau?: T;
   paskutineSantrauka?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tvarkarastis_select".
+ */
+export interface TvarkarastisSelect<T extends boolean = true> {
+  rodyti?: T;
+  antraste?: T;
+  nuo?: T;
+  iki?: T;
+  zingsnis?: T;
+  dienos?: T;
+  savaiciu?: T;
+  leistiRegistruotis?: T;
+  ispejimasVal?: T;
+  pakeitimai?:
+    | T
+    | {
+        savaitesDiena?: T;
+        nuo?: T;
+        iki?: T;
+        busena?: T;
+        pastaba?: T;
+        id?: T;
+      };
+  pastabaLaikai?: T;
+  pastabaGrupine?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

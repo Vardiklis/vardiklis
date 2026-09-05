@@ -116,6 +116,23 @@ export default function Privatumas() {
         </section>
 
         <section>
+          <h2 className="t-h3">Registracija kalendoriuje</h2>
+          <p className="mt-3 t-body text-muted">
+            Pasirinkus laisvą laiką kalendoriuje ir užpildžius langą, įrašomi tėvo ar globėjo
+            vardas, vaiko vardas, el. paštas, telefonas (jei nurodomas) ir klasė (jei nurodoma)
+            kartu su pasirinkta data. Tai daroma dėl vienos priežasties: kad tas laikas būtų
+            rezervuotas ir su jumis būtų galima susisiekti dėl patvirtinimo.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Užsakymas iškart ateina Modestai el. paštu, o jums išsiunčiamas patvirtinimas tuo
+            adresu, kurį nurodėte. Duomenys guli tos pačios svetainės duomenų bazėje ir yra
+            prieinami tik prisijungusiai Modestai — kitiems lankytojams kalendorius rodo tik
+            „laisva“ arba „užimta“, be jokių vardų. Persigalvojus arba tiesiog paprašius laišku,
+            įrašas ištrinamas.
+          </p>
+        </section>
+
+        <section>
           <h2 className="t-h3">Apsauga nuo šlamšto</h2>
           <p className="mt-3 t-body text-muted">
             Kad formos nespamintų automatiniai skriptai, serverio atmintyje dešimčiai minučių

@@ -1,9 +1,20 @@
 import Antraste from '@/components/Antraste'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import Mygtukas from '@/components/Mygtukas'
+import PamokuKalendorius from '@/components/PamokuKalendorius'
 import RegistracijosForma from '@/components/RegistracijosForma'
 import { kainos, kontaktai, nuolaidaPirmajai } from '@/lib/kontaktai'
 import { meta } from '@/lib/metaduomenys'
+
+/**
+ * Atvaizduojama užklausos metu, o ne surenkama build'o metu.
+ *
+ * Priežastis — laisvų laikų lentelė (`PamokuKalendorius`). Iškepus ją į statinį
+ * HTML, CMS'e pakeistas tvarkaraštis svetainėje pasirodytų tik po kito diegimo,
+ * o pats build'as imtų priklausyti nuo to, ar tuo metu pasiekiama duomenų bazė.
+ * Krašto kešas (60 s, `next.config.ts`) apkrovą vis tiek nuima.
+ */
+export const dynamic = 'force-dynamic'
 
 export const metadata = meta({
   antraste: 'Susisiekti',
@@ -75,6 +86,10 @@ export default function Susisiekti() {
         <div className="max-w-2xl">
           <RegistracijosForma saltinis="Susisiekti" />
         </div>
+
+        {/* Laikų lentelė po forma. Užimtumas imamas iš mokinių pamokų; išjungus
+            kalendorių CMS'e komponentas nieko neatvaizduoja. */}
+        <PamokuKalendorius saltinis="Susisiekti" />
       </section>
 
       {/* ── Kaina ──────────────────────────────────────────────────────────── */}

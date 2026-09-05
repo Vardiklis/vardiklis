@@ -217,6 +217,53 @@ Dienos santraukoje sau prie kiekvienos pamokos yra „Buvo / Nebuvo“ nuorodos 
 žurnale pasikeičia neatidarant CMS. Jas saugo parašas iš `PAYLOAD_SECRET`. Pažymėjus „Buvo“,
 mokiniui nusiima pirmos pamokos nuolaidos varnelė.
 
+### Laisvų laikų kalendorius
+
+Po registracijos forma (`/susisiekti` ir `/matematikos-korepetitore`) rodomas kalendorius su
+tikromis datomis: **dvi savaitės vienu metu**, mėnesių sąrašas peršokimui ir ‹ › vartymui po dvi
+savaites. Oranžinė — užimta, šviesi — laisva, blyški — praėję. Paspaudus laisvą langą atsidaro
+registracijos langas (`<dialog>`), o užsakymas iškart užima laiką.
+
+Numatytai rodomas **pusmetis į priekį** (26 savaitės, keičiama CMS'e iki 52). Visos savaitės
+atsiunčiamos iš karto vienu masyvu raidžių, tad vartymas ir mėnesio pasirinkimas neprašo serverio;
+pusmetis HTML'e užima apie 18 KB suspausto teksto.
+
+Lentelės rėmuose „Paskutinė eilutė“ yra **vėliausia pamokos pradžia ir ji dar rodoma**: įrašius
+21:00, paskutinė eilutė yra 21:00, o ne 20:00.
+
+| Failas | Ką daro |
+|---|---|
+| `cms/Tvarkarastis.ts` | globalas „Laisvi laikai“ — rėmai, pataisymai, tekstai |
+| `cms/Rezervacijos.ts` | ką lankytojai užsisakė |
+| `lib/tvarkarastis.ts` | skaičiavimas: `gautiKalendoriu()` ir `arGalimaRezervuoti()` |
+| `components/PamokuKalendorius.tsx` | serverio pusė |
+| `components/KalendoriausTinklelis.tsx` | lentelė, savaičių vartymas, modalas |
+| `lib/rezervacija.ts` | serverio veiksmas: patikros, įrašas, du laiškai |
+
+Užimtumas imamas **iš tų pačių mokinių pamokų** — antro tvarkaraščio pildyti nereikia. Prie to
+prisideda „Rankiniai pataisymai“ (galioja PO skaičiavimo, tad gali ir uždaryti, ir atlaisvinti) ir
+rezervacijos, kurių būsena „nauja“ arba „patvirtinta“. Pažymėjus rezervaciją „Atmesta“, laikas
+svetainėje vėl tampa laisvas.
+
+Langelis pažymimas užimtu, jei intervalai **persidengia**, o ne sutampa pradžios: 15:40 pamoka
+valandinėje lentelėje uždažo ir 15:00, ir 16:00. Geriau parodyti šiek tiek daugiau užimtumo, nei
+pasiūlyti langą, kurio nėra.
+
+Kalendorius atsidaro ties **pirma savaite, kurioje dar yra laisvo laiko** — savaitės pabaigoje visi
+einamosios savaitės langeliai jau būna praėję, ir kitaip žmogus matytų vien pilką lentelę.
+
+Mėnesių sąraše kiekvienas mėnuo yra vieną kartą, o savaitė jam priskiriama pagal **pirmą savo
+dieną**: rugsėjo 28 – spalio 3 savaitė yra „Rugsėjis“, kitaip ji sąraše atsidurtų du kartus.
+
+**Rezervacijos patikrinimas kartojasi serveryje.** `arGalimaRezervuoti()` kviečiama iš naujo prieš
+įrašant: naršyklės puslapis gali būti atidarytas prieš valandą, užklausą galima atsiųsti ir visai be
+jo, o du žmonės gali spustelėti tą patį langelį tuo pačiu metu. Ta pati funkcija tikrina ir tai, ar
+laikas apskritai yra lentelės tinklelyje — „17:07“ neužsakysi.
+
+> Į puslapio HTML patenka tik „užimta / laisva / praėjo“. Vardai, klasės, tėvų paštai, Meet nuorodos
+> ir kitų žmonių rezervacijos lieka serveryje. Dėl tos pačios priežasties ir globalas „Laisvi
+> laikai“ uždarytas: atviras jis atiduotų „Rankinių pataisymų“ laukelį „Kodėl (tik sau)“.
+
 ## Kaip pridėti naują uždavinių generatorių
 
 1. **Sukurk failą** `lib/generatoriai/mano-tema.ts`:
@@ -303,13 +350,18 @@ components/                   savi komponentai, be UI bibliotekų
 cms/
   Mokiniai.ts                 kas, kada ir kur turi pamoką
   Zurnalas.ts                 pamokų žurnalas — rašo tik serveris
-  Priminimai.ts               kada siųsti (globalas)
+  Priminimai.ts               kada siųsti ir laiško parašas (globalas)
+  Tvarkarastis.ts             laisvų laikų kalendorius (globalas)
+  Rezervacijos.ts             ką lankytojai užsisakė kalendoriuje
 lib/
   temos.ts                    prielaidų grafas — DUOMENYS
   diagnostika.ts              adaptyvi logika
   matematika.ts               nsd, mbk, suprastinimas, normalizavimas
   generatoriai/               uždavinių generatoriai
   priminimai.ts               kam ir kada siųsti laišką
+  tvarkarastis.ts             kalendorius: užimta/laisva/praėjo
+  rezervacija.ts              užsakymo veiksmas (patikros, įrašas, laiškai)
+  greicio-riba.ts             bendras botų ribotuvas formoms
   laikas.ts                   Vilniaus laikas (serveris sukasi UTC)
 scripts/                      patikros, nekeliaujančios į produkciją
 ```

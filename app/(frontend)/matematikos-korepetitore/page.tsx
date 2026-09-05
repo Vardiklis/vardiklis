@@ -6,6 +6,7 @@ import Atsiliepimai from '@/components/Atsiliepimai'
 import BruksnysDivider from '@/components/BruksnysDivider'
 import JsonLd from '@/components/JsonLd'
 import Mygtukas from '@/components/Mygtukas'
+import PamokuKalendorius from '@/components/PamokuKalendorius'
 import RegistracijosForma from '@/components/RegistracijosForma'
 import Trupmena from '@/components/Trupmena'
 import { temos } from '@/lib/diagnostikos-temos'
@@ -17,6 +18,16 @@ import { PATIKRINIMAI } from '@/lib/patikrinimai'
 // („%s — Vardiklis") čia netaikom.
 // Šis puslapis yra svetainės „matematikos korepetitorė" puslapis — pradinis
 // tos frazės sąmoningai nebetaiko, kad du savi puslapiai nekonkuruotų.
+/**
+ * Atvaizduojama užklausos metu, o ne surenkama build'o metu.
+ *
+ * Priežastis — laisvų laikų lentelė (`PamokuKalendorius`). Iškepus ją į statinį
+ * HTML, CMS'e pakeistas tvarkaraštis svetainėje pasirodytų tik po kito diegimo,
+ * o pats build'as imtų priklausyti nuo to, ar tuo metu pasiekiama duomenų bazė.
+ * Krašto kešas (60 s, `next.config.ts`) apkrovą vis tiek nuima.
+ */
+export const dynamic = 'force-dynamic'
+
 export const metadata = meta({
   pilna: 'Matematikos korepetitorė internetu | 1-10 klasė | Vardiklis',
   aprasymas:
@@ -472,6 +483,10 @@ export default function MatematikosKorepetitore() {
         <div className="max-w-2xl">
           <RegistracijosForma saltinis="Matematikos korepetitorė" />
         </div>
+
+        {/* Laikų lentelė po forma. Užimtumas imamas iš mokinių pamokų; išjungus
+            kalendorių CMS'e komponentas nieko neatvaizduoja. */}
+        <PamokuKalendorius saltinis="Matematikos korepetitorė" />
       </section>
     </div>
   )

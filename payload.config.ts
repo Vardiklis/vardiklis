@@ -16,8 +16,10 @@ import { Mokiniai } from './cms/Mokiniai'
 import { Naudotojai } from './cms/Naudotojai'
 import { Nustatymai } from './cms/Nustatymai'
 import { Priminimai } from './cms/Priminimai'
+import { Rezervacijos } from './cms/Rezervacijos'
 import { PRADINE_SCHEMA } from './cms/pradine-schema'
 import { straipsnioAdresas, Straipsniai } from './cms/Straipsniai'
+import { Tvarkarastis } from './cms/Tvarkarastis'
 import { Zurnalas } from './cms/Zurnalas'
 import { TEKSTO_BUSENOS } from './cms/stiliai'
 
@@ -40,6 +42,7 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `payload_locked_documents_rels` ADD `mokiniai_id` integer REFERENCES `mokiniai`(`id`)',
   'ALTER TABLE `payload_locked_documents_rels` ADD `zurnalas_id` integer REFERENCES `zurnalas`(`id`)',
   'ALTER TABLE `priminimai` ADD `parasas` text',
+  'ALTER TABLE `payload_locked_documents_rels` ADD `rezervacijos_id` integer REFERENCES `rezervacijos`(`id`)',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -133,8 +136,8 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Straipsniai, Failai, Naudotojai, Mokiniai, Zurnalas],
-  globals: [Nustatymai, Priminimai],
+  collections: [Straipsniai, Failai, Naudotojai, Mokiniai, Zurnalas, Rezervacijos],
+  globals: [Nustatymai, Priminimai, Tvarkarastis],
   /**
    * Redaktoriaus galimybės. Prie numatytųjų pridėta:
    *   • `TextStateFeature` — teksto spalva, paryškinimo fonas ir šriftas;
@@ -231,6 +234,18 @@ export default buildConfig({
        */
       {
         name: 'schema-2026-09-parasas',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /** Laisvų laikų kalendorius — globalas „Tvarkarastis“ ir jo dvi lentelės. */
+      {
+        name: 'schema-2026-09-tvarkarastis',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /** Rezervacijos iš kalendoriaus — kolekcija ir jos stulpelis rakinimų lentelėje. */
+      {
+        name: 'schema-2026-09-rezervacijos',
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },
