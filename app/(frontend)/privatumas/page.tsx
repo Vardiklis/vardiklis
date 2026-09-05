@@ -6,7 +6,7 @@ import { kontaktai } from '@/lib/kontaktai'
 export const metadata: Metadata = {
   title: 'Privatumas',
   description:
-    'Vardiklis neturi duomenų bazės apie lankytojus ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje, registracijos forma duomenis tik persiunčia laišku. Google Analytics ir Ads matavimas įsijungia tik jums sutikus.',
+    'Vardiklis neturi duomenų bazės apie lankytojus ir nereikalauja registracijos. Testo rezultatai lieka tik jūsų naršyklėje, registracijos forma duomenis tik persiunčia laišku. Google Analytics, Ads matavimas ir Microsoft Clarity įsijungia tik jums sutikus.',
 }
 
 export default function Privatumas() {
@@ -56,8 +56,15 @@ export default function Privatumas() {
             rezultatai ten nepatenka.
           </p>
           <p className="mt-3 t-body text-muted">
-            Kol nesutinkate, į Google neiškeliauja nė viena užklausa ir jokių jo slapukų jūsų
-            naršyklėje neatsiranda.
+            Sutikus įsijungia ir Microsoft Clarity. Jis parodo, kur puslapyje spaudžiama, kiek
+            nuslenkama ir kurioje vietoje žmonės pasimeta — kad būtų aišku, ką svetainėje
+            taisyti. Clarity įrašo ir apibendrintą apsilankymo peržiūrą, tačiau diagnostikos
+            puslapis, ataskaita ir registracijos forma jame yra uždengti: nei uždaviniai, nei
+            vaiko atsakymai, nei formos laukelių turinys į įrašą nepatenka.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Kol nesutinkate, nei į Google, nei į Microsoft neiškeliauja nė viena užklausa ir
+            jokių jų slapukų jūsų naršyklėje neatsiranda.
           </p>
           <p className="mt-3 t-body text-muted">
             Sutikus veikia ir Google Ads konversijų matavimas. Jis reikalingas todėl, kad

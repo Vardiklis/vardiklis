@@ -2,7 +2,7 @@
 
 import Script from 'next/script'
 import { useSyncExternalStore } from 'react'
-import { ADS_ID, GA_ID } from '@/lib/analitika'
+import { ADS_ID, CLARITY_ID, GA_ID } from '@/lib/analitika'
 import { prenumeruokSutikima, serveryjeNeatsakyta, skaitykSutikima } from '@/lib/slapukai'
 
 /**
@@ -34,6 +34,11 @@ import { prenumeruokSutikima, serveryjeNeatsakyta, skaitykSutikima } from '@/lib
  *
  * `afterInteractive` — Next'o rekomendacija analitikai: kraunama anksti, bet po
  * pirmojo puslapio atvaizdavimo, kad nestabdytų turinio.
+ *
+ * Microsoft Clarity čia pat, bet `lazyOnload` — jis renka seansų peržiūras ir
+ * šilumos žemėlapius, o tai niekada nėra skubu. Ta strategija skriptą įdeda tik
+ * naršyklei nurimus (po `load`, tuščiąja eiga), tad jis nekonkuruoja nei dėl
+ * juostos su LCP paveikslu, nei dėl procesoriaus su hidratacija.
  *
  * Vietinėje aplinkoje neįjungiam, kad kūrimo metu negadintume statistikos.
  */
@@ -70,6 +75,22 @@ gtag('config', '${ADS_ID}');`}
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
         strategy="afterInteractive"
       />
+
+      {/* Microsoft Clarity — oficiali žymė. Sakinys su (c,l,a,r,i,t,y) sukuria
+          `window.clarity` kaupiklį ir įdeda `async` skriptą.
+
+          `consentv2` reikalingas tik tada, jei Clarity projekte įjungtas
+          „Cookie consent“ režimas — tada be šio signalo jis nerinktų nieko.
+          Jei režimas išjungtas, kvietimas nieko nekeičia. Duodam tą patį, ką ir
+          Google: analitiką ir reklamos matavimą.
+
+          Tuščias `CLARITY_ID` reiškia „dar neįjungta“ — tada nieko nepiešiam. */}
+      {CLARITY_ID !== '' && (
+        <Script id="clarity-init" strategy="lazyOnload">
+          {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y)})(window,document,"clarity","script","${CLARITY_ID}");
+window.clarity('consentv2',{ad_Storage:'granted',analytics_Storage:'granted'});`}
+        </Script>
+      )}
     </>
   )
 }

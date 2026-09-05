@@ -15,6 +15,17 @@ export const GA_ID = 'G-YTHQ4HB2G4'
  */
 export const ADS_ID = 'AW-18408490184'
 
+/**
+ * Microsoft Clarity projekto ID. Taip pat viešas — matyti naršyklės kode.
+ *
+ * Clarity įrašo seansų peržiūras ir šilumos žemėlapius, tad be sutikimo jo
+ * neįdedam lygiai taip pat, kaip ir Google žymės (žr. `components/Analitika.tsx`).
+ *
+ * Tuščia eilutė = išjungta: skriptas neįkeliamas ir niekas nelūžta. Taip galima
+ * laikinai išjungti Clarity nekarpant komponento.
+ */
+export const CLARITY_ID: string = 'ydhy7gbpr5'
+
 /** Konkreti konversija — „užpildyta registracijos forma“. */
 export const UZKLAUSOS_KONVERSIJA = `${ADS_ID}/jIn0CMiA4-ocEMiJ7clE`
 

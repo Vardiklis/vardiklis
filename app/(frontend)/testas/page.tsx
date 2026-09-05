@@ -12,8 +12,10 @@ export const metadata = meta({
 })
 
 export default function TestoPuslapis() {
+  // Clarity testo nefilmuoja: `data-clarity-mask` uždengia visą šią šaką seansų
+  // peržiūrose, tad į įrašą nepatenka nei uždaviniai, nei vaiko atsakymai.
   return (
-    <div className="turinys sekcija">
+    <div className="turinys sekcija" data-clarity-mask="true">
       <Antraste lygis={1} dydis="display-l">
         Diagnostika
       </Antraste>

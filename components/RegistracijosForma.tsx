@@ -75,8 +75,14 @@ export function RegistracijosForma({ saltinis }: Props) {
     )
   }
 
+  // `data-clarity-mask` — Clarity seansų peržiūroje visa forma lieka uždengta,
+  // tad į įrašą nepatenka nei vardas, nei kontaktas, nei žinutės tekstas.
   return (
-    <form action={veiksmas} className="mt-6 flex flex-col gap-4">
+    <form
+      action={veiksmas}
+      className="mt-6 flex flex-col gap-4"
+      data-clarity-mask="true"
+    >
       {saltinis && <input type="hidden" name="saltinis" value={saltinis} />}
 
       {/* Botų spąstai: žmogus šio laukelio nemato ir nepasiekia tabuliatoriumi,

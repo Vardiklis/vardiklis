@@ -14,13 +14,14 @@ import {
 /**
  * Pranešimas apie slapukus su tikru pasirinkimu.
  *
- * Kol žmogus neatsakė, `Analitika` neįdeda NĖ VIENO Google skripto — todėl
- * juosta nėra dekoracija: „Tik būtini“ iš tikrųjų reiškia, kad į Google
- * neiškeliauja jokia užklausa ir slapukų neatsiranda.
+ * Kol žmogus neatsakė, `Analitika` neįdeda NĖ VIENO trečiosios šalies skripto —
+ * nei Google, nei Microsoft. Todėl juosta nėra dekoracija: „Tik būtini“ iš tikrųjų
+ * reiškia, kad niekur neiškeliauja jokia užklausa ir slapukų neatsiranda.
  *
- * Tekste minimas ir reklamos matavimas: sutikus įsijungia ne tik Analytics, bet
- * ir Google Ads konversija (žr. `Analitika`). Sutikimas galioja tik tam, apie ką
- * čia parašyta, tad tylėti apie reklamą būtų negalima.
+ * Tekste minimas ir reklamos matavimas, ir Microsoft Clarity: sutikus įsijungia
+ * ne tik Analytics, bet ir Google Ads konversija bei Clarity seansų peržiūros
+ * (žr. `Analitika`). Sutikimas galioja tik tam, apie ką čia parašyta, tad tylėti
+ * apie reklamą ar peržiūras būtų negalima.
  *
  * „Būtini“ šioje svetainėje — tik pačios naršyklės atmintis: testo eiga
  * (`sessionStorage`), uždaryta nuolaidos juostelė ir šis pats atsakymas.
@@ -55,8 +56,9 @@ export function SlapukuSutikimas() {
         <p className="t-small text-muted md:max-w-2xl">
           Svetainėje naudojame tik būtinus slapukus. Su jūsų sutikimu papildomai
           įjungtume Google Analytics — jis apibendrintai suskaičiuoja, kiek žmonių
-          apsilanko ir kurie puslapiai naudingiausi — ir Google Ads matavimą, kuris
-          parodo, ar užklausa atėjo per reklamą. Testo atsakymai, rezultatai ir
+          apsilanko ir kurie puslapiai naudingiausi — Google Ads matavimą, kuris
+          parodo, ar užklausa atėjo per reklamą, ir Microsoft Clarity, rodantį, kur
+          puslapyje spaudžiama ir kiek nuslenkama. Testo atsakymai, rezultatai ir
           formos turinys ten nepatenka niekada.{' '}
           <Link
             href="/privatumas"
@@ -97,7 +99,7 @@ export function SlapukuPasirinkimas() {
 
   const busena =
     sutikimas === 'sutikta'
-      ? 'Dabar esate sutikę su analitikos ir reklamos matavimo slapukais.'
+      ? 'Dabar esate sutikę su analitikos, reklamos matavimo ir Clarity slapukais.'
       : sutikimas === 'atmesta'
         ? 'Dabar veikia tik būtini slapukai.'
         : 'Kol neatsakėte — veikia tik būtini slapukai.'

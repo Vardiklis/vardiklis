@@ -9,8 +9,10 @@ export const metadata: Metadata = {
 }
 
 export default function RezultatoPuslapis() {
+  // Ataskaita asmeninė — Clarity seansų peržiūrose ji uždengiama, kaip ir pats
+  // testas (`app/(frontend)/testas/page.tsx`).
   return (
-    <div className="turinys sekcija">
+    <div className="turinys sekcija" data-clarity-mask="true">
       <Rezultatas />
     </div>
   )
