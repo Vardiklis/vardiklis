@@ -95,7 +95,7 @@ export const Tvarkarastis: GlobalConfig = {
           type: 'select',
           hasMany: true,
           label: 'Rodomos dienos',
-          defaultValue: ['1', '2', '3', '4', '5', '6'],
+          defaultValue: ['1', '2', '3', '4', '5', '6', '7'],
           options: dienuPasirinkimai,
         },
         {

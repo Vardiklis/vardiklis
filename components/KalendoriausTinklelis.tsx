@@ -160,7 +160,10 @@ export default function KalendoriausTinklelis({ kalendorius, saltinis }: Props) 
       </div>
 
       {/* ── Lentelė ─────────────────────────────────────────────────────────── */}
-      <div className="mt-4 max-w-2xl overflow-x-auto">
+      {/* Keturiolika stulpelių (dvi savaitės po septynias dienas) į `max-w-2xl`
+          nebetelpa net kompiuteryje, tad lentelei leidžiama būti platesnei nei
+          šalia esantis tekstas. Siaurame ekrane ji vis tiek slenkasi savyje. */}
+      <div className="mt-4 max-w-4xl overflow-x-auto">
         {/* `w-auto`, o ne `w-full`: langeliai turi likti kvadratiniai, o ne
             išsitempti per visą plotį iki plokščių juostelių. */}
         <table className="w-auto border-separate border-spacing-1">

@@ -139,7 +139,7 @@ async function surinkti(dabar: Date) {
   const savaiciu = Math.min(Math.max(Number(n.savaiciu || 26), 2), 52)
   const ispejimasMs = Math.max(Number(n.ispejimasVal ?? 12), 0) * 3600_000
 
-  const dienuNumeriai = (n.dienos?.length ? n.dienos : ['1', '2', '3', '4', '5', '6'])
+  const dienuNumeriai = (n.dienos?.length ? n.dienos : ['1', '2', '3', '4', '5', '6', '7'])
     .map(Number)
     .filter((d) => d >= 1 && d <= 7)
     .sort((a, b) => a - b)
