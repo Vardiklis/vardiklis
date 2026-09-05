@@ -671,6 +671,10 @@ export interface Priminimai {
    */
   prierasas?: string | null;
   /**
+   * Kelios eilutės po brūkšneliu. Palikus tuščią, naudojamas numatytasis — vardas, pareigos, telefonas ir vardiklis.lt. Laiškai paprasto teksto, tad paveikslėlių ar spalvų čia nebus.
+   */
+  parasas?: string | null;
+  /**
    * Vienas laiškas su tos dienos pamokomis ir mygtukais „Buvo / Nebuvo“ — kad žurnalo nereikėtų pildyti panelėje.
    */
   santraukaSau?: boolean | null;
@@ -714,6 +718,7 @@ export interface PriminimaiSelect<T extends boolean = true> {
   kada?: T;
   valanda?: T;
   prierasas?: T;
+  parasas?: T;
   santraukaSau?: T;
   paskutineSantrauka?: T;
   updatedAt?: T;

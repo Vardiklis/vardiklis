@@ -26,7 +26,7 @@ export const Mokiniai: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'vardas',
-    defaultColumns: ['vardas', 'klase', 'tevoPastas', 'aktyvus', 'pirmaPamoka'],
+    defaultColumns: ['vardas', 'klase', 'tevoPastas', 'meetNuoroda', 'aktyvus', 'pirmaPamoka'],
     description:
       'Kam siunčiami priminimai. Pamokos kartojasi kas savaitę; pakeitimai galioja nuo kito siuntimo.',
     group: 'Pamokos',
@@ -83,6 +83,8 @@ export const Mokiniai: CollectionConfig = {
       admin: {
         description:
           'Nuolatinė šio vaiko kambario nuoroda, pvz. https://meet.google.com/abc-defg-hij. Tėvams siunčiama ne ji, o vardiklis.lt nuoroda, kuri atveda čia — todėl pakeitus ją, tėvams pranešti nereikia.',
+        // Sąraše rodoma kaip paspaudžiama nuoroda, atsidaranti naujame lange.
+        components: { Cell: '/cms/komponentai/MeetNuoroda#MeetNuorodosCele' },
       },
       validate: (reiksme: string | null | undefined) => {
         if (!reiksme) return 'Įrašykite Meet nuorodą.'

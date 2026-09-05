@@ -4,11 +4,11 @@ import { siuskPriminimus } from '@/lib/priminimai'
 /**
  * Priminimų siuntimas. Šį adresą kviečia cron'as (Hostinger arba cron-job.org).
  *
- * KAS 15 MINUČIŲ, o ne kartą per rytą: siuntimo valanda gyvena CMS'e, tad
+ * KAS 5 MINUTES, o ne kartą per rytą: siuntimo valanda gyvena CMS'e, tad
  * serveris turi reguliariai klausti, ar jau laikas. Nieko siųsti neradęs
  * badymas nekainuoja beveik nieko.
  *
- *   *​/15 * * * *   curl -s "https://vardiklis.lt/vidus/priminimai?raktas=..."
+ *   *​/5 * * * *   curl -s "https://vardiklis.lt/vidus/priminimai?raktas=..."
  *
  * Adresas ne po `/api/`, nes ten viską perima Payload katch-all maršrutas
  * (`app/(payload)/api/[...slug]`).

@@ -6,7 +6,7 @@ import { arLaikas } from '../lib/laikas'
  *
  * KODĖL LAIKAS YRA NUSTATYMAS, O NE CRON'O EILUTĖ. Jei siuntimo valanda būtų
  * įrašyta į cron'ą, ją keičiant reikėtų lįsti į serverį. Todėl cron'as badoma
- * kas 15 min., o kada tikrai siųsti, sprendžia šis globalas: maršrutas kaskart
+ * kas 5 min., o kada tikrai siųsti, sprendžia šis globalas: maršrutas kaskart
  * paskaičiuoja, kurių pamokų priminimo momentas jau praėjo, ir siunčia tik
  * tuos, kurie dar neišsiųsti (žr. `lib/priminimai.ts` ir `Zurnalas`).
  *
@@ -69,6 +69,15 @@ export const Priminimai: GlobalConfig = {
       label: 'Prierašas laiške (nebūtina)',
       admin: {
         description: 'Įterpiamas kiekvieno laiško gale, prieš parašą. Pvz. priminimas apie namų darbus.',
+      },
+    },
+    {
+      name: 'parasas',
+      type: 'textarea',
+      label: 'Parašas laiško gale',
+      admin: {
+        description:
+          'Kelios eilutės po brūkšneliu. Palikus tuščią, naudojamas numatytasis — vardas, pareigos, telefonas ir vardiklis.lt. Laiškai paprasto teksto, tad paveikslėlių ar spalvų čia nebus.',
       },
     },
     {

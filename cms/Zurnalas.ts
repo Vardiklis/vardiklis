@@ -5,8 +5,8 @@ import type { CollectionConfig } from 'payload'
  *
  * TRYS DARBAI VIENU ĮRAŠU:
  *   1. neleidžia išsiųsti to paties priminimo dukart (siuntimo maršrutas
- *      paleidžiamas kas 15 min., tad be šito tėvai gautų laišką kas ketvirtį
- *      valandos);
+ *      paleidžiamas kas 5 min., tad be šito tėvai gautų laišką kas penkias
+ *      minutes);
  *   2. fiksuoja, ar nuoroda buvo atidaryta — tai ir yra „ar prisijungė“,
  *      kiek jo įmanoma sužinoti nemokamoje Google paskyroje;
  *   3. lieka kaip lankomumo ir atsiskaitymo istorija.

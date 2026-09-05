@@ -39,6 +39,7 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `_straipsniai_v` ADD `autosave` integer',
   'ALTER TABLE `payload_locked_documents_rels` ADD `mokiniai_id` integer REFERENCES `mokiniai`(`id`)',
   'ALTER TABLE `payload_locked_documents_rels` ADD `zurnalas_id` integer REFERENCES `zurnalas`(`id`)',
+  'ALTER TABLE `priminimai` ADD `parasas` text',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -64,6 +65,35 @@ function arDublikatas(klaida: unknown): boolean {
     dabartine = (dabartine as { cause?: unknown })?.cause
   }
   return false
+}
+
+/**
+ * Vienos migracijos darbas: **lentelės → stulpeliai → indeksai**.
+ *
+ * Būtent tokia tvarka, nes nauja kolekcija reiškia ne tik naują lentelę, bet ir
+ * naują stulpelį senoje `payload_locked_documents_rels`, o tam stulpeliui dar
+ * kuriamas indeksas. Pridėjus stulpelius po indeksų, migracija nulūžta ties
+ * `CREATE INDEX … (mokiniai_id)`, Payload nebepakyla, ir visi CMS bei
+ * straipsnių puslapiai atsako 503.
+ *
+ * Visi sakiniai idempotentiški, tad kiekviena migracija paleidžia tą patį
+ * darbą — skiriasi tik pavadinimas, o serveryje jau įvykdytas nebekartojamas.
+ */
+async function atnaujinkSchema(db: { run: (sakinys: ReturnType<typeof sql.raw>) => unknown }) {
+  for (const sakinys of PRADINE_SCHEMA.filter(arLentele)) {
+    await db.run(sql.raw(sakinys))
+  }
+  for (const sakinys of TRUKSTAMI_STULPELIAI) {
+    try {
+      await db.run(sql.raw(sakinys))
+    } catch (klaida) {
+      // Švarioje bazėje stulpelis jau sukurtas kartu su lentele.
+      if (!arDublikatas(klaida)) throw klaida
+    }
+  }
+  for (const sakinys of PRADINE_SCHEMA.filter((s) => !arLentele(s))) {
+    await db.run(sql.raw(sakinys))
+  }
 }
 
 /**
@@ -182,39 +212,26 @@ export default buildConfig({
       /**
        * Mokiniai, pamokų žurnalas ir priminimų nustatymai.
        *
-       * EILIŠKUMAS ČIA SVARBUS IR SKIRIASI nuo ankstesnės migracijos. Naujos
-       * kolekcijos priverčia Payload į jau egzistuojančią
-       * `payload_locked_documents_rels` prirašyti po stulpelį, o tų stulpelių
-       * `REFERENCES` rodo į `mokiniai` ir `zurnalas`. Todėl:
-       *
-       *   1. LENTELĖS — kad būtų į ką rodyti (senosios praleidžiamos per
-       *      `IF NOT EXISTS`);
-       *   2. STULPELIAI — `ALTER TABLE`, kurio `CREATE TABLE IF NOT EXISTS`
-       *      niekada nepadarytų senai lentelei;
-       *   3. INDEKSAI — dalis jų mini būtent tuos ką tik pridėtus stulpelius,
-       *      tad anksčiau paleisti jų negalima.
-       *
-       * Sumaišius 2 ir 3 vietomis, migracija nulūžta ir Payload nebepakyla —
-       * visi CMS bei straipsnių puslapiai atsako 503.
+       * Nuo čia visos migracijos daro tą patį (`atnaujinkSchema`) ir skiriasi
+       * tik pavadinimu. Senesnės dvi paliktos tokios, kokios buvo įvykdytos
+       * serveryje — perrašinėti jų nėra prasmės, nes ten jos nebepasileis.
        */
       {
         name: 'schema-2026-09-mokiniai',
-        up: async ({ db }) => {
-          for (const sakinys of PRADINE_SCHEMA.filter(arLentele)) {
-            await db.run(sql.raw(sakinys))
-          }
-          for (const sakinys of TRUKSTAMI_STULPELIAI) {
-            try {
-              await db.run(sql.raw(sakinys))
-            } catch (klaida) {
-              // Švarioje bazėje stulpelis jau sukurtas kartu su lentele.
-              if (!arDublikatas(klaida)) throw klaida
-            }
-          }
-          for (const sakinys of PRADINE_SCHEMA.filter((s) => !arLentele(s))) {
-            await db.run(sql.raw(sakinys))
-          }
-        },
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Parašas laiško gale (`priminimai.parasas`).
+       *
+       * Grynas stulpelis jau esamoje lentelėje: `priminimai` serveryje atsirado
+       * su ankstesne migracija, tad `CREATE TABLE IF NOT EXISTS` jos nebeliečia
+       * ir naujas laukas be `ALTER` niekada neatsirastų. Darbas tas pats, tik
+       * naujas pavadinimas — serveryje jau įvykdyta migracija nepasileidžia.
+       */
+      {
+        name: 'schema-2026-09-parasas',
+        up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },
     ],

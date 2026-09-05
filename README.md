@@ -183,12 +183,18 @@ pirmoji (nuolaida)“.
 vakare**, ir kelintą valandą. Prie atskiro mokinio tą patį galima nurodyti kitaip — jo nustatymas
 nurungia bendrąjį.
 
+Ten pat redaguojamas ir laiško **parašas** bei **prierašas** (papildoma eilutė prieš parašą).
+Parašą palikus tuščią, imamas numatytasis iš `lib/kontaktai.ts` — vardas, pareigos, telefonas ir
+adresas. Likęs laiško tekstas (kreipinys, sakinys apie pamoką, prisijungimo eilutė ir pirmos
+pamokos nuolaida) gyvena `laiskasTevams()` funkcijoje `lib/priminimai.ts`: nuoroda ir laikas
+turi būti visada, tad jų į CMS neiškeliam.
+
 **Pamokų žurnalas** (`cms/Zurnalas.ts`) — po įrašą kiekvienai pamokai. Įrašus kuria pati sistema;
 jie neleidžia išsiųsti to paties priminimo dukart ir kaupia lankomumo bei atsiskaitymo istoriją.
 
 ### Kaip tai sukasi
 
-Cron'as kas 15 min. kviečia `/vidus/priminimai?raktas=…` (`PRIMINIMU_RAKTAS`, žr. `.env.example`).
+Cron'as kas 5 min. kviečia `/vidus/priminimai?raktas=…` (`PRIMINIMU_RAKTAS`, žr. `.env.example`).
 Maršrutas kaskart klausia to paties: kurių artimiausių pamokų priminimo momentas jau praėjo, o
 laiškas dar neišsiųstas. Todėl siuntimo valandą galima keisti CMS'e neliečiant serverio.
 
@@ -363,7 +369,7 @@ Ir dar reikia **cron'o**, kuris tą adresą kviestų. Hostinger hPanel'yje arba 
 cron-job.org:
 
 ```
-*/15 * * * *  curl -s "https://vardiklis.lt/vidus/priminimai?raktas=TAVO_RAKTAS"
+*/5 * * * *  curl -s "https://vardiklis.lt/vidus/priminimai?raktas=TAVO_RAKTAS"
 ```
 
 > Be `SMTP_USER` ir `SMTP_PASS` forma siuntimo nebando: parodo telefoną bei el. paštą ir

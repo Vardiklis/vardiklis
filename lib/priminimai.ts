@@ -14,7 +14,7 @@ import { pastoNustatymai, pastoSiuntejas } from '@/lib/pastas'
 /**
  * Automatiniai priminimai tėvams.
  *
- * KAIP TAI VEIKIA. Maršrutas `/vidus/priminimai` badomas kas 15 min. ir kaskart
+ * KAIP TAI VEIKIA. Maršrutas `/vidus/priminimai` badomas kas 5 min. ir kaskart
  * klausia to paties: kurių artimiausių pamokų priminimo momentas jau praėjo, o
  * laiškas dar neišsiųstas? Siuntimo valanda gyvena CMS'e, tad ją pakeitus
  * cron'o liesti nereikia — kitas badymas jau skaičiuos pagal naują.
@@ -55,6 +55,7 @@ type Nustatymai = {
   kada?: string | null
   valanda?: string | null
   prierasas?: string | null
+  parasas?: string | null
   santraukaSau?: boolean | null
   paskutineSantrauka?: string | null
 }
@@ -87,14 +88,34 @@ function pirmosPamokosKaina(): { pilna: number; suNuolaida: number } | null {
   return { pilna: individuali.eurai, suNuolaida: individuali.eurai - nuolaidaPirmajai }
 }
 
+/**
+ * Parašas, kai CMS'e jis nenurodytas.
+ *
+ * Ne tuščia eilutė: globalo `defaultValue` galioja tik pirmą kartą kuriant
+ * įrašą, o serveryje jis jau sukurtas — tad naujas laukas ten atsiranda
+ * tuščias, ir be šito laiškai staiga liktų be parašo.
+ */
+function numatytasParasas(): string[] {
+  return [
+    `${kontaktai.vardas}, ${kontaktai.pareigos}`,
+    kontaktai.telefonas,
+    svetaine.url.replace('https://', ''),
+  ]
+}
+
 function laiskasTevams(
   mokinys: Mokinys,
   dataISO: string,
   laikas: string,
   prierasas: string | null,
+  parasas: string | null,
 ): { tema: string; tekstas: string } {
   const nuoroda = `${svetaine.url}/p/${mokinys.raktas}`
   const siandien = dataISO === dataVilniuje(new Date())
+
+  // Tuščias CMS laukas ateina kaip `''`, o ne `null` — be šito jis praeitų pro
+  // filtrą ir laiške atsirastų antra tuščia eilutė prieš parašą.
+  const priedas = prierasas?.trim() || null
 
   const kaina = mokinys.pirmaPamoka ? pirmosPamokosKaina() : null
 
@@ -109,12 +130,11 @@ function laiskasTevams(
       ? `Pirmajai pamokai taikoma ${nuolaidaPirmajai} € nuolaida — ${kaina.suNuolaida} € vietoj ${kaina.pilna} €.`
       : null,
     kaina ? '' : null,
-    prierasas,
-    prierasas ? '' : null,
+    priedas,
+    priedas ? '' : null,
     '—',
-    `${kontaktai.vardas}, ${kontaktai.pareigos}`,
-    kontaktai.telefonas,
-    svetaine.url.replace('https://', ''),
+    // Brūkšnelis lieka kode, kad parašas visada atsiskirtų nuo teksto vienodai.
+    ...(parasas?.trim() ? parasas.trim().split('\n') : numatytasParasas()),
   ].filter((e): e is string => e !== null)
 
   return {
@@ -240,7 +260,13 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
             },
           }))
 
-        const laiskas = laiskasTevams(mokinys, dataISO, pamoka.laikas, n.prierasas ?? null)
+        const laiskas = laiskasTevams(
+          mokinys,
+          dataISO,
+          pamoka.laikas,
+          n.prierasas ?? null,
+          n.parasas ?? null,
+        )
         try {
           await siuntejas.sendMail({
             from: `"${kontaktai.vardas} · ${svetaine.pavadinimas}" <${pastas.user}>`,
