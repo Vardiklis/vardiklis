@@ -36,7 +36,12 @@ const nextConfig: NextConfig = {
       { source: '/', headers: [{ key: 'Cache-Control', value: PUSLAPIO_KESAS }] },
       {
         // Viskas, išskyrus statiką, Payload API ir admin skydelį.
-        source: '/:kelias((?!_next/|api/|admin).+)',
+        //
+        // `p/` ir `vidus/` irgi paliekami nuošalyje: tai ne puslapiai, o
+        // veiksmai (pamokos nuorodos atidarymo įrašymas, būsenos pažymėjimas,
+        // priminimų siuntimas). Krašte užkešuotas atsakymas reikštų, kad
+        // antras paspaudimas serverio nebepasiekia.
+        source: '/:kelias((?!_next/|api/|admin|p/|vidus/).+)',
         headers: [{ key: 'Cache-Control', value: PUSLAPIO_KESAS }],
       },
     ]

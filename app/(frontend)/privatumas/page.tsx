@@ -15,7 +15,7 @@ export default function Privatumas() {
       <Antraste
         lygis={1}
         dydis="display-l"
-        paantraste="Trumpai: jokios duomenų bazės apie jus nėra. Ką parašote formoje, ateina Modestai į paštą ir lieka tik ten."
+        paantraste="Trumpai: apie svetainės lankytojus duomenų bazės nėra — ką parašote formoje, ateina Modestai į paštą ir lieka tik ten. Apie jau besimokančius mokinius saugoma tik tiek, kiek reikia pamokų priminimams."
       >
         Privatumas
       </Antraste>
@@ -89,6 +89,29 @@ export default function Privatumas() {
             nepatenka, rinkmenose neįrašomi, tretiesiems asmenims neperduodami. Vienintelė vieta,
             kur jie lieka, yra Modestos pašto dėžutė, ir naudojami jie tik tam, kad būtų galima
             atsakyti.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="t-h3">Mokiniai ir pamokų priminimai</h2>
+          <p className="mt-3 t-body text-muted">
+            Tai vienintelė vieta, kur duomenys tikrai įrašomi, ir liečia ji tik jau
+            besimokančius mokinius — ne svetainės lankytojus. Apie kiekvieną mokinį laikoma:
+            vardas, klasė, tėvo ar mamos vardas ir el. paštas, savaitinių pamokų laikai bei
+            nuolatinė vaizdo pamokos nuoroda. Šiuos įrašus suveda pati Modesta iš to, ką sutarėte
+            — pačiam per svetainę nieko įvesti negalima.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Reikalingi jie vienam dalykui: prieš pamoką automatiškai išsiųsti tėvams laišką su
+            laiku ir prisijungimo nuoroda. Toje nuorodoje užfiksuojama, kada ji buvo atidaryta —
+            taip susidaro lankomumo sąrašas ir nereikia jo vesti ranka. Daugiau apie pačią pamoką
+            nieko nerenkama: pokalbis neįrašomas, ekranas nefiksuojamas.
+          </p>
+          <p className="mt-3 t-body text-muted">
+            Duomenys guli svetainės serverio duomenų bazėje ir yra prieinami tik prisijungusiai
+            Modestai — viešai jų nemato niekas, tretiesiems asmenims jie neperduodami ir
+            reklamai nenaudojami. Nustojus lankyti pamokas arba tiesiog paprašius laišku, įrašas
+            ištrinamas visas.
           </p>
         </section>
 

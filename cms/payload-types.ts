@@ -70,6 +70,8 @@ export interface Config {
     straipsniai: Straipsniai;
     failai: Failai;
     naudotojai: Naudotojai;
+    mokiniai: Mokiniai;
+    zurnalas: Zurnala;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +82,8 @@ export interface Config {
     straipsniai: StraipsniaiSelect<false> | StraipsniaiSelect<true>;
     failai: FailaiSelect<false> | FailaiSelect<true>;
     naudotojai: NaudotojaiSelect<false> | NaudotojaiSelect<true>;
+    mokiniai: MokiniaiSelect<false> | MokiniaiSelect<true>;
+    zurnalas: ZurnalasSelect<false> | ZurnalasSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -91,9 +95,11 @@ export interface Config {
   fallbackLocale: ('false' | 'none' | 'null') | false | null | 'lt' | 'lt'[];
   globals: {
     nustatymai: Nustatymai;
+    priminimai: Priminimai;
   };
   globalsSelect: {
     nustatymai: NustatymaiSelect<false> | NustatymaiSelect<true>;
+    priminimai: PriminimaiSelect<false> | PriminimaiSelect<true>;
   };
   locale: 'lt';
   widgets: {
@@ -243,6 +249,97 @@ export interface Naudotojai {
   collection: 'naudotojai';
 }
 /**
+ * Kam siunčiami priminimai. Pamokos kartojasi kas savaitę; pakeitimai galioja nuo kito siuntimo.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mokiniai".
+ */
+export interface Mokiniai {
+  id: number;
+  vardas: string;
+  klase?: ('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10') | null;
+  tevoVardas?: string | null;
+  /**
+   * Šiuo adresu eina priminimai. Be jo siųsti nėra kur.
+   */
+  tevoPastas: string;
+  /**
+   * Nuolatinė šio vaiko kambario nuoroda, pvz. https://meet.google.com/abc-defg-hij. Tėvams siunčiama ne ji, o vardiklis.lt nuoroda, kuri atveda čia — todėl pakeitus ją, tėvams pranešti nereikia.
+   */
+  meetNuoroda: string;
+  /**
+   * Kartojasi kas savaitę. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus.
+   */
+  pamokos?:
+    | {
+        savaitesDiena: '1' | '2' | '3' | '4' | '5' | '6' | '7';
+        /**
+         * Formatas 17:00, Lietuvos laiku.
+         */
+        laikas: string;
+        trukmeMin?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Nuėmus varnelę priminimai nustoja eiti, o įrašas lieka.
+   */
+  aktyvus?: boolean | null;
+  /**
+   * Įjungta — laiške paminima pirmos pamokos nuolaida. Pažymėjus žurnale „Įvyko“, varnelė nusiima pati.
+   */
+  pirmaPamoka?: boolean | null;
+  /**
+   * Atostogoms. Iki šios dienos imtinai priminimai nesiunčiami.
+   */
+  pauzeIki?: string | null;
+  sutikimas?: boolean | null;
+  priminimoKada?: ('' | 'rytas' | 'vakaras') | null;
+  /**
+   * Pvz. 07:30. Palikus tuščią — kaip bendruose nustatymuose.
+   */
+  priminimoValanda?: string | null;
+  pastabos?: string | null;
+  /**
+   * Iš jo sudaroma nuoroda vardiklis.lt/p/… Nekeičiamas.
+   */
+  raktas?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria pati sistema.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "zurnalas".
+ */
+export interface Zurnala {
+  id: number;
+  /**
+   * Sudaroma automatiškai.
+   */
+  santrauka?: string | null;
+  data: string;
+  laikas?: string | null;
+  mokinys?: (number | null) | Mokiniai;
+  /**
+   * „Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia.
+   */
+  busena?: ('suplanuota' | 'atidare' | 'ivyko' | 'neivyko') | null;
+  issiusta?: string | null;
+  atidaryta?: string | null;
+  /**
+   * Įrašoma siuntimo metu — kad kaina istorijoje nepasikeistų atgaline data.
+   */
+  pirmaPamoka?: boolean | null;
+  /**
+   * Užpildyta tik tada, kai laiško išsiųsti nepavyko.
+   */
+  klaida?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -277,6 +374,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'naudotojai';
         value: number | Naudotojai;
+      } | null)
+    | ({
+        relationTo: 'mokiniai';
+        value: number | Mokiniai;
+      } | null)
+    | ({
+        relationTo: 'zurnalas';
+        value: number | Zurnala;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -413,6 +518,52 @@ export interface NaudotojaiSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mokiniai_select".
+ */
+export interface MokiniaiSelect<T extends boolean = true> {
+  vardas?: T;
+  klase?: T;
+  tevoVardas?: T;
+  tevoPastas?: T;
+  meetNuoroda?: T;
+  pamokos?:
+    | T
+    | {
+        savaitesDiena?: T;
+        laikas?: T;
+        trukmeMin?: T;
+        id?: T;
+      };
+  aktyvus?: T;
+  pirmaPamoka?: T;
+  pauzeIki?: T;
+  sutikimas?: T;
+  priminimoKada?: T;
+  priminimoValanda?: T;
+  pastabos?: T;
+  raktas?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "zurnalas_select".
+ */
+export interface ZurnalasSelect<T extends boolean = true> {
+  santrauka?: T;
+  data?: T;
+  laikas?: T;
+  mokinys?: T;
+  busena?: T;
+  issiusta?: T;
+  atidaryta?: T;
+  pirmaPamoka?: T;
+  klaida?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -499,6 +650,38 @@ export interface Nustatymai {
   createdAt?: string | null;
 }
 /**
+ * Kada ir ar išvis siunčiami automatiniai priminimai tėvams.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "priminimai".
+ */
+export interface Priminimai {
+  id: number;
+  /**
+   * Nuėmus varnelę siuntimas sustoja visiems, nieko kito keisti nereikia.
+   */
+  ijungta?: boolean | null;
+  kada: 'rytas' | 'vakaras';
+  /**
+   * Formatas 07:30, Lietuvos laiku.
+   */
+  valanda: string;
+  /**
+   * Įterpiamas kiekvieno laiško gale, prieš parašą. Pvz. priminimas apie namų darbus.
+   */
+  prierasas?: string | null;
+  /**
+   * Vienas laiškas su tos dienos pamokomis ir mygtukais „Buvo / Nebuvo“ — kad žurnalo nereikėtų pildyti panelėje.
+   */
+  santraukaSau?: boolean | null;
+  /**
+   * Kad ta pati santrauka neišeitų kelis kartus per dieną.
+   */
+  paskutineSantrauka?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "nustatymai_select".
  */
@@ -518,6 +701,21 @@ export interface NustatymaiSelect<T extends boolean = true> {
   kainuPastaba?: T;
   formosAntraste?: T;
   formosTekstas?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "priminimai_select".
+ */
+export interface PriminimaiSelect<T extends boolean = true> {
+  ijungta?: T;
+  kada?: T;
+  valanda?: T;
+  prierasas?: T;
+  santraukaSau?: T;
+  paskutineSantrauka?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

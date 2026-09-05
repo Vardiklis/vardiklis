@@ -12,10 +12,13 @@ import { seoPlugin } from '@payloadcms/plugin-seo'
 import { buildConfig } from 'payload'
 import { straipsnioBlokai } from './cms/blokai'
 import { Failai } from './cms/Failai'
+import { Mokiniai } from './cms/Mokiniai'
 import { Naudotojai } from './cms/Naudotojai'
 import { Nustatymai } from './cms/Nustatymai'
+import { Priminimai } from './cms/Priminimai'
 import { PRADINE_SCHEMA } from './cms/pradine-schema'
 import { straipsnioAdresas, Straipsniai } from './cms/Straipsniai'
+import { Zurnalas } from './cms/Zurnalas'
 import { TEKSTO_BUSENOS } from './cms/stiliai'
 
 const katalogas = path.dirname(fileURLToPath(import.meta.url))
@@ -26,10 +29,42 @@ const katalogas = path.dirname(fileURLToPath(import.meta.url))
  *
  * `autosave` atsirado įjungus automatinį juodraščių saugojimą straipsniuose —
  * be jo Payload versijų lentelės nebeperskaito.
+ *
+ * `mokiniai_id` ir `zurnalas_id` — atsiradus naujoms kolekcijoms, Payload į
+ * SENĄ `payload_locked_documents_rels` lentelę prisideda po stulpelį kiekvienai.
+ * Jiems dar sukuriami indeksai, tad be šitų dviejų eilučių migracija nulūžtų
+ * ties `CREATE INDEX … (mokiniai_id)`.
  */
 const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `_straipsniai_v` ADD `autosave` integer',
+  'ALTER TABLE `payload_locked_documents_rels` ADD `mokiniai_id` integer REFERENCES `mokiniai`(`id`)',
+  'ALTER TABLE `payload_locked_documents_rels` ADD `zurnalas_id` integer REFERENCES `zurnalas`(`id`)',
 ]
+
+/** Ar sakinys kuria lentelę (o ne indeksą). */
+const arLentele = (sakinys: string): boolean => /^CREATE TABLE/i.test(sakinys)
+
+/**
+ * Ar klaida — „toks stulpelis jau yra“.
+ *
+ * Bazėje, kur stulpelis jau pridėtas (o tokia yra kiekviena, kurioje anksčiau
+ * suveikė migracija), pakartotinis `ALTER TABLE ADD` skundžiasi dublikatu, ir
+ * tai yra normalu. Bėda ta, kad Drizzle originalią SQLite klaidą apvynioja
+ * savo `DrizzleQueryError`, kurio tekstas yra „Failed query: ALTER TABLE …“ —
+ * tad paviršiuje ieškant „duplicate column“ nerandama nieko ir migracija
+ * nulūžta be reikalo, o kartu neleidžia pakilti visam Payload'ui.
+ *
+ * Todėl peržiūrima visa `cause` grandinė.
+ */
+function arDublikatas(klaida: unknown): boolean {
+  let dabartine: unknown = klaida
+  for (let gylis = 0; gylis < 5 && dabartine; gylis++) {
+    const tekstas = `${(dabartine as Error)?.message ?? ''} ${String(dabartine)}`
+    if (/duplicate column/i.test(tekstas)) return true
+    dabartine = (dabartine as { cause?: unknown })?.cause
+  }
+  return false
+}
 
 /**
  * Payload CMS — straipsniai, SEO laukai ir PDF failai.
@@ -68,8 +103,8 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Straipsniai, Failai, Naudotojai],
-  globals: [Nustatymai],
+  collections: [Straipsniai, Failai, Naudotojai, Mokiniai, Zurnalas],
+  globals: [Nustatymai, Priminimai],
   /**
    * Redaktoriaus galimybės. Prie numatytųjų pridėta:
    *   • `TextStateFeature` — teksto spalva, paryškinimo fonas ir šriftas;
@@ -135,10 +170,48 @@ export default buildConfig({
             } catch (klaida) {
               // Švarioje bazėje stulpelis jau sukurtas kartu su lentele —
               // tada SQLite skundžiasi dublikatu, ir tai yra gerai.
-              if (!/duplicate column/i.test(String(klaida))) throw klaida
+              if (!arDublikatas(klaida)) throw klaida
             }
           }
           for (const sakinys of PRADINE_SCHEMA) {
+            await db.run(sql.raw(sakinys))
+          }
+        },
+        down: async () => {},
+      },
+      /**
+       * Mokiniai, pamokų žurnalas ir priminimų nustatymai.
+       *
+       * EILIŠKUMAS ČIA SVARBUS IR SKIRIASI nuo ankstesnės migracijos. Naujos
+       * kolekcijos priverčia Payload į jau egzistuojančią
+       * `payload_locked_documents_rels` prirašyti po stulpelį, o tų stulpelių
+       * `REFERENCES` rodo į `mokiniai` ir `zurnalas`. Todėl:
+       *
+       *   1. LENTELĖS — kad būtų į ką rodyti (senosios praleidžiamos per
+       *      `IF NOT EXISTS`);
+       *   2. STULPELIAI — `ALTER TABLE`, kurio `CREATE TABLE IF NOT EXISTS`
+       *      niekada nepadarytų senai lentelei;
+       *   3. INDEKSAI — dalis jų mini būtent tuos ką tik pridėtus stulpelius,
+       *      tad anksčiau paleisti jų negalima.
+       *
+       * Sumaišius 2 ir 3 vietomis, migracija nulūžta ir Payload nebepakyla —
+       * visi CMS bei straipsnių puslapiai atsako 503.
+       */
+      {
+        name: 'schema-2026-09-mokiniai',
+        up: async ({ db }) => {
+          for (const sakinys of PRADINE_SCHEMA.filter(arLentele)) {
+            await db.run(sql.raw(sakinys))
+          }
+          for (const sakinys of TRUKSTAMI_STULPELIAI) {
+            try {
+              await db.run(sql.raw(sakinys))
+            } catch (klaida) {
+              // Švarioje bazėje stulpelis jau sukurtas kartu su lentele.
+              if (!arDublikatas(klaida)) throw klaida
+            }
+          }
+          for (const sakinys of PRADINE_SCHEMA.filter((s) => !arLentele(s))) {
             await db.run(sql.raw(sakinys))
           }
         },

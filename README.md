@@ -167,6 +167,50 @@ išsaugojimo perkrauna peržiūros langą. Adresas — `/straipsniai/<nuoroda>?p
 juodraštį jis parodo **tik prisijungusiam** CMS naudotojui, visiems kitiems tas pats
 adresas grąžina paskelbtą versiją.
 
+## Pamokų priminimai
+
+Automatinis laiškas tėvams prieš pamoką. Google kalendorius čia nedalyvauja: tvarkaraštis,
+tėvų paštas ir Meet nuoroda gyvena Payload'e, tad nereikia nei Calendar API, nei OAuth, nei
+pavadinimų prefiksų.
+
+### Ką suvedi CMS'e
+
+**Mokiniai** (`cms/Mokiniai.ts`) — vardas, klasė, tėvo vardas ir el. paštas, nuolatinė Meet
+nuoroda, savaitinių pamokų laikai. Ten pat: „Aktyvus“, „Pauzė iki“ atostogoms ir „Kita pamoka —
+pirmoji (nuolaida)“.
+
+**Priminimai** (`cms/Priminimai.ts`) — kada siųsti: **tos pačios dienos rytą** arba **dieną prieš,
+vakare**, ir kelintą valandą. Prie atskiro mokinio tą patį galima nurodyti kitaip — jo nustatymas
+nurungia bendrąjį.
+
+**Pamokų žurnalas** (`cms/Zurnalas.ts`) — po įrašą kiekvienai pamokai. Įrašus kuria pati sistema;
+jie neleidžia išsiųsti to paties priminimo dukart ir kaupia lankomumo bei atsiskaitymo istoriją.
+
+### Kaip tai sukasi
+
+Cron'as kas 15 min. kviečia `/vidus/priminimai?raktas=…` (`PRIMINIMU_RAKTAS`, žr. `.env.example`).
+Maršrutas kaskart klausia to paties: kurių artimiausių pamokų priminimo momentas jau praėjo, o
+laiškas dar neišsiųstas. Todėl siuntimo valandą galima keisti CMS'e neliečiant serverio.
+
+Tikrinamos dvi paros — pasirinkus „dieną prieš, vakare“, aštuntą vakaro reikia žiūrėti į
+**rytojaus** pamokas. Pamokai jau prasidėjus priminimas nebesiunčiamas niekada; iki tol nepavykęs
+laiškas bandomas iš naujo kito badymo metu.
+
+Laikai skaičiuojami Vilniaus laiku (`lib/laikas.ts`), nes serveris sukasi UTC.
+
+### Nuoroda tėvams ir „ar prisijungė“
+
+Laiške siunčiama ne pati Meet nuoroda, o `vardiklis.lt/p/<raktas>`: ji įrašo atidarymo laiką ir
+permeta į Meet kambarį. Raktas pastovus — nuorodą galima įsidėti į žymes, o pakeitus Meet
+kambarį Payload'e sena žyma pati atves į naują.
+
+Tiksliau nei „nuoroda atidaryta“ nemokamoje Google paskyroje nesužinosi: Meet REST API dirba tik
+su Workspace paskyrų vedamais skambučiais, o dalyvavimo ataskaitos yra mokamuose planuose.
+
+Dienos santraukoje sau prie kiekvienos pamokos yra „Buvo / Nebuvo“ nuorodos — paspaudus, būsena
+žurnale pasikeičia neatidarant CMS. Jas saugo parašas iš `PAYLOAD_SECRET`. Pažymėjus „Buvo“,
+mokiniui nusiima pirmos pamokos nuolaidos varnelė.
+
 ## Kaip pridėti naują uždavinių generatorių
 
 1. **Sukurk failą** `lib/generatoriai/mano-tema.ts`:
@@ -245,13 +289,22 @@ app/
   testai/                     NMPP ir PUPP
   matematikos-korepetitore/   paslaugų puslapis (buv. `apie/`, 308 iš `/apie`)
   privatumas/
+  p/[raktas]/                 pamokos nuoroda tėvams → įrašo ir permeta į Meet
+  vidus/priminimai/           cron'o kviečiamas siuntimas
+  vidus/zymeti/               „Buvo / Nebuvo“ iš santraukos laiško
   sitemap.ts  robots.ts
 components/                   savi komponentai, be UI bibliotekų
+cms/
+  Mokiniai.ts                 kas, kada ir kur turi pamoką
+  Zurnalas.ts                 pamokų žurnalas — rašo tik serveris
+  Priminimai.ts               kada siųsti (globalas)
 lib/
   temos.ts                    prielaidų grafas — DUOMENYS
   diagnostika.ts              adaptyvi logika
   matematika.ts               nsd, mbk, suprastinimas, normalizavimas
   generatoriai/               uždavinių generatoriai
+  priminimai.ts               kam ir kada siųsti laišką
+  laikas.ts                   Vilniaus laikas (serveris sukasi UTC)
 scripts/                      patikros, nekeliaujančios į produkciją
 ```
 
@@ -302,6 +355,16 @@ Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
   (STARTTLS). 465 nenaudojamas sąmoningai: tinkle su neveikiančiu IPv6 jis lūžta
   ties `ECONNREFUSED`, nes prie jau užmegzto TLS nodemailer nebepersijungia į IPv4.
 - `UZKLAUSU_PASTAS` — nebūtinas, kam ateina užklausos. Nenurodžius — tas pats `SMTP_USER`.
+- `PRIMINIMU_RAKTAS` — slaptažodis priminimų maršrutui (žr. „Pamokų priminimai“). Nenurodžius,
+  `/vidus/priminimai` atsako 503 ir laiškų nesiunčia; tai ir yra būdas juos laikinai išjungti
+  serveryje, o švelnesnis — varnelė CMS globale „Priminimai“.
+
+Ir dar reikia **cron'o**, kuris tą adresą kviestų. Hostinger hPanel'yje arba nemokamame
+cron-job.org:
+
+```
+*/15 * * * *  curl -s "https://vardiklis.lt/vidus/priminimai?raktas=TAVO_RAKTAS"
+```
 
 > Be `SMTP_USER` ir `SMTP_PASS` forma siuntimo nebando: parodo telefoną bei el. paštą ir
 > įrašo priežastį į serverio žurnalą. Tyliai užklausa nedingsta, bet ir neateina.
@@ -316,6 +379,13 @@ Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
 4. jei atsirado **naujas stulpelis jau esamoje lentelėje** (pvz. įjungus autosave, į
    `_straipsniai_v` atsiranda `autosave`), jis surašomas į `TRUKSTAMI_STULPELIAI`
    sąrašą `payload.config.ts`.
+
+> **Nauja kolekcija reiškia ir naują stulpelį.** Payload į jau egzistuojančią
+> `payload_locked_documents_rels` prideda po vieną stulpelį kiekvienai kolekcijai ir dar
+> sukuria jiems indeksus. Todėl 3 ir 4 punktai eina kartu, o migracijoje sakiniai
+> paleidžiami tokia tvarka: **lentelės → stulpeliai → indeksai** (žr.
+> `schema-2026-09-mokiniai`). Pridėjus stulpelius po indeksų, migracija nulūžta ties
+> `CREATE INDEX … (mokiniai_id)`.
 
 > `CREATE TABLE IF NOT EXISTS` seną lentelę tiesiog praleidžia, tad naujas stulpelis į ją
 > savaime nepatenka. Blogiausia, kad jį minintis indeksas tada nulaužia visą migraciją —
