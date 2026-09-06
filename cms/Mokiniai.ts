@@ -97,25 +97,27 @@ export const Mokiniai: CollectionConfig = {
     {
       name: 'pamokos',
       type: 'array',
-      label: 'Pamokų laikai',
+      label: 'Pamokų kiekis per savaitę',
       labels: { singular: 'Pamoka', plural: 'Pamokos' },
       admin: {
         description:
-          'Kartojasi kas savaitę. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus.',
+          'Kartojasi, kol nuimta „Aktyvus“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus.',
+        components: { RowLabel: '/cms/komponentai/PamokosEilute#PamokosEilute' },
       },
       fields: [
         {
           type: 'row',
           fields: [
             {
-              name: 'savaitesDiena',
+              name: 'kartojimas',
               type: 'select',
-              label: 'Savaitės diena',
+              label: 'Kartojasi',
+              defaultValue: 'savaite',
               required: true,
-              options: SAVAITES_DIENOS.map((d, i) => ({
-                label: d[0].toUpperCase() + d.slice(1),
-                value: String(i + 1),
-              })),
+              options: [
+                { label: 'Savaitės dieną', value: 'savaite' },
+                { label: 'Mėnesio dieną', value: 'menuo' },
+              ],
             },
             {
               name: 'laikas',
@@ -135,6 +137,71 @@ export const Mokiniai: CollectionConfig = {
               max: 240,
             },
           ],
+        },
+        {
+          type: 'row',
+          admin: { condition: (_, eilute) => eilute?.kartojimas !== 'menuo' },
+          fields: [
+            {
+              name: 'savaitesDiena',
+              type: 'select',
+              label: 'Savaitės diena',
+              options: SAVAITES_DIENOS.map((d, i) => ({
+                label: d[0].toUpperCase() + d.slice(1),
+                value: String(i + 1),
+              })),
+            },
+            {
+              name: 'kasKiek',
+              type: 'select',
+              label: 'Kaip dažnai',
+              defaultValue: '1',
+              options: [
+                { label: 'Kas savaitę', value: '1' },
+                { label: 'Kas 2 savaites', value: '2' },
+                { label: 'Kas 3 savaites', value: '3' },
+                { label: 'Kas 4 savaites', value: '4' },
+              ],
+            },
+            {
+              name: 'nuoDatos',
+              type: 'date',
+              label: 'Pirmoji tokia pamoka',
+              admin: {
+                description:
+                  'Nuo jos skaičiuojamos „kas antra“ savaitės. Būtina, kai pasirinkta rečiau nei kas savaitę.',
+                date: { pickerAppearance: 'dayOnly', displayFormat: 'yyyy-MM-dd' },
+                condition: (_, eilute) =>
+                  eilute?.kartojimas !== 'menuo' && Number(eilute?.kasKiek || 1) > 1,
+              },
+              /**
+               * Be atskaitos datos „kas antra savaitė“ neturi prasmės — neaišku,
+               * kurios savaitės yra tos. Kodas tokiu atveju laiko, kad pamoka
+               * kas savaitę (`lib/pamokos.ts`), bet čia to neleidžiam įrašyti.
+               */
+              validate: (reiksme: unknown, { siblingData }: { siblingData?: unknown }) => {
+                const eilute = siblingData as { kasKiek?: unknown; kartojimas?: unknown }
+                if (eilute?.kartojimas === 'menuo') return true
+                if (Number(eilute?.kasKiek || 1) > 1 && !reiksme) {
+                  return 'Nurodykite, nuo kurios pamokos skaičiuoti.'
+                }
+                return true
+              },
+            },
+          ],
+        },
+        {
+          name: 'menesioDiena',
+          type: 'number',
+          label: 'Mėnesio diena',
+          min: 1,
+          max: 31,
+          admin: {
+            description:
+              'Pvz. 15 — pamoka kas mėnesio 15 dieną. Mėnesiais, kuriuose tokios dienos nėra, pamokos nebus.',
+            condition: (_, eilute) => eilute?.kartojimas === 'menuo',
+            width: '50%',
+          },
         },
       ],
     },

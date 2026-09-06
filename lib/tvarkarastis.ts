@@ -7,6 +7,7 @@ import {
   SAVAITES_DIENOS,
   savaitesDiena,
 } from '@/lib/laikas'
+import { arVyksta, trukme, type Pamoka } from '@/lib/pamokos'
 
 /**
  * Laisvų laikų kalendorius su tikromis datomis.
@@ -28,7 +29,8 @@ import {
  * šiek tiek daugiau užimtumo, nei pasiūlyti langą, kurio nėra.
  */
 
-export type LangelioBusena = 'l' | 'u' | 'p'
+/** `l` laisva · `u` užimta · `p` praėję arba per vėlu · `n` tą dieną nesiūloma. */
+export type LangelioBusena = 'l' | 'u' | 'p' | 'n'
 
 export type Diena = {
   /** `2026-09-08` */
@@ -71,7 +73,9 @@ const REZERVACIJOS_MIN = 60
 type Intervalas = { data: string; nuo: number; iki: number }
 
 type Pakeitimas = {
+  tipas?: string | null
   savaitesDiena?: string | null
+  data?: string | null
   nuo?: string | null
   iki?: string | null
   busena?: string | null
@@ -81,6 +85,7 @@ type Dok = {
   rodyti?: boolean | null
   antraste?: string | null
   nuo?: string | null
+  nuoSavaitgali?: string | null
   iki?: string | null
   zingsnis?: string | null
   dienos?: string[] | null
@@ -91,8 +96,6 @@ type Dok = {
   pastabaLaikai?: string | null
   pastabaGrupine?: string | null
 }
-
-type Pamoka = { savaitesDiena?: string | null; laikas?: string | null; trukmeMin?: number | null }
 
 /** `17:30` → 1050. */
 function minutes(laikas: string): number {
@@ -133,7 +136,12 @@ async function surinkti(dabar: Date) {
     overrideAccess: true,
   })) as Dok
 
-  const nuo = minutes(n.nuo?.trim() || '08:00')
+  // Darbo dienomis pamokos prasideda vėliau — vaikai dar mokykloje.
+  const nuoDarbo = minutes(n.nuo?.trim() || '13:00')
+  const nuoSavaitgalio = minutes(n.nuoSavaitgali?.trim() || '10:00')
+  // Lentelės eilutės turi apimti abu variantus; ankstyvieji darbo dienų
+  // langeliai lieka tušti (`n`), o ne dingsta.
+  const nuo = Math.min(nuoDarbo, nuoSavaitgalio)
   const iki = minutes(n.iki?.trim() || '21:00')
   const zingsnis = Number(n.zingsnis || 60)
   const savaiciu = Math.min(Math.max(Number(n.savaiciu || 26), 2), 52)
@@ -158,24 +166,28 @@ async function surinkti(dabar: Date) {
     overrideAccess: true,
   })
 
-  /** Savaitinės pamokos: diena (1–7) → intervalai minutėmis. */
-  const savaitiniai: { diena: number; nuo: number; iki: number }[] = []
-  for (const dok of mokiniai as unknown as { pamokos?: Pamoka[] | null }[]) {
-    for (const pamoka of dok.pamokos ?? []) {
-      if (!pamoka.savaitesDiena || !pamoka.laikas) continue
-      const pradzia = minutes(pamoka.laikas)
-      savaitiniai.push({
-        diena: Number(pamoka.savaitesDiena),
-        nuo: pradzia,
-        iki: pradzia + (pamoka.trukmeMin || 60),
-      })
-    }
-  }
+  /**
+   * Visų mokinių pamokos vienu sąrašu.
+   *
+   * Nebe „savaitės diena → intervalas“: pasikartojimas gali būti ir kas antra
+   * savaitė, ir konkreti mėnesio diena, tad kiekvienai datai atskirai klausiam
+   * `arVyksta()` (`lib/pamokos.ts`) — tos pačios funkcijos, pagal kurią
+   * siunčiami ir rytiniai priminimai.
+   */
+  const pamokos = (mokiniai as unknown as { pamokos?: Pamoka[] | null }[]).flatMap(
+    (dok) => dok.pamokos ?? [],
+  )
 
+  /**
+   * Pataisymas gali galioti arba savaitės dienai (kartojasi), arba vienai
+   * konkrečiai datai (atostogos, vienkartinis susitikimas). `data` užpildyta —
+   * lyginam datas, kitaip savaitės dieną.
+   */
   const pakeitimai = (n.pakeitimai ?? [])
-    .filter((p) => p.savaitesDiena && p.nuo && p.iki && p.busena)
+    .filter((p) => p.nuo && p.iki && p.busena && (p.data || p.savaitesDiena))
     .map((p) => ({
-      diena: Number(p.savaitesDiena),
+      diena: p.savaitesDiena ? Number(p.savaitesDiena) : null,
+      data: p.tipas === 'data' && p.data ? String(p.data).slice(0, 10) : null,
       nuo: minutes(p.nuo!),
       iki: minutes(p.iki!),
       uzimta: p.busena === 'uzimta',
@@ -203,13 +215,15 @@ async function surinkti(dabar: Date) {
   return {
     n,
     nuo,
+    nuoDarbo,
+    nuoSavaitgalio,
     iki,
     zingsnis,
     savaiciu,
     ispejimasMs,
     dienuNumeriai,
     pirmadienis,
-    savaitiniai,
+    pamokos,
     pakeitimai,
     rezervacijos,
     // `iki` yra PASKUTINĖS eilutės pradžia, tad lygybė irgi tinka — tada
@@ -227,18 +241,26 @@ function langelioBusena(
   pradzia: number,
   dabar: Date,
 ): LangelioBusena {
+  const diena = savaitesDiena(dataISO)
+
+  // Savaitgalis prasideda anksčiau nei darbo diena; ankstyvesni langeliai tą
+  // dieną nesiūlomi visai — nei laisvi, nei užimti.
+  if (pradzia < (diena >= 6 ? s.nuoSavaitgalio : s.nuoDarbo)) return 'n'
+
   if (momentas(dataISO, tekstu(pradzia)).getTime() - dabar.getTime() < s.ispejimasMs) return 'p'
 
   const pabaiga = pradzia + s.zingsnis
-  const diena = savaitesDiena(dataISO)
 
-  let uzimta = s.savaitiniai.some(
-    (u) => u.diena === diena && persidengia(u.nuo, u.iki, pradzia, pabaiga),
+  let uzimta = s.pamokos.some(
+    (p) =>
+      arVyksta(p, dataISO) &&
+      persidengia(minutes(p.laikas!), minutes(p.laikas!) + trukme(p), pradzia, pabaiga),
   )
 
   // Rankiniai pataisymai — paskutinis žodis prieš rezervacijas.
   for (const p of s.pakeitimai) {
-    if (p.diena !== diena) continue
+    const tinka = p.data ? p.data === dataISO : p.diena === diena
+    if (!tinka) continue
     if (!persidengia(p.nuo, p.iki, pradzia, pabaiga)) continue
     uzimta = p.uzimta
   }

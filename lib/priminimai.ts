@@ -7,8 +7,8 @@ import {
   dataZodziais,
   momentas,
   pridekDienas,
-  savaitesDiena,
 } from '@/lib/laikas'
+import { arVyksta, type Pamoka } from '@/lib/pamokos'
 import { pastoNustatymai, pastoSiuntejas } from '@/lib/pastas'
 
 /**
@@ -26,12 +26,6 @@ import { pastoNustatymai, pastoSiuntejas } from '@/lib/pastas'
  * DUKART NEIŠSIUNČIA žurnalas: įrašas kuriamas prieš siunčiant, ir kitas
  * badymas tą pačią pamoką jau randa.
  */
-
-type Pamoka = {
-  savaitesDiena?: string | null
-  laikas?: string | null
-  trukmeMin?: number | null
-}
 
 type Mokinys = {
   id: number
@@ -204,8 +198,10 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
       if (mokinys.pauzeIki && dataISO <= dataVilniuje(new Date(mokinys.pauzeIki))) continue
 
       for (const pamoka of mokinys.pamokos ?? []) {
-        if (!pamoka.savaitesDiena || !pamoka.laikas) continue
-        if (Number(pamoka.savaitesDiena) !== savaitesDiena(dataISO)) continue
+        if (!pamoka.laikas) continue
+        // Ta pati funkcija, pagal kurią dažomas ir svetainės kalendorius —
+        // kad tėvai negautų laiško apie pamoką, kurios kalendorius nerodo.
+        if (!arVyksta(pamoka, dataISO)) continue
 
         const pradzia = momentas(dataISO, pamoka.laikas)
         const siusti = siuntimoMomentas(mokinys, n, dataISO)

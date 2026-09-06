@@ -59,12 +59,22 @@ export const Tvarkarastis: GlobalConfig = {
             {
               name: 'nuo',
               type: 'text',
-              label: 'Pirma eilutė',
-              defaultValue: '08:00',
+              label: 'Darbo dienomis nuo',
+              defaultValue: '13:00',
               required: true,
-              admin: { description: 'Anksčiausia pamokos pradžia.' },
+              admin: { description: 'Anksčiausia pamoka pirmadienį–penktadienį.' },
               validate: (r: string | null | undefined) =>
-                arLaikas(r) ? true : 'Rašykite kaip 08:00.',
+                arLaikas(r) ? true : 'Rašykite kaip 13:00.',
+            },
+            {
+              name: 'nuoSavaitgali',
+              type: 'text',
+              label: 'Savaitgaliais nuo',
+              defaultValue: '10:00',
+              required: true,
+              admin: { description: 'Anksčiausia pamoka šeštadienį ir sekmadienį.' },
+              validate: (r: string | null | undefined) =>
+                arLaikas(r) ? true : 'Rašykite kaip 10:00.',
             },
             {
               name: 'iki',
@@ -154,11 +164,42 @@ export const Tvarkarastis: GlobalConfig = {
           type: 'row',
           fields: [
             {
+              name: 'tipas',
+              type: 'select',
+              label: 'Kam galioja',
+              defaultValue: 'savaite',
+              required: true,
+              options: [
+                { label: 'Savaitės dienai (kartojasi)', value: 'savaite' },
+                { label: 'Konkrečiai datai (vieną kartą)', value: 'data' },
+              ],
+            },
+            {
               name: 'savaitesDiena',
               type: 'select',
               label: 'Diena',
-              required: true,
               options: dienuPasirinkimai,
+              admin: { condition: (_, eilute) => eilute?.tipas !== 'data' },
+              validate: (reiksme: unknown, { siblingData }: { siblingData?: unknown }) => {
+                const eilute = siblingData as { tipas?: unknown }
+                if (eilute?.tipas !== 'data' && !reiksme) return 'Pasirinkite savaitės dieną.'
+                return true
+              },
+            },
+            {
+              name: 'data',
+              type: 'date',
+              label: 'Data',
+              admin: {
+                description: 'Pvz. rugsėjo 18 — galioja tik tą vieną dieną.',
+                date: { pickerAppearance: 'dayOnly', displayFormat: 'yyyy-MM-dd' },
+                condition: (_, eilute) => eilute?.tipas === 'data',
+              },
+              validate: (reiksme: unknown, { siblingData }: { siblingData?: unknown }) => {
+                const eilute = siblingData as { tipas?: unknown }
+                if (eilute?.tipas === 'data' && !reiksme) return 'Pasirinkite datą.'
+                return true
+              },
             },
             {
               name: 'nuo',

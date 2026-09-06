@@ -30,6 +30,7 @@ import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MeetNuorodosCele as MeetNuorodosCele_49f1d94a11e6c7993e041562d555e258 } from '../../../cms/komponentai/MeetNuoroda'
+import { PamokosEilute as PamokosEilute_622399b2af823d016153f7a7d352b589 } from '../../../cms/komponentai/PamokosEilute'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -66,5 +67,6 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "/cms/komponentai/MeetNuoroda#MeetNuorodosCele": MeetNuorodosCele_49f1d94a11e6c7993e041562d555e258,
+  "/cms/komponentai/PamokosEilute#PamokosEilute": PamokosEilute_622399b2af823d016153f7a7d352b589,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

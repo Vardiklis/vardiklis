@@ -272,16 +272,26 @@ export interface Mokiniai {
    */
   meetNuoroda: string;
   /**
-   * Kartojasi kas savaitę. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus.
+   * Kartojasi, kol nuimta „Aktyvus“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus.
    */
   pamokos?:
     | {
-        savaitesDiena: '1' | '2' | '3' | '4' | '5' | '6' | '7';
+        kartojimas: 'savaite' | 'menuo';
         /**
          * Formatas 17:00, Lietuvos laiku.
          */
         laikas: string;
         trukmeMin?: number | null;
+        savaitesDiena?: ('1' | '2' | '3' | '4' | '5' | '6' | '7') | null;
+        kasKiek?: ('1' | '2' | '3' | '4') | null;
+        /**
+         * Nuo jos skaičiuojamos „kas antra“ savaitės. Būtina, kai pasirinkta rečiau nei kas savaitę.
+         */
+        nuoDatos?: string | null;
+        /**
+         * Pvz. 15 — pamoka kas mėnesio 15 dieną. Mėnesiais, kuriuose tokios dienos nėra, pamokos nebus.
+         */
+        menesioDiena?: number | null;
         id?: string | null;
       }[]
     | null;
@@ -565,9 +575,13 @@ export interface MokiniaiSelect<T extends boolean = true> {
   pamokos?:
     | T
     | {
-        savaitesDiena?: T;
+        kartojimas?: T;
         laikas?: T;
         trukmeMin?: T;
+        savaitesDiena?: T;
+        kasKiek?: T;
+        nuoDatos?: T;
+        menesioDiena?: T;
         id?: T;
       };
   aktyvus?: T;
@@ -751,9 +765,13 @@ export interface Tvarkarasti {
   rodyti?: boolean | null;
   antraste?: string | null;
   /**
-   * Anksčiausia pamokos pradžia.
+   * Anksčiausia pamoka pirmadienį–penktadienį.
    */
   nuo: string;
+  /**
+   * Anksčiausia pamoka šeštadienį ir sekmadienį.
+   */
+  nuoSavaitgali: string;
   /**
    * Vėliausia pamokos pradžia. Ši eilutė lentelėje dar rodoma.
    */
@@ -777,7 +795,12 @@ export interface Tvarkarasti {
    */
   pakeitimai?:
     | {
-        savaitesDiena: '1' | '2' | '3' | '4' | '5' | '6' | '7';
+        tipas: 'savaite' | 'data';
+        savaitesDiena?: ('1' | '2' | '3' | '4' | '5' | '6' | '7') | null;
+        /**
+         * Pvz. rugsėjo 18 — galioja tik tą vieną dieną.
+         */
+        data?: string | null;
         nuo: string;
         iki: string;
         busena: 'uzimta' | 'laisva';
@@ -841,6 +864,7 @@ export interface TvarkarastisSelect<T extends boolean = true> {
   rodyti?: T;
   antraste?: T;
   nuo?: T;
+  nuoSavaitgali?: T;
   iki?: T;
   zingsnis?: T;
   dienos?: T;
@@ -850,7 +874,9 @@ export interface TvarkarastisSelect<T extends boolean = true> {
   pakeitimai?:
     | T
     | {
+        tipas?: T;
         savaitesDiena?: T;
+        data?: T;
         nuo?: T;
         iki?: T;
         busena?: T;

@@ -1,16 +1,143 @@
 /**
- * CMS skydelio priedai.
+ * CMS skydelio išvaizda.
  *
- * Redaktoriuje pasirenkami šriftai (`cms/stiliai.ts`) remiasi kintamaisiais,
- * kuriuos svetainėje sukuria `next/font`. Admin skydelyje `next/font` nesisuka,
- * tad be šito teksto šriftas ten nepasikeistų ir pasirinkimas atrodytų
- * neveikiantis. Šriftai imami iš Google — tik CMS pusėje; lankytojo puslapiui
- * tai nekainuoja nieko.
+ * KAM TAI NEKAINUOJA. Šis failas įtraukiamas TIK `app/(payload)/layout.tsx`,
+ * t. y. `/admin` maršrutuose. Svetainės lankytojo puslapius aptarnauja
+ * `app/(frontend)/layout.tsx`, tad nei šis CSS, nei žemiau parsiunčiami
+ * šriftai į jų naršyklę nepatenka niekada.
+ *
+ * KODĖL DAUGIAUSIA KINTAMIEJI, O NE KLASĖS. Payload savo stilius laiko
+ * `@layer payload-default` sluoksnyje, o šis failas yra be sluoksnio, tad
+ * visada laimi. Bet perrašinėti konkrečias klases pavojinga: pasikeitus
+ * versijai jos gali dingti. Todėl beveik viskas daroma per Payload paties
+ * paskelbtus kintamuosius — jie yra jo vieša sąsaja. Kelios klasės, kurios
+ * vis dėlto minimos, pažymėtos atskirai.
  */
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@400&display=swap');
+
+/**
+ * Šriftai. Redaktoriuje pasirenkami šriftai (`cms/stiliai.ts`) remiasi
+ * kintamaisiais, kuriuos svetainėje sukuria `next/font`. Admin skydelyje
+ * `next/font` nesisuka, tad be šito teksto šriftas ten nepasikeistų ir
+ * pasirinkimas atrodytų neveikiantis.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
 
 :root {
   --font-bricolage: 'Bricolage Grotesque';
   --font-instrument: 'Instrument Sans';
   --font-jetbrains: 'JetBrains Mono';
+
+  /* Payload visą tekstą ima iš `--font-body`. */
+  --font-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /**
+   * ŠILTA PILKA VIETOJ NEUTRALIOS.
+   *
+   * Payload visą sąsają piešia iš vienos `--color-base-*` skalės (0 —
+   * šviesiausia, 1000 — tamsiausia), o `--theme-elevation-*` tik rodo į ją.
+   * Perrašius skalę, vienu ypu sušyla fonas, rėmeliai, lentelės ir laukai —
+   * nereikia liesti nė vienos Payload klasės.
+   *
+   * Skalė vedama nuo svetainės popieriaus (`--paper`) iki rašalo (`--ink`),
+   * pro `--paper-2`, `--line` ir `--muted`, tad CMS ir svetainė atrodo iš tos
+   * pačios šeimos. Tamsi tema veikia savaime: ji tą pačią skalę skaito
+   * atbulai.
+   */
+  --color-base-0: #fbf8f2;
+  --color-base-50: #f7f3ec;
+  --color-base-100: #f3eee4;
+  --color-base-150: #ebe5d9;
+  --color-base-200: #e4ded2;
+  --color-base-250: #d8d0c1;
+  --color-base-300: #cbc2b1;
+  --color-base-350: #beb4a1;
+  --color-base-400: #b1a691;
+  --color-base-450: #a49881;
+  --color-base-500: #978a72;
+  --color-base-550: #897d67;
+  --color-base-600: #7b705d;
+  --color-base-650: #6b655f;
+  --color-base-700: #5d5850;
+  --color-base-750: #4e4a44;
+  --color-base-800: #3f3c37;
+  --color-base-850: #2f2d29;
+  --color-base-900: #201e1b;
+  --color-base-950: #171512;
+  --color-base-1000: #12100e;
+
+  /* Svetainės akcentas — naudojamas taupiai, kaip ir puslapiuose. */
+  --vardiklis-oranzine: #ff5c00;
+  --vardiklis-oranzine-tamsi: #f05600;
+  --vardiklis-oranzine-svelni: #ffe9da;
+}
+
+/**
+ * Pagrindinis mygtukas — oranžinis.
+ *
+ * Payload jį piešia iš trijų kintamųjų (`--bg-color`, `--color`, `--hover-bg`),
+ * paskelbtų prie pačios klasės, tad užtenka jas perrašyti. Tekstas tamsus, ne
+ * baltas: balta ant #FF5C00 duoda 3,09:1 ir nepraeina WCAG AA — ta pati
+ * taisyklė galioja ir svetainėje (`components/Mygtukas.tsx`).
+ */
+.btn--style-primary {
+  --bg-color: var(--vardiklis-oranzine);
+  --color: #12100e;
+  --hover-bg: var(--vardiklis-oranzine-tamsi);
+  --hover-color: #12100e;
+}
+
+/**
+ * Šoninė navigacija.
+ *
+ * Čia minimos Payload klasės (`nav__link*`, `nav-group__toggle`) — vienintelė
+ * vieta, kur be jų neapsieita. Jei po atnaujinimo navigacija atrodys kaip
+ * anksčiau, kaltas bus pasikeitęs klasės vardas, o ne kas nors sugedę.
+ *
+ * Atkreiptinas dėmesys: aktyvaus skyriaus Payload NEŽYMI klase `active` — jis
+ * tiesiog įdeda `nav__link-indicator` elementą ir brūkšnį piešia pats. Todėl
+ * čia ne kuriama nauja žymė, o perdažoma esama.
+ */
+.nav__link-indicator {
+  width: 3px;
+  background: var(--vardiklis-oranzine);
+}
+
+.nav__link:hover .nav__link-label {
+  color: var(--vardiklis-oranzine-tamsi);
+}
+
+/* Grupių antraštės („Pamokos“, „Turinys“) — ne dar viena pilka eilutė. */
+.nav-group__toggle {
+  font-family: var(--font-bricolage), var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--theme-elevation-500);
+}
+
+/* Sąrašų ir dokumentų antraštės — tuo pačiu šriftu kaip svetainės antraštės. */
+h1,
+.list-header__title,
+.doc-header__title {
+  font-family: var(--font-bricolage), var(--font-body);
+  letter-spacing: -0.01em;
+}
+
+/**
+ * Lentelių antraštės. Numatytai jos beveik nesiskiria nuo turinio, tad ilgame
+ * mokinių ar rezervacijų sąraše sunku atskirti, kur baigiasi antraštė.
+ */
+.table thead {
+  color: var(--theme-elevation-600);
+
+  th {
+    font-weight: 600;
+    border-bottom: 1px solid var(--theme-elevation-200);
+  }
+}
+
+/* Eilutė po pele — kad akis nepamestų, kurioje eilutėje yra. */
+.table tbody tr:hover {
+  background: var(--theme-elevation-50);
 }

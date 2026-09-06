@@ -43,6 +43,7 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `payload_locked_documents_rels` ADD `zurnalas_id` integer REFERENCES `zurnalas`(`id`)',
   'ALTER TABLE `priminimai` ADD `parasas` text',
   'ALTER TABLE `payload_locked_documents_rels` ADD `rezervacijos_id` integer REFERENCES `rezervacijos`(`id`)',
+  "ALTER TABLE `tvarkarastis` ADD `nuo_savaitgali` text DEFAULT '10:00' NOT NULL",
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -97,6 +98,47 @@ async function atnaujinkSchema(db: { run: (sakinys: ReturnType<typeof sql.raw>) 
   for (const sakinys of PRADINE_SCHEMA.filter((s) => !arLentele(s))) {
     await db.run(sql.raw(sakinys))
   }
+}
+
+/**
+ * Perkuria lentelę pagal naują `PRADINE_SCHEMA` aprašą, išsaugant duomenis.
+ *
+ * KAM TO REIKIA. `ALTER TABLE ADD COLUMN` prideda stulpelį, bet NEIŠIMA seno
+ * `NOT NULL`. Pamokoms atsiradus pasikartojimams, `savaites_diena` nebeprivalo
+ * būti užpildyta (mėnesinė pamoka jos neturi) — o senoje lentelėje ji vis dar
+ * privaloma, tad toks įrašas neįsirašytų. SQLite tokio apribojimo nuimti
+ * nemoka, todėl lentelė perkuriama: pervadinam, sukuriam naują, persikeliam
+ * senus stulpelius, seną išmetam.
+ *
+ * `senieji` — stulpeliai, kurie egzistuoja IR senoje, IR naujoje lentelėje.
+ * Naujieji lieka tušti, o jų numatytąsias reikšmes duoda pati schema.
+ */
+async function perkurkLentele(
+  db: { run: (sakinys: ReturnType<typeof sql.raw>) => unknown },
+  lentele: string,
+  senieji: string[],
+) {
+  const aprasas = PRADINE_SCHEMA.find((s) =>
+    s.startsWith(`CREATE TABLE IF NOT EXISTS \`${lentele}\``),
+  )
+  if (!aprasas) throw new Error(`Schemoje nėra lentelės ${lentele}`)
+
+  try {
+    await db.run(sql.raw(`ALTER TABLE \`${lentele}\` RENAME TO \`${lentele}_senas\``))
+  } catch (klaida) {
+    // Švarioje bazėje senos lentelės nėra — ją sukurs `atnaujinkSchema`.
+    if (/no such table/i.test(`${(klaida as Error)?.message} ${String(klaida)}`)) return
+    throw klaida
+  }
+
+  const stulpeliai = senieji.map((s) => `\`${s}\``).join(', ')
+  await db.run(sql.raw(aprasas))
+  await db.run(
+    sql.raw(
+      `INSERT INTO \`${lentele}\` (${stulpeliai}) SELECT ${stulpeliai} FROM \`${lentele}_senas\``,
+    ),
+  )
+  await db.run(sql.raw(`DROP TABLE \`${lentele}_senas\``))
 }
 
 /**
@@ -247,6 +289,39 @@ export default buildConfig({
       {
         name: 'schema-2026-09-rezervacijos',
         up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Pamokų pasikartojimai (kas N savaičių, mėnesio diena), pataisymai
+       * konkrečiai datai ir atskira savaitgalio pradžia.
+       *
+       * Dvi lentelės čia PERKURIAMOS, o ne papildomos: jose `savaites_diena`
+       * buvo `NOT NULL`, o dabar gali būti tuščia (mėnesinė pamoka, pataisymas
+       * konkrečiai datai). Duomenys persikelia.
+       */
+      {
+        name: 'schema-2026-09-kartojimas',
+        up: async ({ db }) => {
+          await perkurkLentele(db, 'mokiniai_pamokos', [
+            '_order',
+            '_parent_id',
+            'id',
+            'savaites_diena',
+            'laikas',
+            'trukme_min',
+          ])
+          await perkurkLentele(db, 'tvarkarastis_pakeitimai', [
+            '_order',
+            '_parent_id',
+            'id',
+            'savaites_diena',
+            'nuo',
+            'iki',
+            'busena',
+            'pastaba',
+          ])
+          await atnaujinkSchema(db)
+        },
         down: async () => {},
       },
     ],

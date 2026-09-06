@@ -83,6 +83,20 @@ export function savaitesDiena(dataISO: string): number {
   return diena === 0 ? 7 : diena
 }
 
+/** Kiek dienų nuo `a` iki `b`. Neigiama, jei `b` anksčiau. */
+export function dienuSkirtumas(a: string, b: string): number {
+  const [am, amen, ad] = a.split('-').map(Number)
+  const [bm, bmen, bd] = b.split('-').map(Number)
+  return Math.round(
+    (Date.UTC(bm, bmen - 1, bd) - Date.UTC(am, amen - 1, ad)) / 86_400_000,
+  )
+}
+
+/** Tos savaitės pirmadienis. */
+export function savaitesPradzia(dataISO: string): string {
+  return pridekDienas(dataISO, -(savaitesDiena(dataISO) - 1))
+}
+
 /** Pridėti (ar atimti) dienų prie `YYYY-MM-DD`. */
 export function pridekDienas(dataISO: string, kiek: number): string {
   const [m, men, d] = dataISO.split('-').map(Number)

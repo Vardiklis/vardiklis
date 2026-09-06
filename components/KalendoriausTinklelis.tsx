@@ -216,13 +216,23 @@ export default function KalendoriausTinklelis({ kalendorius, saltinis }: Props) 
                           className={`block size-10 rounded-[4px] border md:size-11 ${
                             b === 'u'
                               ? 'border-orange bg-orange'
-                              : b === 'p'
-                                ? 'border-line bg-paper opacity-40'
-                                : 'border-line bg-paper-2'
+                              : b === 'n'
+                                ? // Tą dieną tokių pamokų nebūna — langelis
+                                  // paliekamas visai tuščias, be rėmelio.
+                                  'border-transparent'
+                                : b === 'p'
+                                  ? 'border-line bg-paper opacity-40'
+                                  : 'border-line bg-paper-2'
                           }`}
                         >
                           <span className="sr-only">
-                            {b === 'u' ? 'Užimta' : b === 'p' ? 'Praėjęs laikas' : 'Laisva'}
+                            {b === 'u'
+                              ? 'Užimta'
+                              : b === 'n'
+                                ? 'Tuo metu pamokų nebūna'
+                                : b === 'p'
+                                  ? 'Praėjęs laikas'
+                                  : 'Laisva'}
                           </span>
                         </span>
                       )}

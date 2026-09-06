@@ -176,8 +176,14 @@ pavadinimų prefiksų.
 ### Ką suvedi CMS'e
 
 **Mokiniai** (`cms/Mokiniai.ts`) — vardas, klasė, tėvo vardas ir el. paštas, nuolatinė Meet
-nuoroda, savaitinių pamokų laikai. Ten pat: „Aktyvus“, „Pauzė iki“ atostogoms ir „Kita pamoka —
+nuoroda, pamokų laikai. Ten pat: „Aktyvus“, „Pauzė iki“ atostogoms ir „Kita pamoka —
 pirmoji (nuolaida)“.
+
+Pamokos pasikartojimas — kaip Google kalendoriuje: **savaitės diena** (kas savaitę, kas 2, 3 ar 4
+savaites) arba **mėnesio diena** (pvz. kas mėnesio 18-ą). Rečiau nei kas savaitę reikia „Pirmosios
+tokios pamokos“ datos — nuo jos skaičiuojama, kurios savaitės yra „tos“. Visa logika —
+`lib/pamokos.ts`, funkcija `arVyksta()`; ja remiasi IR priminimai, IR svetainės kalendorius, kad
+tėvai negautų laiško apie pamoką, kurios kalendorius nerodo.
 
 **Priminimai** (`cms/Priminimai.ts`) — kada siųsti: **tos pačios dienos rytą** arba **dieną prieš,
 vakare**, ir kelintą valandą. Prie atskiro mokinio tą patį galima nurodyti kitaip — jo nustatymas
@@ -244,6 +250,12 @@ Užimtumas imamas **iš tų pačių mokinių pamokų** — antro tvarkaraščio 
 prisideda „Rankiniai pataisymai“ (galioja PO skaičiavimo, tad gali ir uždaryti, ir atlaisvinti) ir
 rezervacijos, kurių būsena „nauja“ arba „patvirtinta“. Pažymėjus rezervaciją „Atmesta“, laikas
 svetainėje vėl tampa laisvas.
+
+Pataisymas gali galioti **savaitės dienai** (kartojasi) arba **konkrečiai datai** (atostogos,
+vienkartinis susitikimas) — pasirenkama laukelyje „Kam galioja“.
+
+Dienos pradžia atskira darbo dienoms ir savaitgaliui (numatytai 13:00 ir 10:00): eilutės apima abu
+variantus, o ankstyvieji darbo dienų langeliai lieka tušti — nei laisvi, nei užimti (`n` būsena).
 
 Langelis pažymimas užimtu, jei intervalai **persidengia**, o ne sutampa pradžios: 15:40 pamoka
 valandinėje lentelėje uždažo ir 15:00, ir 16:00. Geriau parodyti šiek tiek daugiau užimtumo, nei
@@ -358,6 +370,7 @@ lib/
   diagnostika.ts              adaptyvi logika
   matematika.ts               nsd, mbk, suprastinimas, normalizavimas
   generatoriai/               uždavinių generatoriai
+  pamokos.ts                  pasikartojimai — ar pamoka vyksta tą dieną
   priminimai.ts               kam ir kada siųsti laišką
   tvarkarastis.ts             kalendorius: užimta/laisva/praėjo
   rezervacija.ts              užsakymo veiksmas (patikros, įrašas, laiškai)
