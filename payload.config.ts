@@ -321,6 +321,17 @@ export default buildConfig({
             'pastaba',
           ])
           await atnaujinkSchema(db)
+
+          /**
+           * Senoji „Pirma eilutė“ reiškė visų dienų pradžią, o dabar — tik
+           * darbo dienų. Įrašai, kuriuose likusi senoji numatytoji `08:00`,
+           * pakeliami iki naujos: kitaip lentelė be reikalo prasidėtų aštuntą
+           * ryto, o pirmos penkios eilutės darbo dienomis būtų tuščios.
+           * Sąmoningai pasirinktos kitokios reikšmės neliečiamos.
+           */
+          await db.run(
+            sql.raw("UPDATE `tvarkarastis` SET `nuo` = '13:00' WHERE `nuo` = '08:00'"),
+          )
         },
         down: async () => {},
       },

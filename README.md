@@ -256,6 +256,18 @@ vienkartinis susitikimas) — pasirenkama laukelyje „Kam galioja“.
 
 Dienos pradžia atskira darbo dienoms ir savaitgaliui (numatytai 13:00 ir 10:00): eilutės apima abu
 variantus, o ankstyvieji darbo dienų langeliai lieka tušti — nei laisvi, nei užimti (`n` būsena).
+Todėl pirmoji lentelės eilutė yra ankstyvesnioji iš dviejų, o ne 08:00.
+
+### CMS skydelio išvaizda — `app/(payload)/custom.scss`
+
+Šiltos svetainės spalvos vietoj numatytos pilkos, oranžinis pagrindinis mygtukas ir Lucide ikonos
+skydelio kortelėms. Failas įtraukiamas **tik** `app/(payload)/layout.tsx`, tad į svetainės
+lankytojo naršyklę nepatenka nei šis CSS, nei jo parsiunčiami šriftai.
+
+Beveik viskas daroma per Payload paskelbtus CSS kintamuosius — visą sąsają jis piešia iš vienos
+`--color-base-*` skalės, tad ją perrašius sušyla fonas, laukai ir lentelės iš karto. Kelios vietos,
+kur be klasių neapsieita (navigacija, lentelių antraštės, kortelės), pažymėtos komentaruose: po
+Payload atnaujinimo pirmiausia tikrinti jas.
 
 Langelis pažymimas užimtu, jei intervalai **persidengia**, o ne sutampa pradžios: 15:40 pamoka
 valandinėje lentelėje uždažo ir 15:00, ir 16:00. Geriau parodyti šiek tiek daugiau užimtumo, nei
