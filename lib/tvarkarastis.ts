@@ -166,16 +166,29 @@ async function surinkti(dabar: Date) {
     overrideAccess: true,
   })
 
+  const { docs: grupes } = await payload.find({
+    collection: 'grupes',
+    where: { aktyvi: { equals: true } },
+    limit: 200,
+    depth: 0,
+    overrideAccess: true,
+  })
+
   /**
-   * Visų mokinių pamokos vienu sąrašu.
+   * Visų mokinių IR visų grupių pamokos vienu sąrašu.
+   *
+   * Grupės čia dalyvauja lygiai taip pat, kaip individualūs mokiniai: langas
+   * užimtas nepriklausomai nuo to, kiek vaikų tuo metu sėdi. Be šito grupinės
+   * pamokos laikas svetainėje atrodytų laisvas, o užsiregistravęs žmogus
+   * gautų valandą, kurios nėra.
    *
    * Nebe „savaitės diena → intervalas“: pasikartojimas gali būti ir kas antra
    * savaitė, ir konkreti mėnesio diena, tad kiekvienai datai atskirai klausiam
    * `arVyksta()` (`lib/pamokos.ts`) — tos pačios funkcijos, pagal kurią
    * siunčiami ir rytiniai priminimai.
    */
-  const pamokos = (mokiniai as unknown as { pamokos?: Pamoka[] | null }[]).flatMap(
-    (dok) => dok.pamokos ?? [],
+  const pamokos = [...mokiniai, ...grupes].flatMap(
+    (dok) => (dok as unknown as { pamokos?: Pamoka[] | null }).pamokos ?? [],
   )
 
   /**

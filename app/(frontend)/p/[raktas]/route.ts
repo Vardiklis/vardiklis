@@ -14,6 +14,12 @@ import { data as dataVilniuje, momentas, pridekDienas } from '@/lib/laikas'
  * sekimas veikia toliau, o pakeitus Meet kambarį Payload'e sena žyma pati
  * atveda į naują — tėvams nieko pranešinėti nereikia.
  *
+ * VIENAS RAKTAS, DU KAMBARIAI. Tas pats vaikas gali turėti ir individualių, ir
+ * grupinių pamokų, o kambariai jiems skirtingi. Todėl nuoroda vedama ne pagal
+ * kortelę, o pagal ARTIMIAUSIĄ žurnalo įrašą: grupinei pamokai atiduodamas
+ * grupės kambarys, individualiai — vaiko. Taip tėvams lieka viena nuoroda
+ * visam laikui, o ne dvi, kurias reikėtų nepainioti.
+ *
  * Atsakymas — permetimas, be jokio turinio: pašalinis, atspėjęs raktą, iš čia
  * neišpeš nei vardo, nei el. pašto.
  */
@@ -23,6 +29,14 @@ const BE_KESO = { 'Cache-Control': 'no-store' }
 /** Kiek nuo pamokos pradžios paspaudimas dar laikomas atėjimu į pamoką. */
 const PRIES_MIN = 60
 const PO_MIN = 120
+
+type ZurnaloIrasas = {
+  id: string | number
+  data: string
+  laikas?: string | null
+  busena?: string | null
+  grupe?: { meetNuoroda?: string | null } | number | string | null
+}
 
 export async function GET(_uzklausa: Request, ctx: RouteContext<'/p/[raktas]'>) {
   const { raktas } = await ctx.params
@@ -44,22 +58,49 @@ export async function GET(_uzklausa: Request, ctx: RouteContext<'/p/[raktas]'>) 
     return new Response('Nuoroda nerasta.', { status: 404, headers: BE_KESO })
   }
 
-  // Įrašom prieš permetant, bet klaida čia neturi sugriauti prisijungimo:
-  // vaikui svarbu patekti į pamoką, o žurnalas yra mano patogumas.
+  const dabar = new Date()
+
+  /**
+   * Žurnalo klaida neturi sugriauti prisijungimo: vaikui svarbu patekti į
+   * pamoką, o žurnalas yra mano patogumas. Todėl nepavykus einam toliau su
+   * vaiko kambariu — jis visada užpildytas.
+   */
+  let artimiausia: ZurnaloIrasas | null = null
   try {
-    await zymekAtidaryma(payload, mokinys.id)
+    artimiausia = await artimiausiaPamoka(payload, mokinys.id, dabar)
+    if (artimiausia) await zymekAtidaryma(payload, artimiausia, dabar)
   } catch (klaida) {
     console.error('[p] žurnalo įrašyti nepavyko:', klaida)
   }
 
-  return Response.redirect(mokinys.meetNuoroda, 302)
+  return Response.redirect(kambarys(artimiausia) ?? mokinys.meetNuoroda, 302)
 }
 
-async function zymekAtidaryma(
+/**
+ * Grupės kambarys, jei pamoka grupinė.
+ *
+ * `depth: 1` grąžina grupės dokumentą, bet ryšys gali būti ir vien numeris
+ * (grupė ištrinta arba gylis kitoks) — tada grįžtam prie vaiko kambario.
+ */
+function kambarys(irasas: ZurnaloIrasas | null): string | null {
+  const grupe = irasas?.grupe
+  if (!grupe || typeof grupe !== 'object') return null
+  return grupe.meetNuoroda?.trim() || null
+}
+
+/**
+ * Šios dienos ar rytojaus pamoka, laike arčiausia dabarties.
+ *
+ * Į kurį kambarį vesti, sprendžiama PLAČIAI: tėvai neretai spusteli likus
+ * valandoms, o nusiuntus juos į ne tą kambarį vaikas liktų vienas tuščiame
+ * skambutyje. Ar tai jau laikyti atėjimu į pamoką — atskiras, siauresnis
+ * klausimas (žr. `zymekAtidaryma`).
+ */
+async function artimiausiaPamoka(
   payload: Awaited<ReturnType<typeof getPayload>>,
   mokinysId: number | string,
-): Promise<void> {
-  const dabar = new Date()
+  dabar: Date,
+): Promise<ZurnaloIrasas | null> {
   const siandien = dataVilniuje(dabar)
 
   const { docs } = await payload.find({
@@ -71,30 +112,39 @@ async function zymekAtidaryma(
       ],
     },
     limit: 10,
-    depth: 0,
+    // Reikia grupės Meet nuorodos, tad vienas lygis gilyn.
+    depth: 1,
     overrideAccess: true,
   })
 
-  /**
-   * Vakare gautą laišką tėvai neretai atsidaro iš karto — tai dar ne
-   * atėjimas į rytojaus pamoką. Todėl žymim tik tada, kai paspaudimas
-   * patenka į pamokos langą.
-   */
-  const irasas = (
-    docs as unknown as {
-      id: string | number
-      data: string
-      laikas?: string | null
-      busena?: string | null
-    }[]
-  ).find((d) => {
-    if (!d.laikas) return false
-    const pradzia = momentas(d.data, d.laikas).getTime()
-    const skirtumas = (dabar.getTime() - pradzia) / 60000
-    return skirtumas >= -PRIES_MIN && skirtumas <= PO_MIN
-  })
+  let arciausia: ZurnaloIrasas | null = null
+  let maziausias = Infinity
+  for (const d of docs as unknown as ZurnaloIrasas[]) {
+    if (!d.laikas) continue
+    const skirtumas = Math.abs(momentas(d.data, d.laikas).getTime() - dabar.getTime())
+    if (skirtumas < maziausias) {
+      maziausias = skirtumas
+      arciausia = d
+    }
+  }
+  return arciausia
+}
 
-  if (!irasas || irasas.busena !== 'suplanuota') return
+/**
+ * Vakare gautą laišką tėvai neretai atsidaro iš karto — tai dar ne atėjimas į
+ * rytojaus pamoką. Todėl žymim tik tada, kai paspaudimas patenka į pamokos
+ * langą.
+ */
+async function zymekAtidaryma(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  irasas: ZurnaloIrasas,
+  dabar: Date,
+): Promise<void> {
+  if (!irasas.laikas || irasas.busena !== 'suplanuota') return
+
+  const pradzia = momentas(irasas.data, irasas.laikas).getTime()
+  const skirtumas = (dabar.getTime() - pradzia) / 60000
+  if (skirtumas < -PRIES_MIN || skirtumas > PO_MIN) return
 
   await payload.update({
     collection: 'zurnalas',

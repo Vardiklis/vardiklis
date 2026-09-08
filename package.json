@@ -8,14 +8,16 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "payload generate:importmap && next build",
     "start": "next start",
     "lint": "eslint .",
     "patikra": "tsx scripts/patikrink-generatorius.ts 100",
     "patikra:diagnostika": "tsx scripts/patikrink-diagnostika.ts",
     "patikra:pastas": "tsx --env-file-if-exists=.env scripts/patikrink-pasta.ts",
     "egzaminai": "tsx scripts/kurk-egzaminu-pdf.ts",
-    "schema": "node scripts/kurk-schema.mjs"
+    "schema": "node scripts/kurk-schema.mjs",
+    "patikra:saskaitos": "tsx --env-file-if-exists=.env scripts/patikrink-saskaitas.ts",
+    "importmap": "payload generate:importmap"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",
@@ -31,6 +33,7 @@
     "next": "16.2.12",
     "nodemailer": "^9.1.1",
     "payload": "^3.88.0",
+    "pdfkit": "^0.20.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sharp": "^0.35.3"
@@ -39,6 +42,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
+    "@types/pdfkit": "^0.17.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

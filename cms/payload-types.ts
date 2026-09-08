@@ -71,7 +71,9 @@ export interface Config {
     failai: Failai;
     naudotojai: Naudotojai;
     mokiniai: Mokiniai;
+    grupes: Grupe;
     zurnalas: Zurnala;
+    saskaitos: Saskaito;
     rezervacijos: Rezervacijo;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -84,7 +86,9 @@ export interface Config {
     failai: FailaiSelect<false> | FailaiSelect<true>;
     naudotojai: NaudotojaiSelect<false> | NaudotojaiSelect<true>;
     mokiniai: MokiniaiSelect<false> | MokiniaiSelect<true>;
+    grupes: GrupesSelect<false> | GrupesSelect<true>;
     zurnalas: ZurnalasSelect<false> | ZurnalasSelect<true>;
+    saskaitos: SaskaitosSelect<false> | SaskaitosSelect<true>;
     rezervacijos: RezervacijosSelect<false> | RezervacijosSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -99,11 +103,13 @@ export interface Config {
     nustatymai: Nustatymai;
     priminimai: Priminimai;
     tvarkarastis: Tvarkarasti;
+    atsiskaitymai: Atsiskaitymai;
   };
   globalsSelect: {
     nustatymai: NustatymaiSelect<false> | NustatymaiSelect<true>;
     priminimai: PriminimaiSelect<false> | PriminimaiSelect<true>;
     tvarkarastis: TvarkarastisSelect<false> | TvarkarastisSelect<true>;
+    atsiskaitymai: AtsiskaitymaiSelect<false> | AtsiskaitymaiSelect<true>;
   };
   locale: 'lt';
   widgets: {
@@ -268,11 +274,11 @@ export interface Mokiniai {
    */
   tevoPastas: string;
   /**
-   * Nuolatinė šio vaiko kambario nuoroda, pvz. https://meet.google.com/abc-defg-hij. Tėvams siunčiama ne ji, o vardiklis.lt nuoroda, kuri atveda čia — todėl pakeitus ją, tėvams pranešti nereikia.
+   * Nuolatinė šio vaiko kambario nuoroda, pvz. https://meet.google.com/abc-defg-hij. Tėvams siunčiama ne ji, o vardiklis.lt nuoroda, kuri atveda čia — todėl pakeitus ją, tėvams pranešti nereikia. Grupinėms pamokoms nuoroda imama iš grupės, ne iš čia.
    */
   meetNuoroda: string;
   /**
-   * Kartojasi, kol nuimta „Aktyvus“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus.
+   * Kartojasi, kol nuimta „Aktyvus“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus. Grupinių pamokų čia rašyti nereikia — jos gyvena „Grupėse“.
    */
   pamokos?:
     | {
@@ -322,6 +328,62 @@ export interface Mokiniai {
   createdAt: string;
 }
 /**
+ * Kelių vaikų pamokos vienu metu. Kaina grupinei pamokai — iš „Sąskaitų nustatymų“.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "grupes".
+ */
+export interface Grupe {
+  id: number;
+  /**
+   * Pvz. „8 klasė, penktadieniais“. Tėvai jo nemato.
+   */
+  pavadinimas: string;
+  /**
+   * Nuėmus varnelę priminimai nustoja eiti, o įrašas lieka.
+   */
+  aktyvi?: boolean | null;
+  /**
+   * Kiekvienam nariui priminimas eina atskirai, jo tėvų adresu — su šios grupės nuoroda.
+   */
+  nariai: (number | Mokiniai)[];
+  /**
+   * Bendras šios grupės kambarys. Tėvams siunčiama ne ji, o kiekvieno vaiko vardiklis.lt/p/… nuoroda, kuri grupinės pamokos metu atveda būtent čia.
+   */
+  meetNuoroda: string;
+  /**
+   * Kartojasi, kol nuimta „Aktyvi“ arba pamoka ištrinta. Šie laikai kalendoriuje užima langą lygiai taip pat, kaip individualūs.
+   */
+  pamokos?:
+    | {
+        kartojimas: 'savaite' | 'menuo';
+        /**
+         * Formatas 17:00, Lietuvos laiku.
+         */
+        laikas: string;
+        trukmeMin?: number | null;
+        savaitesDiena?: ('1' | '2' | '3' | '4' | '5' | '6' | '7') | null;
+        kasKiek?: ('1' | '2' | '3' | '4') | null;
+        /**
+         * Nuo jos skaičiuojamos „kas antra“ savaitės. Būtina, kai pasirinkta rečiau nei kas savaitę.
+         */
+        nuoDatos?: string | null;
+        /**
+         * Pvz. 15 — pamoka kas mėnesio 15 dieną. Mėnesiais, kuriuose tokios dienos nėra, pamokos nebus.
+         */
+        menesioDiena?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Atostogoms visai grupei. Atskiro vaiko pauzė nurodoma jo kortelėje ir galioja ir čia.
+   */
+  pauzeIki?: string | null;
+  pastabos?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria pati sistema.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -337,6 +399,14 @@ export interface Zurnala {
   laikas?: string | null;
   mokinys?: (number | null) | Mokiniai;
   /**
+   * Įrašoma siuntimo metu — kad ištrynus grupę istorija liktų teisinga.
+   */
+  tipas?: ('individuali' | 'grupine') | null;
+  /**
+   * Tuščia, kai pamoka individuali.
+   */
+  grupe?: (number | null) | Grupe;
+  /**
    * „Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia.
    */
   busena?: ('suplanuota' | 'atidare' | 'ivyko' | 'neivyko') | null;
@@ -347,9 +417,115 @@ export interface Zurnala {
    */
   pirmaPamoka?: boolean | null;
   /**
+   * Užfiksuojama siuntimo metu iš „Sąskaitų nustatymų“. Tušti seni įrašai kainuoja tiek, kiek nustatymuose šiandien.
+   */
+  kaina?: number | null;
+  /**
+   * Užpildyta — pamoka jau apmokestinta. Būtent tai neleidžia jos įtraukti į dvi sąskaitas. Ištrynus sąskaitą, laukas išsivalo ir pamoka vėl laukia eilėje.
+   */
+  saskaita?: (number | null) | Saskaito;
+  /**
    * Užpildyta tik tada, kai laiško išsiųsti nepavyko.
    */
   klaida?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Sąskaitos tėvams. Juodraščius sudaro skydelis iš pamokų žurnalo.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "saskaitos".
+ */
+export interface Saskaito {
+  id: number;
+  /**
+   * Sudaroma automatiškai.
+   */
+  santrauka?: string | null;
+  /**
+   * Suteikiamas išrašant. Juodraštis numerio dar neturi.
+   */
+  numeris?: string | null;
+  busena?: ('juodrastis' | 'israsyta' | 'issiusta' | 'apmoketa' | 'anuliuota') | null;
+  /**
+   * YYYY-MM-DD, Vilniaus para.
+   */
+  data?: string | null;
+  terminas?: string | null;
+  /**
+   * Mėnuo, už kurį išrašyta.
+   */
+  laikotarpisNuo?: string | null;
+  laikotarpisIki?: string | null;
+  /**
+   * Vienas tėvas su keliais vaikais gauna vieną sąskaitą.
+   */
+  mokiniai?: (number | Mokiniai)[] | null;
+  pirkejoVardas?: string | null;
+  pirkejoPastas?: string | null;
+  /**
+   * Nebūtina. Tuščias — i.SAF eina „ND“ (nežinomas).
+   */
+  pirkejoKodas?: string | null;
+  /**
+   * Fiziniai asmenys jo neturi — palikite tuščią.
+   */
+  pirkejoPvmKodas?: string | null;
+  pirkejoAdresas?: string | null;
+  /**
+   * Pakeitus kiekį ar kainą, sumos perskaičiuojamos išsaugant.
+   */
+  eilutes?:
+    | {
+        /**
+         * Pvz. „Matematikos pamoka (individuali) — Jonas“.
+         */
+        aprasymas: string;
+        /**
+         * Kurių dienų pamokos į šią eilutę suėjo. Rodoma smulkiu tekstu.
+         */
+        detales?: string | null;
+        kiekis: number;
+        matoVnt?: string | null;
+        /**
+         * Tokia, kokia rodoma tėvams: su PVM arba be — pagal sąskaitos žymą „Kainos su PVM“.
+         */
+        kaina: number;
+        /**
+         * Iš „Sąskaitų nustatymų“, pvz. PVM1.
+         */
+        pvmKodas?: string | null;
+        pvmProc?: number | null;
+        /**
+         * Kiekis × kaina. Perskaičiuojama išsaugant.
+         */
+        suma?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Nurašoma iš „Sąskaitų nustatymų“ išrašymo metu. Nuo jos priklauso, ar PVM iš sumos išskaičiuojamas, ar prie jos pridedamas — todėl vėliau nebekeičiama.
+   */
+  kainosSuPvm?: boolean | null;
+  sumaBePvm?: number | null;
+  pvmSuma?: number | null;
+  sumaIsViso?: number | null;
+  pastaba?: string | null;
+  issiusta?: string | null;
+  /**
+   * Žymima ranka — banko sąskaitos sistema nemato.
+   */
+  apmoketa?: string | null;
+  /**
+   * Užpildyta tik tada, kai laiško išsiųsti nepavyko.
+   */
+  siuntimoKlaida?: string | null;
+  isafBusena?: ('neteikta' | 'ikelta' | 'pateikta' | 'klaida') | null;
+  isafAtnaujinta?: string | null;
+  isafTrackingNumber?: string | null;
+  isafRegistryNumber?: string | null;
+  isafKlaida?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -422,8 +598,16 @@ export interface PayloadLockedDocument {
         value: number | Mokiniai;
       } | null)
     | ({
+        relationTo: 'grupes';
+        value: number | Grupe;
+      } | null)
+    | ({
         relationTo: 'zurnalas';
         value: number | Zurnala;
+      } | null)
+    | ({
+        relationTo: 'saskaitos';
+        value: number | Saskaito;
       } | null)
     | ({
         relationTo: 'rezervacijos';
@@ -597,6 +781,32 @@ export interface MokiniaiSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "grupes_select".
+ */
+export interface GrupesSelect<T extends boolean = true> {
+  pavadinimas?: T;
+  aktyvi?: T;
+  nariai?: T;
+  meetNuoroda?: T;
+  pamokos?:
+    | T
+    | {
+        kartojimas?: T;
+        laikas?: T;
+        trukmeMin?: T;
+        savaitesDiena?: T;
+        kasKiek?: T;
+        nuoDatos?: T;
+        menesioDiena?: T;
+        id?: T;
+      };
+  pauzeIki?: T;
+  pastabos?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "zurnalas_select".
  */
 export interface ZurnalasSelect<T extends boolean = true> {
@@ -604,11 +814,62 @@ export interface ZurnalasSelect<T extends boolean = true> {
   data?: T;
   laikas?: T;
   mokinys?: T;
+  tipas?: T;
+  grupe?: T;
   busena?: T;
   issiusta?: T;
   atidaryta?: T;
   pirmaPamoka?: T;
+  kaina?: T;
+  saskaita?: T;
   klaida?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "saskaitos_select".
+ */
+export interface SaskaitosSelect<T extends boolean = true> {
+  santrauka?: T;
+  numeris?: T;
+  busena?: T;
+  data?: T;
+  terminas?: T;
+  laikotarpisNuo?: T;
+  laikotarpisIki?: T;
+  mokiniai?: T;
+  pirkejoVardas?: T;
+  pirkejoPastas?: T;
+  pirkejoKodas?: T;
+  pirkejoPvmKodas?: T;
+  pirkejoAdresas?: T;
+  eilutes?:
+    | T
+    | {
+        aprasymas?: T;
+        detales?: T;
+        kiekis?: T;
+        matoVnt?: T;
+        kaina?: T;
+        pvmKodas?: T;
+        pvmProc?: T;
+        suma?: T;
+        id?: T;
+      };
+  kainosSuPvm?: T;
+  sumaBePvm?: T;
+  pvmSuma?: T;
+  sumaIsViso?: T;
+  pastaba?: T;
+  issiusta?: T;
+  apmoketa?: T;
+  siuntimoKlaida?: T;
+  isafBusena?: T;
+  isafAtnaujinta?: T;
+  isafTrackingNumber?: T;
+  isafRegistryNumber?: T;
+  isafKlaida?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -817,6 +1078,81 @@ export interface Tvarkarasti {
   createdAt?: string | null;
 }
 /**
+ * Pardavėjo rekvizitai, kainos, PVM ir i.SAF teikimas.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "atsiskaitymai".
+ */
+export interface Atsiskaitymai {
+  id: number;
+  /**
+   * Pvz. „Modesta Pavardenė“.
+   */
+  pardavejoVardas?: string | null;
+  /**
+   * Asmens arba įmonės kodas. Šis skaičius keliauja į i.SAF rinkmenos „RegistrationNumber“ — be jo teikti negalima.
+   */
+  pardavejoKodas?: string | null;
+  /**
+   * Pvz. LT100001234567.
+   */
+  pardavejoPvmKodas?: string | null;
+  /**
+   * Nebūtina. Įrašyta — rodoma sąskaitoje.
+   */
+  veiklosPazyma?: string | null;
+  pardavejoAdresas?: string | null;
+  /**
+   * Į ją tėvai perves pinigus. Be jos sąskaita neapmokama.
+   */
+  iban?: string | null;
+  bankas?: string | null;
+  /**
+   * Sąskaitos numeris sudaromas kaip SERIJA-0001.
+   */
+  serija?: string | null;
+  /**
+   * Padidėja pats kaskart išrašius. Ranka keisti verta tik pradedant nuo tam tikro skaičiaus — numeriai turi eiti be spragų.
+   */
+  kitasNumeris?: number | null;
+  terminoDienos?: number | null;
+  individualiKaina?: number | null;
+  grupineKaina?: number | null;
+  /**
+   * Atimama nuo pirmos pamokos kainos — ir individualios, ir grupinės.
+   */
+  pirmosNuolaida?: number | null;
+  pvmKodas: 'PVM1' | 'PVM2' | 'PVM3' | 'PVM5';
+  /**
+   * Pasirinkus PVM5 — įrašykite 0.
+   */
+  pvmProc?: number | null;
+  /**
+   * Įjungta (įprastai taip): 25 € yra galutinė kaina tėvams, o PVM iš jos išskaičiuojamas — 20,66 € + 4,34 €. Išjungus, prie 25 € PVM būtų pridėtas ir tėvai mokėtų 30,25 €.
+   */
+  kainosSuPvm?: boolean | null;
+  /**
+   * Prie temos automatiškai prirašomas sąskaitos numeris.
+   */
+  laiskoTema?: string | null;
+  laiskoTekstas?: string | null;
+  /**
+   * Palikus tuščią — toks pat, kaip priminimų laiškuose.
+   */
+  saskaituParasas?: string | null;
+  /**
+   * Įjunkite tik gavę i.MAS kliento sertifikatą ir įrašę jo kelią į aplinkos kintamuosius.
+   */
+  isafIjungta?: boolean | null;
+  /**
+   * Keliauja į rinkmenos lauką „SoftwareName“.
+   */
+  programosPavadinimas?: string | null;
+  programosVersija?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "nustatymai_select".
  */
@@ -885,6 +1221,37 @@ export interface TvarkarastisSelect<T extends boolean = true> {
       };
   pastabaLaikai?: T;
   pastabaGrupine?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "atsiskaitymai_select".
+ */
+export interface AtsiskaitymaiSelect<T extends boolean = true> {
+  pardavejoVardas?: T;
+  pardavejoKodas?: T;
+  pardavejoPvmKodas?: T;
+  veiklosPazyma?: T;
+  pardavejoAdresas?: T;
+  iban?: T;
+  bankas?: T;
+  serija?: T;
+  kitasNumeris?: T;
+  terminoDienos?: T;
+  individualiKaina?: T;
+  grupineKaina?: T;
+  pirmosNuolaida?: T;
+  pvmKodas?: T;
+  pvmProc?: T;
+  kainosSuPvm?: T;
+  laiskoTema?: T;
+  laiskoTekstas?: T;
+  saskaituParasas?: T;
+  isafIjungta?: T;
+  programosPavadinimas?: T;
+  programosVersija?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

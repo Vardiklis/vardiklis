@@ -11,12 +11,15 @@ import {
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import { buildConfig } from 'payload'
 import { straipsnioBlokai } from './cms/blokai'
+import { Atsiskaitymai } from './cms/Atsiskaitymai'
 import { Failai } from './cms/Failai'
+import { Grupes } from './cms/Grupes'
 import { Mokiniai } from './cms/Mokiniai'
 import { Naudotojai } from './cms/Naudotojai'
 import { Nustatymai } from './cms/Nustatymai'
 import { Priminimai } from './cms/Priminimai'
 import { Rezervacijos } from './cms/Rezervacijos'
+import { Saskaitos } from './cms/Saskaitos'
 import { PRADINE_SCHEMA } from './cms/pradine-schema'
 import { straipsnioAdresas, Straipsniai } from './cms/Straipsniai'
 import { Tvarkarastis } from './cms/Tvarkarastis'
@@ -44,6 +47,12 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `priminimai` ADD `parasas` text',
   'ALTER TABLE `payload_locked_documents_rels` ADD `rezervacijos_id` integer REFERENCES `rezervacijos`(`id`)',
   "ALTER TABLE `tvarkarastis` ADD `nuo_savaitgali` text DEFAULT '10:00' NOT NULL",
+  'ALTER TABLE `payload_locked_documents_rels` ADD `grupes_id` integer REFERENCES `grupes`(`id`)',
+  'ALTER TABLE `payload_locked_documents_rels` ADD `saskaitos_id` integer REFERENCES `saskaitos`(`id`)',
+  "ALTER TABLE `zurnalas` ADD `tipas` text DEFAULT 'individuali'",
+  'ALTER TABLE `zurnalas` ADD `grupe_id` integer REFERENCES `grupes`(`id`)',
+  'ALTER TABLE `zurnalas` ADD `kaina` numeric',
+  'ALTER TABLE `zurnalas` ADD `saskaita_id` integer REFERENCES `saskaitos`(`id`)',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -161,6 +170,24 @@ export default buildConfig({
       titleSuffix: ' · Vardiklis',
     },
     /**
+     * SĄSKAITŲ LANGAS. Mėnesio suvestinė, juodraščių generavimas, siuntimas
+     * tėvams ir i.SAF — viskas, ko nepatogu daryti vartant kolekcijos sąrašą.
+     * Pati sąskaita taisoma įprastu dokumento redaktoriumi, tad čia tik
+     * langas, o ne antra sąskaitų sistema.
+     *
+     * `afterNavLinks` — nes savų langų Payload į meniu pats neįrašo.
+     */
+    components: {
+      views: {
+        saskaitos: {
+          Component: '/cms/vaizdai/SaskaituVaizdas#SaskaituVaizdas',
+          path: '/saskaitos',
+          meta: { title: 'Sąskaitos' },
+        },
+      },
+      afterNavLinks: ['/cms/komponentai/SaskaituNuoroda#SaskaituNuoroda'],
+    },
+    /**
      * GYVA PERŽIŪRA. Redaguojant straipsnį šalia teksto rodomas tikras
      * puslapis — ne tik SEO kortelė. Adresas santykinis: CMS ir svetainė
      * sukasi tame pačiame Next serveryje, tad joks `SERVER_URL` nereikalingas.
@@ -178,8 +205,8 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Straipsniai, Failai, Naudotojai, Mokiniai, Zurnalas, Rezervacijos],
-  globals: [Nustatymai, Priminimai, Tvarkarastis],
+  collections: [Straipsniai, Failai, Naudotojai, Mokiniai, Grupes, Zurnalas, Saskaitos, Rezervacijos],
+  globals: [Nustatymai, Priminimai, Tvarkarastis, Atsiskaitymai],
   /**
    * Redaktoriaus galimybės. Prie numatytųjų pridėta:
    *   • `TextStateFeature` — teksto spalva, paryškinimo fonas ir šriftas;
@@ -333,6 +360,21 @@ export default buildConfig({
             sql.raw("UPDATE `tvarkarastis` SET `nuo` = '13:00' WHERE `nuo` = '08:00'"),
           )
         },
+        down: async () => {},
+      },
+      /**
+       * Grupinės pamokos ir sąskaitos: kolekcijos „Grupės“ ir „Sąskaitos“,
+       * globalas „Sąskaitų nustatymai“ ir keturi nauji žurnalo stulpeliai.
+       *
+       * Žurnalo stulpeliai (`tipas`, `grupe_id`, `kaina`, `saskaita_id`) yra
+       * būtent tas atvejis, dėl kurio egzistuoja `TRUKSTAMI_STULPELIAI`:
+       * lentelė serveryje jau yra, tad `CREATE TABLE IF NOT EXISTS` ją
+       * praleistų, o paskui `CREATE INDEX … (saskaita_id)` nulaužtų migraciją
+       * ir Payload nebepakiltų.
+       */
+      {
+        name: 'schema-2026-09-saskaitos',
+        up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },
     ],

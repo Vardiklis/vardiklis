@@ -30,7 +30,7 @@ export const Zurnalas: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'santrauka',
-    defaultColumns: ['santrauka', 'data', 'laikas', 'busena'],
+    defaultColumns: ['santrauka', 'data', 'laikas', 'tipas', 'busena', 'kaina'],
     description: 'Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria pati sistema.',
     group: 'Pamokos',
   },
@@ -60,6 +60,33 @@ export const Zurnalas: CollectionConfig = {
           label: 'Mokinys',
           index: true,
           admin: { readOnly: true },
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'tipas',
+          type: 'select',
+          label: 'Pamokos rūšis',
+          defaultValue: 'individuali',
+          options: [
+            { label: 'Individuali', value: 'individuali' },
+            { label: 'Grupinė', value: 'grupine' },
+          ],
+          admin: {
+            readOnly: true,
+            description: 'Įrašoma siuntimo metu — kad ištrynus grupę istorija liktų teisinga.',
+          },
+        },
+        {
+          name: 'grupe',
+          type: 'relationship',
+          relationTo: 'grupes',
+          label: 'Grupė',
+          index: true,
+          admin: { readOnly: true, description: 'Tuščia, kai pamoka individuali.' },
         },
       ],
     },
@@ -104,6 +131,34 @@ export const Zurnalas: CollectionConfig = {
         readOnly: true,
         description: 'Įrašoma siuntimo metu — kad kaina istorijoje nepasikeistų atgaline data.',
       },
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'kaina',
+          type: 'number',
+          label: 'Kaina (€)',
+          min: 0,
+          admin: {
+            readOnly: true,
+            description:
+              'Užfiksuojama siuntimo metu iš „Sąskaitų nustatymų“. Tušti seni įrašai kainuoja tiek, kiek nustatymuose šiandien.',
+          },
+        },
+        {
+          name: 'saskaita',
+          type: 'relationship',
+          relationTo: 'saskaitos',
+          label: 'Sąskaita',
+          index: true,
+          admin: {
+            readOnly: true,
+            description:
+              'Užpildyta — pamoka jau apmokestinta. Būtent tai neleidžia jos įtraukti į dvi sąskaitas. Ištrynus sąskaitą, laukas išsivalo ir pamoka vėl laukia eilėje.',
+          },
+        },
+      ],
     },
     {
       name: 'klaida',

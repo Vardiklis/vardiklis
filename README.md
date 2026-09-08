@@ -39,6 +39,9 @@ jos šioje versijoje nedarome.
 | `npm run lint` | ESLint |
 | `npm run patikra` | Sugeneruoja po 100 uždavinių iš kiekvieno generatoriaus ir tikrina, ar nėra bjaurių atsakymų, sugedusio KaTeX ar klaidų grafe |
 | `npm run patikra:diagnostika` | Pravažiuoja diagnostiką 8 scenarijais ir parodo, ką grąžina ataskaita |
+| `npm run patikra:saskaitos` | Praeina visą sąskaitų kelią (juodraštis → išrašymas → PDF → i.SAF) su savo bandomaisiais duomenimis ir po to juos ištrina |
+| `npm run importmap` | Perrašo `app/(payload)/admin/importMap.js` — CMS savų komponentų sąrašą |
+| `npm run schema` | Perrašo `cms/pradine-schema.ts` iš vietinės bazės |
 
 `npx tsx scripts/patikrink-generatorius.ts 100 --pavyzdziai` papildomai atspausdina
 uždavinių pavyzdžius peržiūrai.
@@ -195,8 +198,21 @@ adresas. Likęs laiško tekstas (kreipinys, sakinys apie pamoką, prisijungimo e
 pamokos nuolaida) gyvena `laiskasTevams()` funkcijoje `lib/priminimai.ts`: nuoroda ir laikas
 turi būti visada, tad jų į CMS neiškeliam.
 
-**Pamokų žurnalas** (`cms/Zurnalas.ts`) — po įrašą kiekvienai pamokai. Įrašus kuria pati sistema;
-jie neleidžia išsiųsti to paties priminimo dukart ir kaupia lankomumo bei atsiskaitymo istoriją.
+**Grupės** (`cms/Grupes.ts`) — kai tą patį laiką pas tą pačią Meet nuorodą ateina keli vaikai.
+Grupė turi savo pavadinimą, narių sąrašą, **vieną** Meet nuorodą ir savo pamokų laikus (tokius
+pat, kaip mokinio). Priminimas eina **kiekvienam nariui atskirai** — jo tėvų adresu ir jo valandą,
+tik su grupės nuoroda. Tėvų paštas, pauzė ir sutikimas lieka mokinio kortelėje, nes jie asmeniniai.
+
+Grupinė pamoka kainuoja kitaip nei individuali (žr. „Sąskaitos ir i.SAF“), o kalendoriuje užima
+langą lygiai taip pat.
+
+**Pamokų žurnalas** (`cms/Zurnalas.ts`) — po įrašą kiekvienai pamokai; grupinė pamoka palieka po
+įrašą **kiekvienam nariui**, nes lankomumas ir apmokėjimas yra pervaikį, ne pergrupę. Įrašus kuria
+pati sistema; jie neleidžia išsiųsti to paties priminimo dukart ir kaupia lankomumo bei
+atsiskaitymo istoriją.
+
+Kiekvienam įrašui siuntimo metu užrašoma **rūšis** (individuali / grupinė) ir **kaina** — kad
+pakeitus kainoraštį praėjusio mėnesio sąskaitos nepersiskaičiuotų atgaline data.
 
 ### Kaip tai sukasi
 
@@ -215,6 +231,11 @@ Laikai skaičiuojami Vilniaus laiku (`lib/laikas.ts`), nes serveris sukasi UTC.
 Laiške siunčiama ne pati Meet nuoroda, o `vardiklis.lt/p/<raktas>`: ji įrašo atidarymo laiką ir
 permeta į Meet kambarį. Raktas pastovus — nuorodą galima įsidėti į žymes, o pakeitus Meet
 kambarį Payload'e sena žyma pati atves į naują.
+
+**Vienas raktas, du kambariai.** Tas pats vaikas gali turėti ir individualių, ir grupinių pamokų,
+o kambariai jiems skirtingi. Todėl nuoroda veda ne pagal kortelę, o pagal **artimiausią žurnalo
+įrašą**: grupinei pamokai atiduodamas grupės kambarys, individualiai — vaiko. Tėvams lieka viena
+nuoroda visam laikui.
 
 Tiksliau nei „nuoroda atidaryta“ nemokamoje Google paskyroje nesužinosi: Meet REST API dirba tik
 su Workspace paskyrų vedamais skambučiais, o dalyvavimo ataskaitos yra mokamuose planuose.
@@ -257,6 +278,93 @@ vienkartinis susitikimas) — pasirenkama laukelyje „Kam galioja“.
 Dienos pradžia atskira darbo dienoms ir savaitgaliui (numatytai 13:00 ir 10:00): eilutės apima abu
 variantus, o ankstyvieji darbo dienų langeliai lieka tušti — nei laisvi, nei užimti (`n` būsena).
 Todėl pirmoji lentelės eilutė yra ankstyvesnioji iš dviejų, o ne 08:00.
+
+## Sąskaitos ir i.SAF
+
+Skydelio langas **`/admin/saskaitos`**: mėnesio suvestinė, juodraščių generavimas iš pamokų
+žurnalo, PDF, siuntimas tėvams ir išrašomų PVM sąskaitų faktūrų registro teikimas į VMI i.SAF.
+
+### Mėnesio eiga
+
+1. **Sugeneruoti juodraščius.** Imamos to mėnesio pamokos, pažymėtos **„Įvyko“** ir dar
+   neapmokestintos. Grupuojama pagal **tėvų el. paštą**: viena šeima — viena sąskaita, net jei
+   vaikai du.
+2. **Peržiūrėti / pataisyti.** „Peržiūrėti“ atidaro sąskaitą naršyklėje, „Taisyti“ — įprastą
+   Payload dokumento redaktorių. Pakeitus kiekį ar kainą, sumos persiskaičiuoja išsaugant.
+3. **Išrašyti.** Tik dabar suteikiamas numeris (`SERIJA-0001`), išrašymo data ir terminas.
+   Juodraštį galima ištrinti, numeruotą sąskaitą — tik anuliuoti, todėl numeracijoje nelieka
+   spragų.
+4. **Siųsti tėvams.** Laiškas su prisegtu PDF ir nuoroda į sąskaitą (nuoroda pasirašyta tuo pačiu
+   HMAC, kaip „Buvo / Nebuvo“ — tėvams slaptažodžio nereikia, pašaliniam neužtenka atspėti numerį).
+5. **i.SAF** — atskira lango dalis, žr. žemiau.
+
+**Pakartotinis generavimas nekuria antros sąskaitos.** Prisiminus dar vieną įvykusią pamoką ir
+paspaudus „Sugeneruoti“ dar kartą, esamas **juodraštis** persidaro iš visų prie jo prikabintų
+pamokų plius naujų. Kiekvienai žurnalo eilutei įrašoma, į kurią sąskaitą ji nuėjo — būtent tai, o
+ne datų palyginimas, neleidžia apmokestinti tos pačios pamokos dukart. Ištrynus ar anuliavus
+sąskaitą, pamokos grįžta į eilę.
+
+### Kainos ir PVM — globalas „Sąskaitų nustatymai“
+
+`cms/Atsiskaitymai.ts`: pardavėjo rekvizitai, banko sąskaita, numeracija, kainos (individuali,
+grupinė, pirmos pamokos nuolaida), PVM kodas ir tarifas, laiško tekstas.
+
+**„Kainos nurodytos su PVM“** (numatytai įjungta) sprendžia, kaip skaičiuojamos sumos. Įjungta:
+25 € yra galutinė kaina tėvams, o PVM iš jos išskaičiuojamas. Ir išskaičiuojamas **vieną kartą nuo
+visos to tarifo sumos**, ne nuo vieneto: skaičiuojant per vienetą, keturios pamokos po 25 € duotų
+99,99 €, ir tėvai pagrįstai klaustų, kur dingo centas. Todėl eilutėje rodoma sutarta kaina, o PVM
+išskiriamas sumų bloke (`lib/saskaitos-sumos.ts`; visa aritmetika centais — `lib/pinigai.ts`).
+
+Kaina užfiksuojama **žurnale pamokos metu**, tad kainoraščio pakeitimas galioja tik naujoms
+pamokoms.
+
+> **PVM1 ar PVM5?** Ar korepetitorės paslauga apmokestinama standartiniu 21 % tarifu, ar
+> neapmokestinama pagal PVM įstatymo 20–33 str. — klausimas buhalterei, ne kodui. Todėl kodas
+> tarifo neįrašo: jis pasirenkamas CMS'e, numatytasis `PVM1` / 21 %.
+
+### PDF
+
+`lib/saskaitos-pdf.ts`, `pdfkit` + **Noto Sans** (`lib/saskaitos-sriftai/`). Savas šriftas būtinas:
+standartiniai PDF šriftai neturi nei ą, nei č, nei ž. Į failą įdedami tik panaudoti glifai, tad
+sąskaita sveria ~20 KB, nors šriftas — pusę megabaito.
+
+`next.config.ts` juos įtraukia į `outputFileTracingIncludes`, o `pdfkit` yra
+`serverExternalPackages` sąraše — kitaip savarankiškame diegime failų tiesiog nebūtų ir PDF lūžtų
+**tik produkcijoje**.
+
+### i.SAF — išrašomų PVM sąskaitų faktūrų registras
+
+Taikoma **tik PVM mokėtojui**. Teikiama kas mėnesį iki kito mėnesio 20 d., net jei sąskaitų
+nebuvo. Sistema gamina **`P` tipo** rinkmeną (tik išrašomos); gaunamos (`S`) teikiamos atskirai
+per imas.vmi.lt ir čia nedalyvauja.
+
+> **Laikotarpis eina pagal IŠRAŠYMO datą, ne pagal pamokų mėnesį.** Rugsėjo 1 d. išrašyta sąskaita
+> už rugpjūčio pamokas patenka į **rugsėjo** registrą — taip reikalauja schema (`InvoiceDate`
+> privalo patekti tarp `SelectionStartDate` ir `SelectionEndDate`). Todėl skydelyje sąskaitų
+> sąrašas ir i.SAF dalis rodomi atskirai.
+
+| Failas | Ką daro |
+|---|---|
+| `lib/isaf-xml.ts` | `iSAFFile` rinkmenos sudarymas ir kliūčių sąrašas |
+| `lib/isaf.ts` | SOAP klientas: `Upload`, `CheckState`, `GetRegistryNumbers`, `SubmitRegistry`, `GetRegistryStatus` |
+| `lib/isaf-teikimas.ts` | eiga ir jos pėdsakas sąskaitose |
+
+Kelias skydelyje: **Peržiūrėti XML** → **Įkelti į i.SAF** → **Tikrinti būseną** → **Pateikti
+registrą**. Trys atskiri mygtukai sąmoningai: įkeltą rinkmeną dar galima pakeisti, o pateiktas
+registras jau yra deklaracija.
+
+**Sertifikatas gaunamas ranka** — jo kodu susikurti neįmanoma. i.MAS portale užsakomas kliento
+sertifikatas, sugeneruojamas CSR, o gautas sertifikatas ir privatus raktas įrašomi į failus
+serveryje **už repozitorijos ribų**; kelias nurodomas `ISAF_SERTIFIKATAS` kintamuoju (žr.
+`.env.example`). Į duomenų bazę raktas nededamas, nes ta keliauja į atsargines kopijas.
+
+Paslaugos sritis (namespace) nuskaitoma iš WSDL automatiškai — specifikacijoje ji neužrašyta, o
+atspėta neteisingai duotų klaidą, iš kurios nieko nesuprasi.
+
+**Pirma — demo aplinka** (`ISAF_APLINKA=demo`), ir dar prieš tai: atsisiųsk XML ir įkelk jį ranka
+per imas.vmi.lt. Taip XML klaidos atskiriamos nuo sujungimo klaidų, o painioti jas brangu. Kol
+sertifikato nėra, sistema vis tiek pilnai naudinga: rinkmena sudaroma ir atsisiunčiama, o i.SAF
+mygtukai skydelyje pasirodo tik įjungus juos nustatymuose.
 
 ### CMS skydelio išvaizda — `app/(payload)/custom.scss`
 
@@ -369,14 +477,21 @@ app/
   p/[raktas]/                 pamokos nuoroda tėvams → įrašo ir permeta į Meet
   vidus/priminimai/           cron'o kviečiamas siuntimas
   vidus/zymeti/               „Buvo / Nebuvo“ iš santraukos laiško
+  vidus/saskaita/[id]/        sąskaitos peržiūra ir PDF (prisijungus arba su parašu)
+  vidus/isaf/[laikotarpis]/   i.SAF rinkmena atsisiuntimui
   sitemap.ts  robots.ts
 components/                   savi komponentai, be UI bibliotekų
 cms/
   Mokiniai.ts                 kas, kada ir kur turi pamoką
+  Grupes.ts                   grupinės pamokos — bendra nuoroda ir laikas
+  pamokos-laukai.ts           pamokos laukai, bendri mokiniams ir grupėms
   Zurnalas.ts                 pamokų žurnalas — rašo tik serveris
+  Saskaitos.ts                sąskaitos tėvams — kuria serveris, taisoma ranka
   Priminimai.ts               kada siųsti ir laiško parašas (globalas)
+  Atsiskaitymai.ts            rekvizitai, kainos, PVM, i.SAF (globalas)
   Tvarkarastis.ts             laisvų laikų kalendorius (globalas)
   Rezervacijos.ts             ką lankytojai užsisakė kalendoriuje
+  vaizdai/                    `/admin/saskaitos` langas ir jo serverio veiksmai
 lib/
   temos.ts                    prielaidų grafas — DUOMENYS
   diagnostika.ts              adaptyvi logika
@@ -384,6 +499,16 @@ lib/
   generatoriai/               uždavinių generatoriai
   pamokos.ts                  pasikartojimai — ar pamoka vyksta tą dieną
   priminimai.ts               kam ir kada siųsti laišką
+  kainos.ts                   kiek kainuoja pamoka + pardavėjo rekvizitai
+  pinigai.ts                  centai, PVM išskaidymas, formatavimas
+  saskaitos.ts                juodraščiai iš žurnalo, numeracija, mėnesio apžvalga
+  saskaitos-sumos.ts          sumos ir PVM grupės — vienos visoms trims išvestims
+  saskaitos-vaizdas.ts        vienas duomenų rinkinys PDF'ui, peržiūrai ir laiškui
+  saskaitos-pdf.ts            PDF (pdfkit + Noto Sans)
+  saskaitos-pastas.ts         laiškas tėvams su prisegtu PDF
+  isaf-xml.ts                 i.SAF rinkmena (P tipo registras)
+  isaf.ts                     SOAP klientas su kliento sertifikatu
+  isaf-teikimas.ts            įkėlimo ir pateikimo eiga
   tvarkarastis.ts             kalendorius: užimta/laisva/praėjo
   rezervacija.ts              užsakymo veiksmas (patikros, įrašas, laiškai)
   greicio-riba.ts             bendras botų ribotuvas formoms
@@ -442,6 +567,10 @@ Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
   `/vidus/priminimai` atsako 503 ir laiškų nesiunčia; tai ir yra būdas juos laikinai išjungti
   serveryje, o švelnesnis — varnelė CMS globale „Priminimai“.
 
+- `ISAF_APLINKA`, `ISAF_SERTIFIKATAS`, `ISAF_RAKTAS`, `ISAF_RAKTO_SLAPTAZODIS` — i.SAF teikimui
+  (žr. „Sąskaitos ir i.SAF“). Nebūtini: be jų rinkmena vis tiek sudaroma ir atsisiunčiama, tik
+  neteikiama automatiškai. Sertifikato kelias — **už repozitorijos ribų**, kaip `DATABASE_URI`.
+
 Ir dar reikia **cron'o**, kuris tą adresą kviestų. Hostinger hPanel'yje arba nemokamame
 cron-job.org:
 
@@ -451,6 +580,16 @@ cron-job.org:
 
 > Be `SMTP_USER` ir `SMTP_PASS` forma siuntimo nebando: parodo telefoną bei el. paštą ir
 > įrašo priežastį į serverio žurnalą. Tyliai užklausa nedingsta, bet ir neateina.
+
+### Pridėjus savą CMS komponentą
+
+Payload savus komponentus (langus, celes, meniu nuorodas) randa ne pagal kelią, o pagal
+`app/(payload)/admin/importMap.js` — jame surašyta, ką iš kur importuoti. Naujo įrašo ten
+neatsiradus, komponentas tyliai neegzistuoja: savas langas atsako **404**, o meniu nuoroda
+tiesiog nepasirodo.
+
+Todėl `npm run build` **pats perrašo importMap'ą** (`payload generate:importmap && next build`).
+Vietoje jį galima perrašyti ir atskirai — `npm run importmap`.
 
 ### Pakeitus kolekcijų ar globalų laukus
 
