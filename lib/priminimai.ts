@@ -11,6 +11,7 @@ import {
 import {
   data as dataVilniuje,
   dataZodziais,
+  dienaGalininku,
   momentas,
   pridekDienas,
 } from '@/lib/laikas'
@@ -136,13 +137,13 @@ export function atsisakymoNuoroda(mokinioId: number | string): string {
  * Ne tuščia eilutė: globalo `defaultValue` galioja tik pirmą kartą kuriant
  * įrašą, o serveryje jis jau sukurtas — tad naujas laukas ten atsiranda
  * tuščias, ir be šito laiškai staiga liktų be parašo.
+ *
+ * Trumpas ir šiltas, be pareigų ir kontaktų bloko: tai priminimas savam
+ * žmogui, o ne prisistatymas nepažįstamam. Telefonas ir adresas tėvams jau
+ * žinomi, o laiško gale jie tik primintų reklaminį parašą.
  */
 function numatytasParasas(): string[] {
-  return [
-    `${kontaktai.vardas}, ${kontaktai.pareigos}`,
-    kontaktai.telefonas,
-    svetaine.url.replace('https://', ''),
-  ]
+  return ['Šilčiausi linkėjimai,', kontaktai.vardas]
 }
 
 /** Ar mokinys tą dieną ilsisi. Pauzė galioja imtinai. */
@@ -235,6 +236,10 @@ const SVELNI = '#6b655f'
  * JOKIŲ PAVEIKSLĖLIŲ IR SEKIMO. Nematomas paveikslėlis ar peradresuojanti
  * nuoroda yra būtent tai, ko filtrai ieško. Nuorodos adresas parodomas ir
  * tekstu — kad matomas tekstas sutaptų su tuo, kur iš tikrųjų vedama.
+ *
+ * DIENA VADINAMA SAVAITĖS VARDU, o ne data: priminimai išeina tik apie
+ * šiandienos arba rytojaus pamoką, tad „ketvirtadienį“ tėvams pasako daugiau
+ * ir greičiau nei „rugsėjo 17 d.“.
  */
 function laiskasTevams(
   p: Suplanuota,
@@ -247,7 +252,6 @@ function laiskasTevams(
   const { mokinys, dataISO, laikas } = p
   const nuoroda = `${svetaine.url}/p/${mokinys.raktas}`
   const siandien = dataISO === dataVilniuje(new Date())
-  const rusis = p.tipas === 'grupine' ? 'grupinė matematikos pamoka' : 'matematikos pamoka'
 
   // Tuščias CMS laukas ateina kaip `''`, o ne `null` — be šito jis praeitų pro
   // filtrą ir laiške atsirastų antra tuščia eilutė prieš parašą.
@@ -261,28 +265,29 @@ function laiskasTevams(
   const pilnaKaina = pamokosKaina(kainos, p.tipas, false)
   const nuolaida = mokinys.pirmaPamoka && pilnaKaina > kaina ? pilnaKaina - kaina : 0
 
-  const kada = siandien ? 'šiandien' : dataZodziais(dataISO)
-  const pasveikinimas = mokinys.tevoVardas ? `Sveiki, ${mokinys.tevoVardas},` : 'Sveiki,'
-  const zinute = `primenu: ${mokinys.vardas} ${rusis} ${kada}, ${laikas}.`
+  const kada = siandien ? 'šiandien' : dienaGalininku(dataISO)
+  /**
+   * Vardas VARDININKU, ir sakinys sudėliotas taip, kad kitokio nereikėtų.
+   * „Jono matematikos pamoka“ reikalautų kilmininko, o vardai Payload'e
+   * saugomi vardininku ir automatiškai jų nelinksniuosi: „Ugnė“ virstų
+   * „Ugnės“, bet „Justas“ — „Justo“, o svetimvardžiai nepasiduotų visai.
+   */
+  const zinute = `Noriu priminti, jog ${mokinys.vardas} turi matematikos pamoką ${kada} ${laikas}.`
   const nuolaidosZinute =
-    nuolaida > 0
-      ? `Pirmajai pamokai taikoma ${nuolaida} € nuolaida — ${kaina} € vietoj ${pilnaKaina} €.`
-      : null
+    nuolaida > 0 ? `Pirmajai pamokai taikoma ${nuolaida} € nuolaida.` : null
   const parasoEilutes = parasas?.trim() ? parasas.trim().split('\n') : numatytasParasas()
 
   const tekstas = [
-    pasveikinimas,
+    'Sveiki,',
     '',
     zinute,
     '',
-    `Prisijungti: ${nuoroda}`,
+    `Prisijungti galėsite paspaudę šią nuorodą: ${nuoroda}`,
     '',
     nuolaidosZinute,
     nuolaidosZinute ? '' : null,
     priedas,
     priedas ? '' : null,
-    '—',
-    // Brūkšnelis lieka kode, kad parašas visada atsiskirtų nuo teksto vienodai.
     ...parasoEilutes,
     '',
     `Nebenorite šių priminimų: ${atsisakymas}`,
@@ -292,14 +297,12 @@ function laiskasTevams(
 
   const html = [
     `<div style="font:16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#12100e;max-width:34rem">`,
-    `<p>${saugus(pasveikinimas)}</p>`,
+    `<p>Sveiki,</p>`,
     `<p>${saugus(zinute)}</p>`,
-    `<p>Prisijungti: <a href="${saugus(nuoroda)}" style="color:#12100e;font-weight:600;text-decoration:underline">${saugus(nuoroda)}</a></p>`,
+    `<p>Prisijungti galėsite paspaudę šią nuorodą:<br><a href="${saugus(nuoroda)}" style="color:#12100e;font-weight:600;text-decoration:underline">${saugus(nuoroda)}</a></p>`,
     nuolaidosZinute ? `<p>${saugus(nuolaidosZinute)}</p>` : null,
     priedas ? `<p>${saugus(priedas).replace(/\n/g, '<br>')}</p>` : null,
-    `<p style="color:${SVELNI};border-top:1px solid #e5e0d8;padding-top:1rem">${parasoEilutes
-      .map(saugus)
-      .join('<br>')}</p>`,
+    `<p>${parasoEilutes.map(saugus).join('<br>')}</p>`,
     `<p style="color:${SVELNI};font-size:14px"><a href="${saugus(atsisakymas)}" style="color:${SVELNI}">Nebenoriu šių priminimų</a></p>`,
     `</div>`,
   ]
@@ -307,7 +310,7 @@ function laiskasTevams(
     .join('\n')
 
   return {
-    tema: `${mokinys.vardas} — pamoka ${kada} ${laikas}`,
+    tema: `Matematikos pamokos priminimas (${kada} ${laikas})`,
     tekstas,
     html,
   }

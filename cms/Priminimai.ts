@@ -77,7 +77,7 @@ export const Priminimai: GlobalConfig = {
       label: 'Parašas laiško gale',
       admin: {
         description:
-          'Kelios eilutės po brūkšneliu. Palikus tuščią, naudojamas numatytasis — vardas, pareigos, telefonas ir vardiklis.lt. Laiškai paprasto teksto, tad paveikslėlių ar spalvų čia nebus.',
+          'Kelios eilutės laiško gale. Palikus tuščią, pasirašoma „Šilčiausi linkėjimai, Modesta“. Įrašomas tekstas, ne HTML — paveikslėlių ar spalvų čia nebus.',
       },
     },
     {

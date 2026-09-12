@@ -190,3 +190,19 @@ export function dataZodziais(dataISO: string): string {
   const [, men, d] = dataISO.split('-').map(Number)
   return `${MENESIAI[men - 1]} ${d} d. (${SAVAITES_DIENOS[savaitesDiena(dataISO) - 1]})`
 }
+
+/** Galininkas — „vyks ketvirtadienį“. Vardininkas — `SAVAITES_DIENOS`. */
+export const SAVAITES_DIENOS_GALININKU = [
+  'pirmadienį',
+  'antradienį',
+  'trečiadienį',
+  'ketvirtadienį',
+  'penktadienį',
+  'šeštadienį',
+  'sekmadienį',
+] as const
+
+/** `2026-09-17` → `ketvirtadienį`. Sakiniui, kuriame diena yra veiksmo laikas. */
+export function dienaGalininku(dataISO: string): string {
+  return SAVAITES_DIENOS_GALININKU[savaitesDiena(dataISO) - 1]
+}

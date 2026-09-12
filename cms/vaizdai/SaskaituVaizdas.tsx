@@ -14,9 +14,10 @@ import { SaskaituValdiklis } from './SaskaituValdiklis'
  * jau paruošti. Taip naršyklė negauna nei mokinių sąrašo, nei kainų
  * skaičiavimo — tik tai, kas rodoma ekrane.
  *
- * NUMATYTASIS MĖNUO — PRAĖJĘS. Sąskaita išrašoma už tai, kas jau įvyko, tad
- * atsidarius langą rugsėjį pirmiausia rūpi rugpjūtis. Kitą mėnesį pasirenkant
- * adresas keičiasi į `?menuo=2026-07`, tad langą galima įsidėti į žymes.
+ * NUMATYTASIS MĖNUO — EINAMASIS. Iki mėnesio pabaigos sąskaitos dar niekas
+ * neišrašo, bet matyti, kiek pamokų jau susikaupė ir kaip atrodytų juodraščiai,
+ * reikia bet kurią dieną. Praėjęs mėnuo yra už vieno paspaudimo sąraše, o
+ * adresas keičiasi į `?menuo=2026-08`, tad langą galima įsidėti į žymes.
  */
 
 export async function SaskaituVaizdas({ searchParams }: AdminViewServerProps) {
@@ -25,7 +26,7 @@ export async function SaskaituVaizdas({ searchParams }: AdminViewServerProps) {
   const pasirinktas =
     prasytas && menesiai.some((m) => m.raktas === prasytas)
       ? prasytas
-      : // Sąrašas prasideda praėjusiu mėnesiu; jei jo kažkodėl nėra — šis.
+      : // Sąrašas prasideda einamuoju mėnesiu; jei sąrašas tuščias — jis pats.
         (menesiai[0]?.raktas ?? dataVilniuje(new Date()).slice(0, 7))
 
   const apzvalga = await menesioApzvalga(pasirinktas)

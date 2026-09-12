@@ -65,13 +65,17 @@ export function menesioRaktas(dataISO: string): string {
 /**
  * Paskutiniai mėnesiai, naujausias pirmas.
  *
- * Pirmas sąraše — PRAĖJĘS mėnuo, ne einamasis: sąskaita išrašoma už tai, kas
- * jau įvyko, tad būtent jo skydelis turi pasiūlyti pirmiausia.
+ * PRASIDEDA EINAMUOJU MĖNESIU. Sąskaita paprastai išrašoma už tai, kas jau
+ * baigėsi, tad kurį laiką sąrašas prasidėdavo praėjusiu mėnesiu — bet tada
+ * einamojo nebuvo galima nė pasirinkti, ir mėnesio viduryje pamatyti, kas iki
+ * šiol susikaupė, tapdavo neįmanoma: skydelis rodydavo tuščią praėjusį mėnesį
+ * ir pranešimą, kad įvykusių pamokų nėra. Sąrašas yra pasirinkimas, o ne
+ * taisyklė, tad einamasis mėnuo jame turi būti.
  */
 export function menesiuSarasas(dabar: Date, kiek = 12): Laikotarpis[] {
   const [metai, men] = dataVilniuje(dabar).split('-').map(Number)
   const sarasas: Laikotarpis[] = []
-  for (let i = 1; i <= kiek; i++) {
+  for (let i = 0; i < kiek; i++) {
     const d = new Date(Date.UTC(metai, men - 1 - i, 1))
     const l = menuo(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`)
     if (l) sarasas.push(l)
