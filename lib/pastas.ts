@@ -40,7 +40,7 @@ export function pastoNustatymai(): PastoNustatymai | null {
    * „535 BadCredentials“, o kaltinamas būna slaptažodis. Tarpai teisingame
    * app password neegzistuoja, tad iškirpti juos saugu.
    */
-  const pass = process.env.SMTP_PASS?.replace(/s+/g, '')
+  const pass = process.env.SMTP_PASS?.replace(/\s+/g, '')
 
   if (!user || !pass) return null
 

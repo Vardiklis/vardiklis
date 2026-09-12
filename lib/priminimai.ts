@@ -107,6 +107,30 @@ export function arTeisingasParasas(id: string, busena: string, parasas: string):
 }
 
 /**
+ * Parašas priminimų atsisakymo nuorodai.
+ *
+ * ATSKIRAS ir nuo `zymejimoParasas`, ir nuo mokinio `raktas`. Raktą vaikas
+ * laiko naršyklės žymėse, ir jis skirtas patekti į pamoką — atsisakyti tėvų
+ * priminimų juo neturi būti galima. Todėl atskiras parašas su savo žyme.
+ */
+export function atsisakymoParasas(id: string): string {
+  const raktas = process.env.PAYLOAD_SECRET || ''
+  return createHmac('sha256', raktas).update(`atsisakymas:${id}`).digest('hex').slice(0, 16)
+}
+
+export function arTeisingasAtsisakymas(id: string, parasas: string): boolean {
+  const laukiamas = Buffer.from(atsisakymoParasas(id))
+  const gautas = Buffer.from(parasas || '')
+  return laukiamas.length === gautas.length && timingSafeEqual(laukiamas, gautas)
+}
+
+/** Pilnas adresas — naudojamas ir laiško tekste, ir `List-Unsubscribe` antraštėje. */
+export function atsisakymoNuoroda(mokinioId: number | string): string {
+  const id = String(mokinioId)
+  return `${svetaine.url}/vidus/atsisakyti?m=${id}&p=${atsisakymoParasas(id)}`
+}
+
+/**
  * Parašas, kai CMS'e jis nenurodytas.
  *
  * Ne tuščia eilutė: globalo `defaultValue` galioja tik pirmą kartą kuriant
@@ -185,13 +209,41 @@ function suplanuok(
   return [...pagalRakta.values()]
 }
 
+/**
+ * HTML laiške skaitomas kaip tekstas, tad tėvo vardas, prierašas ir parašas
+ * pro jį eiti negali: CMS'e įrašytas `<` sugriautų visą likusį laišką.
+ */
+function saugus(tekstas: string): string {
+  return tekstas
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+const SVELNI = '#6b655f'
+
+/**
+ * Priminimas tėvams — ta pati žinutė dviem pavidalais.
+ *
+ * KODĖL IR HTML. Vien tekstinis laiškas techniškai teisingas, bet automatika,
+ * siunčianti kasdien tą patį iš `@gmail.com` adreso, be HTML dalies atrodo
+ * įtartinesnė nei įprastas laiškas — o čia dar ir nuoroda į kitą domeną
+ * (`vardiklis.lt`), kurio pašto tarnybos nesieja su siuntėju. Dvi dalys
+ * viename laiške yra normos, o ne puošybos klausimas.
+ *
+ * JOKIŲ PAVEIKSLĖLIŲ IR SEKIMO. Nematomas paveikslėlis ar peradresuojanti
+ * nuoroda yra būtent tai, ko filtrai ieško. Nuorodos adresas parodomas ir
+ * tekstu — kad matomas tekstas sutaptų su tuo, kur iš tikrųjų vedama.
+ */
 function laiskasTevams(
   p: Suplanuota,
   kaina: number,
   kainos: AtsiskaitymuNustatymai,
   prierasas: string | null,
   parasas: string | null,
-): { tema: string; tekstas: string } {
+  atsisakymas: string,
+): { tema: string; tekstas: string; html: string } {
   const { mokinys, dataISO, laikas } = p
   const nuoroda = `${svetaine.url}/p/${mokinys.raktas}`
   const siandien = dataISO === dataVilniuje(new Date())
@@ -209,27 +261,55 @@ function laiskasTevams(
   const pilnaKaina = pamokosKaina(kainos, p.tipas, false)
   const nuolaida = mokinys.pirmaPamoka && pilnaKaina > kaina ? pilnaKaina - kaina : 0
 
-  const eilutes = [
-    mokinys.tevoVardas ? `Sveiki, ${mokinys.tevoVardas},` : 'Sveiki,',
+  const kada = siandien ? 'šiandien' : dataZodziais(dataISO)
+  const pasveikinimas = mokinys.tevoVardas ? `Sveiki, ${mokinys.tevoVardas},` : 'Sveiki,'
+  const zinute = `primenu: ${mokinys.vardas} ${rusis} ${kada}, ${laikas}.`
+  const nuolaidosZinute =
+    nuolaida > 0
+      ? `Pirmajai pamokai taikoma ${nuolaida} € nuolaida — ${kaina} € vietoj ${pilnaKaina} €.`
+      : null
+  const parasoEilutes = parasas?.trim() ? parasas.trim().split('\n') : numatytasParasas()
+
+  const tekstas = [
+    pasveikinimas,
     '',
-    `primenu: ${mokinys.vardas} ${rusis} ${siandien ? 'šiandien' : dataZodziais(dataISO)}, ${laikas}.`,
+    zinute,
     '',
     `Prisijungti: ${nuoroda}`,
     '',
-    nuolaida > 0
-      ? `Pirmajai pamokai taikoma ${nuolaida} € nuolaida — ${kaina} € vietoj ${pilnaKaina} €.`
-      : null,
-    nuolaida > 0 ? '' : null,
+    nuolaidosZinute,
+    nuolaidosZinute ? '' : null,
     priedas,
     priedas ? '' : null,
     '—',
     // Brūkšnelis lieka kode, kad parašas visada atsiskirtų nuo teksto vienodai.
-    ...(parasas?.trim() ? parasas.trim().split('\n') : numatytasParasas()),
-  ].filter((e): e is string => e !== null)
+    ...parasoEilutes,
+    '',
+    `Nebenorite šių priminimų: ${atsisakymas}`,
+  ]
+    .filter((e): e is string => e !== null)
+    .join('\n')
+
+  const html = [
+    `<div style="font:16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#12100e;max-width:34rem">`,
+    `<p>${saugus(pasveikinimas)}</p>`,
+    `<p>${saugus(zinute)}</p>`,
+    `<p>Prisijungti: <a href="${saugus(nuoroda)}" style="color:#12100e;font-weight:600;text-decoration:underline">${saugus(nuoroda)}</a></p>`,
+    nuolaidosZinute ? `<p>${saugus(nuolaidosZinute)}</p>` : null,
+    priedas ? `<p>${saugus(priedas).replace(/\n/g, '<br>')}</p>` : null,
+    `<p style="color:${SVELNI};border-top:1px solid #e5e0d8;padding-top:1rem">${parasoEilutes
+      .map(saugus)
+      .join('<br>')}</p>`,
+    `<p style="color:${SVELNI};font-size:14px"><a href="${saugus(atsisakymas)}" style="color:${SVELNI}">Nebenoriu šių priminimų</a></p>`,
+    `</div>`,
+  ]
+    .filter((e): e is string => e !== null)
+    .join('\n')
 
   return {
-    tema: `${mokinys.vardas} — pamoka ${siandien ? 'šiandien' : dataZodziais(dataISO)} ${laikas}`,
-    tekstas: eilutes.join('\n'),
+    tema: `${mokinys.vardas} — pamoka ${kada} ${laikas}`,
+    tekstas,
+    html,
   }
 }
 
@@ -360,7 +440,15 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
         },
       }))
 
-    const laiskas = laiskasTevams(p, kaina, kainos, n.prierasas ?? null, n.parasas ?? null)
+    const atsisakymas = atsisakymoNuoroda(mokinys.id)
+    const laiskas = laiskasTevams(
+      p,
+      kaina,
+      kainos,
+      n.prierasas ?? null,
+      n.parasas ?? null,
+      atsisakymas,
+    )
     try {
       await siuntejas.sendMail({
         from: `"${kontaktai.vardas} · ${svetaine.pavadinimas}" <${pastas.user}>`,
@@ -368,6 +456,24 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
         replyTo: pastas.gavejas,
         subject: laiskas.tema,
         text: laiskas.tekstas,
+        html: laiskas.html,
+        /**
+         * Atsisakymo antraštės.
+         *
+         * Gmail ir Outlook pagal jas parodo mygtuką „Atsisakyti“ virš laiško, o
+         * jų buvimas yra vienas iš požymių, pagal kuriuos kasdien siunčiama
+         * automatika atskiriama nuo šlamšto. Be jų vienintelis būdas nutraukti
+         * laiškus yra mygtukas „Pranešti apie šlamštą“ — o kiekvienas toks
+         * paspaudimas gadina siuntėjo vardą visiems likusiems gavėjams.
+         *
+         * `One-Click` reiškia, kad pašto programa gali atsisakyti pati, `POST`
+         * užklausa ir nieko neklausdama (RFC 8058). Todėl maršrutas ir keičia
+         * duomenis tik per `POST`.
+         */
+        headers: {
+          'List-Unsubscribe': `<${atsisakymas}>, <mailto:${pastas.gavejas}?subject=Atsisakau%20priminimu>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       })
       await payload.update({
         collection: 'zurnalas',
