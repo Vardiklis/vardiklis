@@ -92,6 +92,18 @@ export function dienuSkirtumas(a: string, b: string): number {
   )
 }
 
+/**
+ * Kiek mėnesių nuo `a` iki `b`. Neigiama, jei `b` anksčiau.
+ *
+ * Dienos nežiūrim — klausimas yra „kelintas mėnuo“, o ne „kiek laiko“. Tinka ir
+ * `2026-09`, ir `2026-09-15`: pirmos dvi dalys abiem atvejais tos pačios.
+ */
+export function menesiuSkirtumas(a: string, b: string): number {
+  const [am, amen] = a.split('-').map(Number)
+  const [bm, bmen] = b.split('-').map(Number)
+  return (bm - am) * 12 + (bmen - amen)
+}
+
 /** Tos savaitės pirmadienis. */
 export function savaitesPradzia(dataISO: string): string {
   return pridekDienas(dataISO, -(savaitesDiena(dataISO) - 1))

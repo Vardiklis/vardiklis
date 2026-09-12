@@ -39,6 +39,7 @@ jos šioje versijoje nedarome.
 | `npm run lint` | ESLint |
 | `npm run patikra` | Sugeneruoja po 100 uždavinių iš kiekvieno generatoriaus ir tikrina, ar nėra bjaurių atsakymų, sugedusio KaTeX ar klaidų grafe |
 | `npm run patikra:diagnostika` | Pravažiuoja diagnostiką 8 scenarijais ir parodo, ką grąžina ataskaita |
+| `npm run patikra:pamokos` | Tikrina pamokų pasikartojimus: laikotarpį „nuo–iki“, kas N savaičių / mėnesių ir senų įrašų suderinamumą |
 | `npm run patikra:saskaitos` | Praeina visą sąskaitų kelią (juodraštis → išrašymas → PDF → i.SAF) su savo bandomaisiais duomenimis ir po to juos ištrina |
 | `npm run importmap` | Perrašo `app/(payload)/admin/importMap.js` — CMS savų komponentų sąrašą |
 | `npm run schema` | Perrašo `cms/pradine-schema.ts` iš vietinės bazės |
@@ -183,10 +184,20 @@ nuoroda, pamokų laikai. Ten pat: „Aktyvus“, „Pauzė iki“ atostogoms ir 
 pirmoji (nuolaida)“.
 
 Pamokos pasikartojimas — kaip Google kalendoriuje: **savaitės diena** (kas savaitę, kas 2, 3 ar 4
-savaites) arba **mėnesio diena** (pvz. kas mėnesio 18-ą). Rečiau nei kas savaitę reikia „Pirmosios
-tokios pamokos“ datos — nuo jos skaičiuojama, kurios savaitės yra „tos“. Visa logika —
+savaites) arba **mėnesio diena** (kas mėnesį, kas 2, 3, 6 ar 12 mėnesių). Visa logika —
 `lib/pamokos.ts`, funkcija `arVyksta()`; ja remiasi IR priminimai, IR svetainės kalendorius, kad
 tėvai negautų laiško apie pamoką, kurios kalendorius nerodo.
+
+Kiekviena eilutė turi **laikotarpį**: „Nuo kada“ (tuščia — vyksta iškart) ir „Iki kada“ imtinai
+(tuščia — kartojasi be galo). Sukakus pabaigos datai pamokos nebėra, o laikas kalendoriuje
+atsilaisvina pats — eilutės trinti nereikia.
+
+Rečiau nei kas savaitę ar kas mėnesį **„Nuo kada“ yra privaloma**: be atskaitos taško neaišku,
+kurios savaitės ar mėnesiai yra „tie“. Mėnesiniam kartojimui atskaita yra **pirmoji tikra pamoka**,
+ne „Nuo kada“ mėnuo: įrašius „nuo rugsėjo 20“ su 15-a mėnesio diena, pirmoji pamoka yra spalio
+15-oji, ir „kas 2 mėn.“ eina spalis → gruodis, o ne lapkritis → sausis.
+
+Kraštinius atvejus tikrina `npm run patikra:pamokos` (bazės nereikia — `arVyksta()` gryna funkcija).
 
 **Priminimai** (`cms/Priminimai.ts`) — kada siųsti: **tos pačios dienos rytą** arba **dieną prieš,
 vakare**, ir kelintą valandą. Prie atskiro mokinio tą patį galima nurodyti kitaip — jo nustatymas

@@ -10,9 +10,31 @@ import { arLaikas, SAVAITES_DIENOS } from '../lib/laikas'
  * atsakytų skirtingai — ir anksčiau ar vėliau grupė dingtų iš kalendoriaus
  * arba negautų priminimo. Todėl aprašas vienas, o kolekcijos jį tik įsideda.
  *
+ * EILUČIŲ IŠDĖSTYMAS. Pirma eilutė — kas visada aktualu (kaip kartojasi, kada
+ * ir kiek laiko). Antra ir trečia — tik viena jų, pagal pasirinktą kartojimą.
+ * Ketvirta — laikotarpis, galiojantis abiem būdams.
+ *
  * `Field[]`, o ne visas `array` laukas: kolekcijoms skiriasi tik pavadinimas ir
  * paaiškinimas, tad juos kiekviena nurodo pati (žr. `pamokuMasyvas`).
  */
+
+/** Ar eilutėje pasirinktas mėnesinis kartojimas. */
+const arMenesinis = (eilute: unknown): boolean =>
+  (eilute as { kartojimas?: unknown })?.kartojimas === 'menuo'
+
+/**
+ * Ar eilutė kartojasi rečiau nei kiekvieną kartą.
+ *
+ * Būtent tada „Nuo kada“ tampa privaloma: be atskaitos taško neaišku, kurios
+ * savaitės ar mėnesiai yra „tie“.
+ */
+function arRetesnis(eilute: unknown): boolean {
+  const e = eilute as { kartojimas?: unknown; kasKiek?: unknown; kasKiekMenesiu?: unknown }
+  return arMenesinis(e)
+    ? Number(e?.kasKiekMenesiu || 1) > 1
+    : Number(e?.kasKiek || 1) > 1
+}
+
 export const PAMOKOS_LAUKAI: Field[] = [
   {
     type: 'row',
@@ -49,7 +71,7 @@ export const PAMOKOS_LAUKAI: Field[] = [
   },
   {
     type: 'row',
-    admin: { condition: (_, eilute) => eilute?.kartojimas !== 'menuo' },
+    admin: { condition: (_, eilute) => !arMenesinis(eilute) },
     fields: [
       {
         name: 'savaitesDiena',
@@ -72,45 +94,94 @@ export const PAMOKOS_LAUKAI: Field[] = [
           { label: 'Kas 4 savaites', value: '4' },
         ],
       },
+    ],
+  },
+  {
+    type: 'row',
+    admin: { condition: (_, eilute) => arMenesinis(eilute) },
+    fields: [
       {
-        name: 'nuoDatos',
-        type: 'date',
-        label: 'Pirmoji tokia pamoka',
+        name: 'menesioDiena',
+        type: 'number',
+        label: 'Mėnesio diena',
+        min: 1,
+        max: 31,
         admin: {
           description:
-            'Nuo jos skaičiuojamos „kas antra“ savaitės. Būtina, kai pasirinkta rečiau nei kas savaitę.',
-          date: { pickerAppearance: 'dayOnly', displayFormat: 'yyyy-MM-dd' },
-          condition: (_, eilute) =>
-            eilute?.kartojimas !== 'menuo' && Number(eilute?.kasKiek || 1) > 1,
+            'Pvz. 15. Mėnesiais, kuriuose tokios dienos nėra (vasario 30-osios), pamokos nebus.',
         },
-        /**
-         * Be atskaitos datos „kas antra savaitė“ neturi prasmės — neaišku,
-         * kurios savaitės yra tos. Kodas tokiu atveju laiko, kad pamoka
-         * kas savaitę (`lib/pamokos.ts`), bet čia to neleidžiam įrašyti.
-         */
         validate: (reiksme: unknown, { siblingData }: { siblingData?: unknown }) => {
-          const eilute = siblingData as { kasKiek?: unknown; kartojimas?: unknown }
-          if (eilute?.kartojimas === 'menuo') return true
-          if (Number(eilute?.kasKiek || 1) > 1 && !reiksme) {
-            return 'Nurodykite, nuo kurios pamokos skaičiuoti.'
-          }
+          if (!arMenesinis(siblingData)) return true
+          if (!reiksme) return 'Nurodykite mėnesio dieną.'
           return true
+        },
+      },
+      {
+        name: 'kasKiekMenesiu',
+        type: 'select',
+        label: 'Kaip dažnai',
+        defaultValue: '1',
+        options: [
+          { label: 'Kas mėnesį', value: '1' },
+          { label: 'Kas 2 mėnesius', value: '2' },
+          { label: 'Kas 3 mėnesius', value: '3' },
+          { label: 'Kas 6 mėnesius', value: '6' },
+          { label: 'Kas 12 mėnesių', value: '12' },
+        ],
+        admin: {
+          description: 'Rečiau nei kas mėnesį — nurodykite ir „Nuo kada“.',
         },
       },
     ],
   },
   {
-    name: 'menesioDiena',
-    type: 'number',
-    label: 'Mėnesio diena',
-    min: 1,
-    max: 31,
-    admin: {
-      description:
-        'Pvz. 15 — pamoka kas mėnesio 15 dieną. Mėnesiais, kuriuose tokios dienos nėra, pamokos nebus.',
-      condition: (_, eilute) => eilute?.kartojimas === 'menuo',
-      width: '50%',
-    },
+    type: 'row',
+    fields: [
+      {
+        name: 'nuoDatos',
+        type: 'date',
+        label: 'Nuo kada',
+        admin: {
+          description:
+            'Tuščia — pamoka vyksta iškart. Pasirinkus rečiau nei kas savaitę ar kas mėnesį, nuo šios datos skaičiuojami intervalai, tad geriausia įrašyti pirmosios tokios pamokos dieną.',
+          date: { pickerAppearance: 'dayOnly', displayFormat: 'yyyy-MM-dd' },
+        },
+        /**
+         * Be atskaitos datos „kas antra savaitė“ (ar „kas antras mėnuo“) neturi
+         * prasmės — neaišku, kurios savaitės ar mėnesiai yra tie. Kodas tokiu
+         * atveju laiko, kad pamoka vyksta kiekvieną kartą (`lib/pamokos.ts`),
+         * bet čia to neleidžiam įrašyti.
+         */
+        validate: (reiksme: unknown, { siblingData }: { siblingData?: unknown }) => {
+          if (arRetesnis(siblingData) && !reiksme) {
+            return 'Nurodykite, nuo kurios pamokos skaičiuoti.'
+          }
+          return true
+        },
+      },
+      {
+        name: 'ikiDatos',
+        type: 'date',
+        label: 'Iki kada (imtinai)',
+        admin: {
+          description:
+            'Tuščia — pamoka kartojasi be galo. Įrašius, po šios dienos pamokų nebėra, o laikas kalendoriuje atsilaisvina pats — eilutės trinti nereikia.',
+          date: { pickerAppearance: 'dayOnly', displayFormat: 'yyyy-MM-dd' },
+        },
+        /**
+         * Apverstas langas nieko nereikštų: pamokų nebūtų nė vienos, o
+         * kalendoriuje tai atrodytų tiesiog kaip dingęs laikas be priežasties.
+         */
+        validate: (reiksme: unknown, { siblingData }: { siblingData?: unknown }) => {
+          const nuo = (siblingData as { nuoDatos?: unknown })?.nuoDatos
+          if (!reiksme || !nuo) return true
+          if (String(reiksme).slice(0, 10) < String(nuo).slice(0, 10)) {
+            return '„Iki kada“ negali būti anksčiau už „Nuo kada“.'
+          }
+          return true
+        },
+      },
+    ],
   },
 ]
 
@@ -119,7 +190,8 @@ export function pamokuMasyvas(aprasas: string): Field {
   return {
     name: 'pamokos',
     type: 'array',
-    label: 'Pamokų kiekis per savaitę',
+    // Ne „per savaitę“: eilutė gali kartotis ir kas mėnesį, ir kas pusmetį.
+    label: 'Pamokų laikai',
     labels: { singular: 'Pamoka', plural: 'Pamokos' },
     admin: {
       description: aprasas,

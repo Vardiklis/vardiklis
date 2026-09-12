@@ -80,7 +80,7 @@ export const Mokiniai: CollectionConfig = {
       'Nuolatinė šio vaiko kambario nuoroda, pvz. https://meet.google.com/abc-defg-hij. Tėvams siunčiama ne ji, o vardiklis.lt nuoroda, kuri atveda čia — todėl pakeitus ją, tėvams pranešti nereikia. Grupinėms pamokoms nuoroda imama iš grupės, ne iš čia.',
     ),
     pamokuMasyvas(
-      'Kartojasi, kol nuimta „Aktyvus“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus. Grupinių pamokų čia rašyti nereikia — jos gyvena „Grupėse“.',
+      'Kartojasi, kol nuimta „Aktyvus“, sueina „Iki kada“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus. Grupinių pamokų čia rašyti nereikia — jos gyvena „Grupėse“.',
     ),
     {
       type: 'collapsible',

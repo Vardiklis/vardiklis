@@ -53,6 +53,10 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `zurnalas` ADD `grupe_id` integer REFERENCES `grupes`(`id`)',
   'ALTER TABLE `zurnalas` ADD `kaina` numeric',
   'ALTER TABLE `zurnalas` ADD `saskaita_id` integer REFERENCES `saskaitos`(`id`)',
+  "ALTER TABLE `mokiniai_pamokos` ADD `kas_kiek_menesiu` text DEFAULT '1'",
+  'ALTER TABLE `mokiniai_pamokos` ADD `iki_datos` text',
+  "ALTER TABLE `grupes_pamokos` ADD `kas_kiek_menesiu` text DEFAULT '1'",
+  'ALTER TABLE `grupes_pamokos` ADD `iki_datos` text',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -374,6 +378,18 @@ export default buildConfig({
        */
       {
         name: 'schema-2026-09-saskaitos',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Pamokos laikotarpis („Nuo kada“ / „Iki kada“) ir mėnesinis intervalas.
+       *
+       * `nuo_datos` lentelėse jau buvo — pasikeitė tik tai, kada laukas
+       * rodomas; nauji yra `iki_datos` ir `kas_kiek_menesiu` abiejose pamokų
+       * lentelėse. Grynas stulpelių pridėjimas, tad `TRUKSTAMI_STULPELIAI`.
+       */
+      {
+        name: 'schema-2026-09-pamoku-laikotarpis',
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },

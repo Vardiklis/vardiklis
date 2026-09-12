@@ -72,7 +72,7 @@ export const Grupes: CollectionConfig = {
       'Bendras šios grupės kambarys. Tėvams siunčiama ne ji, o kiekvieno vaiko vardiklis.lt/p/… nuoroda, kuri grupinės pamokos metu atveda būtent čia.',
     ),
     pamokuMasyvas(
-      'Kartojasi, kol nuimta „Aktyvi“ arba pamoka ištrinta. Šie laikai kalendoriuje užima langą lygiai taip pat, kaip individualūs.',
+      'Kartojasi, kol nuimta „Aktyvi“, sueina „Iki kada“ arba pamoka ištrinta. Šie laikai kalendoriuje užima langą lygiai taip pat, kaip individualūs.',
     ),
     {
       name: 'pauzeIki',

@@ -17,7 +17,8 @@
     "egzaminai": "tsx scripts/kurk-egzaminu-pdf.ts",
     "schema": "node scripts/kurk-schema.mjs",
     "patikra:saskaitos": "tsx --env-file-if-exists=.env scripts/patikrink-saskaitas.ts",
-    "importmap": "payload generate:importmap"
+    "importmap": "payload generate:importmap",
+    "patikra:pamokos": "tsx scripts/patikrink-pamokas.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",

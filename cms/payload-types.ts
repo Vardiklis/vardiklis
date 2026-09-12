@@ -278,7 +278,7 @@ export interface Mokiniai {
    */
   meetNuoroda: string;
   /**
-   * Kartojasi, kol nuimta „Aktyvus“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus. Grupinių pamokų čia rašyti nereikia — jos gyvena „Grupėse“.
+   * Kartojasi, kol nuimta „Aktyvus“, sueina „Iki kada“ arba pamoka ištrinta. Nepalikus nė vienos eilutės, priminimų šiam mokiniui nebus. Grupinių pamokų čia rašyti nereikia — jos gyvena „Grupėse“.
    */
   pamokos?:
     | {
@@ -291,13 +291,21 @@ export interface Mokiniai {
         savaitesDiena?: ('1' | '2' | '3' | '4' | '5' | '6' | '7') | null;
         kasKiek?: ('1' | '2' | '3' | '4') | null;
         /**
-         * Nuo jos skaičiuojamos „kas antra“ savaitės. Būtina, kai pasirinkta rečiau nei kas savaitę.
+         * Pvz. 15. Mėnesiais, kuriuose tokios dienos nėra (vasario 30-osios), pamokos nebus.
+         */
+        menesioDiena?: number | null;
+        /**
+         * Rečiau nei kas mėnesį — nurodykite ir „Nuo kada“.
+         */
+        kasKiekMenesiu?: ('1' | '2' | '3' | '6' | '12') | null;
+        /**
+         * Tuščia — pamoka vyksta iškart. Pasirinkus rečiau nei kas savaitę ar kas mėnesį, nuo šios datos skaičiuojami intervalai, tad geriausia įrašyti pirmosios tokios pamokos dieną.
          */
         nuoDatos?: string | null;
         /**
-         * Pvz. 15 — pamoka kas mėnesio 15 dieną. Mėnesiais, kuriuose tokios dienos nėra, pamokos nebus.
+         * Tuščia — pamoka kartojasi be galo. Įrašius, po šios dienos pamokų nebėra, o laikas kalendoriuje atsilaisvina pats — eilutės trinti nereikia.
          */
-        menesioDiena?: number | null;
+        ikiDatos?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -352,7 +360,7 @@ export interface Grupe {
    */
   meetNuoroda: string;
   /**
-   * Kartojasi, kol nuimta „Aktyvi“ arba pamoka ištrinta. Šie laikai kalendoriuje užima langą lygiai taip pat, kaip individualūs.
+   * Kartojasi, kol nuimta „Aktyvi“, sueina „Iki kada“ arba pamoka ištrinta. Šie laikai kalendoriuje užima langą lygiai taip pat, kaip individualūs.
    */
   pamokos?:
     | {
@@ -365,13 +373,21 @@ export interface Grupe {
         savaitesDiena?: ('1' | '2' | '3' | '4' | '5' | '6' | '7') | null;
         kasKiek?: ('1' | '2' | '3' | '4') | null;
         /**
-         * Nuo jos skaičiuojamos „kas antra“ savaitės. Būtina, kai pasirinkta rečiau nei kas savaitę.
+         * Pvz. 15. Mėnesiais, kuriuose tokios dienos nėra (vasario 30-osios), pamokos nebus.
+         */
+        menesioDiena?: number | null;
+        /**
+         * Rečiau nei kas mėnesį — nurodykite ir „Nuo kada“.
+         */
+        kasKiekMenesiu?: ('1' | '2' | '3' | '6' | '12') | null;
+        /**
+         * Tuščia — pamoka vyksta iškart. Pasirinkus rečiau nei kas savaitę ar kas mėnesį, nuo šios datos skaičiuojami intervalai, tad geriausia įrašyti pirmosios tokios pamokos dieną.
          */
         nuoDatos?: string | null;
         /**
-         * Pvz. 15 — pamoka kas mėnesio 15 dieną. Mėnesiais, kuriuose tokios dienos nėra, pamokos nebus.
+         * Tuščia — pamoka kartojasi be galo. Įrašius, po šios dienos pamokų nebėra, o laikas kalendoriuje atsilaisvina pats — eilutės trinti nereikia.
          */
-        menesioDiena?: number | null;
+        ikiDatos?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -764,8 +780,10 @@ export interface MokiniaiSelect<T extends boolean = true> {
         trukmeMin?: T;
         savaitesDiena?: T;
         kasKiek?: T;
-        nuoDatos?: T;
         menesioDiena?: T;
+        kasKiekMenesiu?: T;
+        nuoDatos?: T;
+        ikiDatos?: T;
         id?: T;
       };
   aktyvus?: T;
@@ -796,8 +814,10 @@ export interface GrupesSelect<T extends boolean = true> {
         trukmeMin?: T;
         savaitesDiena?: T;
         kasKiek?: T;
-        nuoDatos?: T;
         menesioDiena?: T;
+        kasKiekMenesiu?: T;
+        nuoDatos?: T;
+        ikiDatos?: T;
         id?: T;
       };
   pauzeIki?: T;
