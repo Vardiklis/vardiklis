@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { arLaikas, data as dataVilniuje } from '../lib/laikas'
 
 /**
  * Pamokų žurnalas — po vieną įrašą kiekvienai suplanuotai pamokai.
@@ -15,31 +16,90 @@ import type { CollectionConfig } from 'payload'
  * momentu su juosta, o čia reikia būtent Vilniaus paros: „2026-09-05“ pamoka
  * yra rugsėjo 5-osios pamoka ir tada, kai serveris skaičiuoja UTC.
  *
- * Rašo tik serveris. Panelėje įrašai tik skaitomi ir taisoma vien būsena —
- * kurti juos ranka nėra prasmės, o ištrynus dingtų atsiskaitymo istorija.
+ * ĮRAŠUS KURIA IR SISTEMA, IR ŽMOGUS. Įprastai juos padaro priminimų maršrutas,
+ * bet pasitaiko pamokų, kurių tvarkaraštyje nebuvo: perkelta iš kitos dienos,
+ * papildoma prieš egzaminą, pravesta be priminimo. Tokia pamoka turi patekti į
+ * žurnalą, kitaip jos nebus nei lankomume, nei sąskaitoje. Todėl laukai taisomi
+ * ranka, o `santrauka` visada sudaroma automatiškai — kad sąrašo stulpelis
+ * nepriklausytų nuo to, ar kas nors jį užpildė.
+ *
+ * KO TAISANT NEPAMIRŠTI. `saskaita` yra apsauga nuo dvigubo apmokestinimo:
+ * užpildyta reiškia „ši pamoka jau kažkur suskaičiuota“. Ją išvalius pamoka
+ * grįžta į eilę ir gali pakliūti į antrą sąskaitą. `issiusta` lygiai taip pat
+ * saugo nuo antro priminimo tiems patiems tėvams.
  */
+
+const DATOS_FORMATAS = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+
+/** Ryšio laukas gali ateiti ir numeriu, ir dokumentu — priklauso nuo gylio. */
+const rysioId = (reiksme: unknown): number | string | null => {
+  if (reiksme == null) return null
+  if (typeof reiksme === 'object') return (reiksme as { id?: number | string }).id ?? null
+  return reiksme as number | string
+}
+
 export const Zurnalas: CollectionConfig = {
   slug: 'zurnalas',
   labels: { singular: 'Pamoka', plural: 'Pamokų žurnalas' },
   access: {
     read: ({ req }) => Boolean(req.user),
-    // Įrašus kuria priminimų maršrutas per `overrideAccess`, ne žmogus.
-    create: () => false,
+    create: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
     delete: ({ req }) => Boolean(req.user),
   },
   admin: {
     useAsTitle: 'santrauka',
     defaultColumns: ['santrauka', 'data', 'laikas', 'tipas', 'busena', 'kaina'],
-    description: 'Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria pati sistema.',
+    description:
+      'Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria priminimai, bet neplanuotą pamoką galima įrašyti ir ranka.',
     group: 'Pamokos',
+  },
+  hooks: {
+    beforeChange: [
+      /**
+       * `santrauka` yra ir sąrašo stulpelis, ir įrašo pavadinimas, tad ji negali
+       * priklausyti nuo to, ar kas nors ją užpildė. Sudaroma iš to paties, iš ko
+       * ir anksčiau (`lib/priminimai.ts`) — kad seni ir nauji įrašai atrodytų
+       * vienodai.
+       *
+       * Perskaičiuojama tik pasikeitus mokiniui, datai ar laikui: žymint „Įvyko“
+       * ar įrašant siuntimo laiką mokinio kortelės traukti nereikia, o tokių
+       * atnaujinimų per rytą būna daug.
+       */
+      async ({ data, originalDoc, req }) => {
+        const keiciasi =
+          data?.mokinys !== undefined || data?.data !== undefined || data?.laikas !== undefined
+        if (!keiciasi && originalDoc?.santrauka) return data
+
+        const mokinysId = rysioId(data?.mokinys ?? originalDoc?.mokinys)
+        const dataISO = data?.data ?? originalDoc?.data ?? ''
+        const laikas = data?.laikas ?? originalDoc?.laikas ?? ''
+
+        let vardas = '(be mokinio)'
+        if (mokinysId != null) {
+          try {
+            const m = await req.payload.findByID({
+              collection: 'mokiniai',
+              id: mokinysId,
+              depth: 0,
+              overrideAccess: true,
+            })
+            vardas = (m as { vardas?: string }).vardas || vardas
+          } catch {
+            // Mokinys ištrintas — įrašas lieka, tik be vardo.
+          }
+        }
+
+        return { ...data, santrauka: `${vardas} · ${dataISO} ${laikas}`.trim() }
+      },
+    ],
   },
   fields: [
     {
       name: 'santrauka',
       type: 'text',
       label: 'Pamoka',
-      admin: { readOnly: true, description: 'Sudaroma automatiškai.' },
+      admin: { readOnly: true, description: 'Sudaroma automatiškai iš mokinio, datos ir laiko.' },
     },
     {
       type: 'row',
@@ -50,16 +110,25 @@ export const Zurnalas: CollectionConfig = {
           label: 'Data',
           required: true,
           index: true,
-          admin: { readOnly: true },
+          defaultValue: () => dataVilniuje(new Date()),
+          admin: { description: 'Formatas 2026-09-05, Lietuvos laiku.' },
+          validate: (reiksme: string | null | undefined) =>
+            DATOS_FORMATAS.test(reiksme ?? '') ? true : 'Rašykite kaip 2026-09-05.',
         },
-        { name: 'laikas', type: 'text', label: 'Pradžia', admin: { readOnly: true } },
+        {
+          name: 'laikas',
+          type: 'text',
+          label: 'Pradžia',
+          admin: { description: 'Formatas 17:00.' },
+          validate: (reiksme: string | null | undefined) =>
+            !reiksme || arLaikas(reiksme) ? true : 'Rašykite kaip 17:00.',
+        },
         {
           name: 'mokinys',
           type: 'relationship',
           relationTo: 'mokiniai',
           label: 'Mokinys',
           index: true,
-          admin: { readOnly: true },
         },
       ],
     },
@@ -76,7 +145,6 @@ export const Zurnalas: CollectionConfig = {
             { label: 'Grupinė', value: 'grupine' },
           ],
           admin: {
-            readOnly: true,
             description: 'Įrašoma siuntimo metu — kad ištrynus grupę istorija liktų teisinga.',
           },
         },
@@ -86,7 +154,7 @@ export const Zurnalas: CollectionConfig = {
           relationTo: 'grupes',
           label: 'Grupė',
           index: true,
-          admin: { readOnly: true, description: 'Tuščia, kai pamoka individuali.' },
+          admin: { description: 'Tuščia, kai pamoka individuali.' },
         },
       ],
     },
@@ -103,7 +171,7 @@ export const Zurnalas: CollectionConfig = {
       ],
       admin: {
         description:
-          '„Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia.',
+          '„Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“.',
       },
     },
     {
@@ -113,13 +181,16 @@ export const Zurnalas: CollectionConfig = {
           name: 'issiusta',
           type: 'date',
           label: 'Priminimas išsiųstas',
-          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+          admin: {
+            date: { pickerAppearance: 'dayAndTime' },
+            description: 'Užpildyta — priminimas nebesiunčiamas. Išvalius bus išsiųstas iš naujo.',
+          },
         },
         {
           name: 'atidaryta',
           type: 'date',
           label: 'Nuoroda atidaryta',
-          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+          admin: { date: { pickerAppearance: 'dayAndTime' } },
         },
       ],
     },
@@ -128,7 +199,6 @@ export const Zurnalas: CollectionConfig = {
       type: 'checkbox',
       label: 'Buvo pirmoji pamoka (su nuolaida)',
       admin: {
-        readOnly: true,
         description: 'Įrašoma siuntimo metu — kad kaina istorijoje nepasikeistų atgaline data.',
       },
     },
@@ -141,9 +211,8 @@ export const Zurnalas: CollectionConfig = {
           label: 'Kaina (€)',
           min: 0,
           admin: {
-            readOnly: true,
             description:
-              'Užfiksuojama siuntimo metu iš „Sąskaitų nustatymų“. Tušti seni įrašai kainuoja tiek, kiek nustatymuose šiandien.',
+              'Užfiksuojama siuntimo metu iš „Sąskaitų nustatymų“. Paliktas tuščias kainuoja tiek, kiek nustatymuose šiandien.',
           },
         },
         {
@@ -153,7 +222,6 @@ export const Zurnalas: CollectionConfig = {
           label: 'Sąskaita',
           index: true,
           admin: {
-            readOnly: true,
             description:
               'Užpildyta — pamoka jau apmokestinta. Būtent tai neleidžia jos įtraukti į dvi sąskaitas. Ištrynus sąskaitą, laukas išsivalo ir pamoka vėl laukia eilėje.',
           },
@@ -165,7 +233,6 @@ export const Zurnalas: CollectionConfig = {
       type: 'text',
       label: 'Siuntimo klaida',
       admin: {
-        readOnly: true,
         description: 'Užpildyta tik tada, kai laiško išsiųsti nepavyko.',
       },
     },
