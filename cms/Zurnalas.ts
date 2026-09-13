@@ -192,6 +192,16 @@ export const Zurnalas: CollectionConfig = {
           label: 'Nuoroda atidaryta',
           admin: { date: { pickerAppearance: 'dayAndTime' } },
         },
+        {
+          name: 'klausta',
+          type: 'date',
+          label: 'Klausta, ar įvyko',
+          admin: {
+            date: { pickerAppearance: 'dayAndTime' },
+            description:
+              'Užpildyta — laiškas „ar įvyko?“ jau išsiųstas. Išvalius bus paklausta dar kartą.',
+          },
+        },
       ],
     },
     {

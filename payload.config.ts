@@ -57,6 +57,9 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `mokiniai_pamokos` ADD `iki_datos` text',
   "ALTER TABLE `grupes_pamokos` ADD `kas_kiek_menesiu` text DEFAULT '1'",
   'ALTER TABLE `grupes_pamokos` ADD `iki_datos` text',
+  'ALTER TABLE `zurnalas` ADD `klausta` text',
+  'ALTER TABLE `priminimai` ADD `po_pamokos` integer DEFAULT false',
+  'ALTER TABLE `priminimai` ADD `po_pamokos_delsa` numeric DEFAULT 60',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */

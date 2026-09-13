@@ -75,6 +75,8 @@ type Nustatymai = {
   parasas?: string | null
   santraukaSau?: boolean | null
   paskutineSantrauka?: string | null
+  poPamokos?: boolean | null
+  poPamokosDelsa?: number | null
 }
 
 export type Ataskaita = {
@@ -83,6 +85,8 @@ export type Ataskaita = {
   nepavyko: number
   praleista: number
   santraukaIssiusta: boolean
+  /** Kiek išsiųsta „ar įvyko?“ laiškų sau. */
+  klausimu: number
   eilutes: string[]
 }
 
@@ -335,6 +339,7 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
     nepavyko: 0,
     praleista: 0,
     santraukaIssiusta: false,
+    klausimu: 0,
     eilutes: [],
   }
 
@@ -515,6 +520,8 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
     }
   }
 
+  if (n.poPamokos) await siuskKlausimus(payload, n, pastas, siuntejas, dabar, ataskaita)
+
   return ataskaita
 }
 
@@ -565,8 +572,8 @@ async function siuskSantrauka(
       eilutes.push(
         `  ${d.laikas}  ${vardas}${klase}${grupe}${d.pirmaPamoka ? '  — PIRMA PAMOKA' : ''}`,
         d.klaida ? `    ⚠ laiškas neišsiųstas: ${d.klaida}` : null,
-        `    Buvo:   ${svetaine.url}/vidus/zymeti?id=${id}&b=ivyko&p=${zymejimoParasas(id, 'ivyko')}`,
-        `    Nebuvo: ${svetaine.url}/vidus/zymeti?id=${id}&b=neivyko&p=${zymejimoParasas(id, 'neivyko')}`,
+        `    Buvo:   ${zymejimoNuorodos(id).buvo}`,
+        `    Nebuvo: ${zymejimoNuorodos(id).nebuvo}`,
         '',
       )
     }
@@ -583,4 +590,111 @@ async function siuskSantrauka(
       `${svetaine.url}/admin/collections/zurnalas`,
     ].join('\n'),
   })
+}
+
+/** „Buvo / Nebuvo“ nuorodos su parašu — vienodos ir santraukoje, ir klausime. */
+function zymejimoNuorodos(id: string): { buvo: string; nebuvo: string } {
+  return {
+    buvo: `${svetaine.url}/vidus/zymeti?id=${id}&b=ivyko&p=${zymejimoParasas(id, 'ivyko')}`,
+    nebuvo: `${svetaine.url}/vidus/zymeti?id=${id}&b=neivyko&p=${zymejimoParasas(id, 'neivyko')}`,
+  }
+}
+
+type KlausimoIrasas = {
+  id: string | number
+  data: string
+  laikas?: string | null
+  klausta?: string | null
+  tipas?: string | null
+  pirmaPamoka?: boolean | null
+  grupe?: { pavadinimas?: string | null } | null
+  mokinys?: { vardas?: string; klase?: string | null } | null
+}
+
+/**
+ * Klausimas po kiekvienos pamokos: ar ji įvyko?
+ *
+ * KUO SKIRIASI NUO DIENOS SANTRAUKOS. Santrauka ateina PRIEŠ pamokas — kartu
+ * su priminimu tėvams, tad rytą arba dieną prieš. Žymėti tuo metu dar nėra ko,
+ * ir iki vakaro laiškas nugula po kitais. Šitas ateina tada, kai atsakymas jau
+ * žinomas: pamokai pasibaigus, su viena pamoka ir dviem mygtukais.
+ *
+ * PABAIGA SKAIČIUOJAMA IŠ PRADŽIOS IR NUSTATYTOS TRUKMĖS. Žurnalo įrašas
+ * trukmės nesaugo (ji gyvena tvarkaraščio eilutėje, o ta gali pasikeisti ar
+ * dingti), tad imama viena bendra reikšmė iš „Priminimų“. Pamokos čia visos
+ * vienodo ilgio, o klystant per kelias minutes nieko neatsitinka.
+ *
+ * NEPAVYKUS SIUNTIMUI `klausta` lieka tuščia, tad kitas badymas po penkių
+ * minučių bando iš naujo. Tuo šitas laiškas patikimesnis už dienos santrauką,
+ * kuri po nesėkmės tą dieną nebepasikartoja.
+ */
+async function siuskKlausimus(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  n: Nustatymai,
+  pastas: NonNullable<ReturnType<typeof pastoNustatymai>>,
+  siuntejas: ReturnType<typeof pastoSiuntejas>,
+  dabar: Date,
+  ataskaita: Ataskaita,
+): Promise<void> {
+  const delsa = Number(n.poPamokosDelsa ?? 60)
+  const siandien = dataVilniuje(dabar)
+
+  // Ir vakarykštė para: vėlyvos pamokos pabaiga nuslenka už vidurnakčio.
+  const { docs } = await payload.find({
+    collection: 'zurnalas',
+    where: {
+      and: [
+        { data: { in: [pridekDienas(siandien, -1), siandien] } },
+        // Jau pažymėtos pamokos klausti nebėra ko.
+        { busena: { in: ['suplanuota', 'atidare'] } },
+      ],
+    },
+    limit: 200,
+    depth: 1,
+    sort: ['data', 'laikas'],
+    overrideAccess: true,
+  })
+
+  for (const d of docs as unknown as KlausimoIrasas[]) {
+    if (d.klausta || !d.laikas) continue
+    if (dabar.getTime() < momentas(d.data, d.laikas).getTime() + delsa * 60_000) continue
+
+    const id = String(d.id)
+    const nuorodos = zymejimoNuorodos(id)
+    const vardas = d.mokinys?.vardas ?? '(ištrintas mokinys)'
+    const klase = d.mokinys?.klase ? `, ${d.mokinys.klase} kl.` : ''
+    const grupe = d.tipas === 'grupine' ? `  [${d.grupe?.pavadinimas ?? 'grupė'}]` : ''
+
+    try {
+      await siuntejas.sendMail({
+        from: `"${svetaine.pavadinimas}" <${pastas.user}>`,
+        to: pastas.gavejas,
+        subject: `Ar įvyko? ${vardas} ${d.laikas}`,
+        text: [
+          `${vardas}${klase}${grupe}`,
+          `${dataZodziais(d.data)} ${d.laikas}${d.pirmaPamoka ? '  — PIRMA PAMOKA' : ''}`,
+          '',
+          `Buvo:   ${nuorodos.buvo}`,
+          `Nebuvo: ${nuorodos.nebuvo}`,
+          '',
+          '—',
+          'Paspaudus „Buvo“, pirmos pamokos nuolaidos varnelė nusiima automatiškai.',
+          `${svetaine.url}/admin/collections/zurnalas`,
+        ].join('\n'),
+      })
+
+      await payload.update({
+        collection: 'zurnalas',
+        id: d.id,
+        overrideAccess: true,
+        data: { klausta: new Date().toISOString() },
+      })
+
+      ataskaita.klausimu++
+      ataskaita.eilutes.push(`? ${vardas} ${d.data} ${d.laikas}`)
+    } catch (klaida) {
+      // `klausta` lieka tuščia — kitas badymas pakartos.
+      console.error('[priminimai] klausimo išsiųsti nepavyko:', klaida)
+    }
+  }
 }

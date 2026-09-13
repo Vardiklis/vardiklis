@@ -400,7 +400,7 @@ export interface Grupe {
   createdAt: string;
 }
 /**
- * Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria pati sistema.
+ * Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria priminimai, bet neplanuotą pamoką galima įrašyti ir ranka.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "zurnalas".
@@ -408,10 +408,16 @@ export interface Grupe {
 export interface Zurnala {
   id: number;
   /**
-   * Sudaroma automatiškai.
+   * Sudaroma automatiškai iš mokinio, datos ir laiko.
    */
   santrauka?: string | null;
+  /**
+   * Formatas 2026-09-05, Lietuvos laiku.
+   */
   data: string;
+  /**
+   * Formatas 17:00.
+   */
   laikas?: string | null;
   mokinys?: (number | null) | Mokiniai;
   /**
@@ -423,17 +429,24 @@ export interface Zurnala {
    */
   grupe?: (number | null) | Grupe;
   /**
-   * „Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia.
+   * „Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“.
    */
   busena?: ('suplanuota' | 'atidare' | 'ivyko' | 'neivyko') | null;
+  /**
+   * Užpildyta — priminimas nebesiunčiamas. Išvalius bus išsiųstas iš naujo.
+   */
   issiusta?: string | null;
   atidaryta?: string | null;
+  /**
+   * Užpildyta — laiškas „ar įvyko?“ jau išsiųstas. Išvalius bus paklausta dar kartą.
+   */
+  klausta?: string | null;
   /**
    * Įrašoma siuntimo metu — kad kaina istorijoje nepasikeistų atgaline data.
    */
   pirmaPamoka?: boolean | null;
   /**
-   * Užfiksuojama siuntimo metu iš „Sąskaitų nustatymų“. Tušti seni įrašai kainuoja tiek, kiek nustatymuose šiandien.
+   * Užfiksuojama siuntimo metu iš „Sąskaitų nustatymų“. Paliktas tuščias kainuoja tiek, kiek nustatymuose šiandien.
    */
   kaina?: number | null;
   /**
@@ -839,6 +852,7 @@ export interface ZurnalasSelect<T extends boolean = true> {
   busena?: T;
   issiusta?: T;
   atidaryta?: T;
+  klausta?: T;
   pirmaPamoka?: T;
   kaina?: T;
   saskaita?: T;
@@ -1021,13 +1035,21 @@ export interface Priminimai {
    */
   prierasas?: string | null;
   /**
-   * Kelios eilutės po brūkšneliu. Palikus tuščią, naudojamas numatytasis — vardas, pareigos, telefonas ir vardiklis.lt. Laiškai paprasto teksto, tad paveikslėlių ar spalvų čia nebus.
+   * Kelios eilutės laiško gale. Palikus tuščią, pasirašoma „Šilčiausi linkėjimai, Modesta“. Įrašomas tekstas, ne HTML — paveikslėlių ar spalvų čia nebus.
    */
   parasas?: string | null;
   /**
    * Vienas laiškas su tos dienos pamokomis ir mygtukais „Buvo / Nebuvo“ — kad žurnalo nereikėtų pildyti panelėje.
    */
   santraukaSau?: boolean | null;
+  /**
+   * Pasibaigus pamokai atsiunčia atskirą laišką su ta viena pamoka ir mygtukais „Buvo / Nebuvo“. Nepriklauso nuo dienos santraukos — galima įjungti abu arba tik vieną.
+   */
+  poPamokos?: boolean | null;
+  /**
+   * Pamokos trukmė. Laiškas išeina praėjus tiek minučių nuo pradžios, tad 60 reiškia „iškart po valandos pamokos“.
+   */
+  poPamokosDelsa?: number | null;
   /**
    * Kad ta pati santrauka neišeitų kelis kartus per dieną.
    */
@@ -1207,6 +1229,8 @@ export interface PriminimaiSelect<T extends boolean = true> {
   prierasas?: T;
   parasas?: T;
   santraukaSau?: T;
+  poPamokos?: T;
+  poPamokosDelsa?: T;
   paskutineSantrauka?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -91,6 +91,29 @@ export const Priminimai: GlobalConfig = {
       },
     },
     {
+      name: 'poPamokos',
+      type: 'checkbox',
+      label: 'Klausti manęs po kiekvienos pamokos',
+      defaultValue: false,
+      admin: {
+        description:
+          'Pasibaigus pamokai atsiunčia atskirą laišką su ta viena pamoka ir mygtukais „Buvo / Nebuvo“. Nepriklauso nuo dienos santraukos — galima įjungti abu arba tik vieną.',
+      },
+    },
+    {
+      name: 'poPamokosDelsa',
+      type: 'number',
+      label: 'Po kiek minučių nuo pamokos pradžios',
+      defaultValue: 60,
+      min: 0,
+      max: 600,
+      admin: {
+        description:
+          'Pamokos trukmė. Laiškas išeina praėjus tiek minučių nuo pradžios, tad 60 reiškia „iškart po valandos pamokos“.',
+        condition: (duomenys) => Boolean(duomenys?.poPamokos),
+      },
+    },
+    {
       name: 'paskutineSantrauka',
       type: 'text',
       label: 'Paskutinė išsiųsta santrauka',
