@@ -396,6 +396,22 @@ export default buildConfig({
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },
+      /**
+       * Klausimas sau po kiekvienos pamokos.
+       *
+       * `zurnalas.klausta` — kada išsiųstas laiškas „ar įvyko?“; be jo jis eitų
+       * kas penkias minutes. `priminimai.po_pamokos` ir `po_pamokos_delsa` —
+       * ar tokie laiškai siunčiami ir po kiek minučių nuo pamokos pradžios.
+       *
+       * Gryni stulpeliai jau esamose lentelėse, tad `TRUKSTAMI_STULPELIAI` —
+       * bet TIK su nauju migracijos pavadinimu: ankstesnės serveryje jau
+       * įvykdytos ir antrą kartą nebepasileidžia.
+       */
+      {
+        name: 'schema-2026-09-po-pamokos',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
     ],
     client: {
       url: process.env.DATABASE_URI || 'file:./vardiklis.db',
