@@ -1,4 +1,5 @@
 import type { AdminViewServerProps } from 'payload'
+import { DefaultTemplate } from '@payloadcms/next/templates'
 import { Gutter, SetStepNav } from '@payloadcms/ui'
 import { gautiAtsiskaitymus } from '@/lib/kainos'
 import { isafNustatymai } from '@/lib/isaf'
@@ -18,9 +19,22 @@ import { SaskaituValdiklis } from './SaskaituValdiklis'
  * neišrašo, bet matyti, kiek pamokų jau susikaupė ir kaip atrodytų juodraščiai,
  * reikia bet kurią dieną. Praėjęs mėnuo yra už vieno paspaudimo sąraše, o
  * adresas keičiasi į `?menuo=2026-08`, tad langą galima įsidėti į žymes.
+ *
+ * MAKETĄ PIEŠIA PATS LANGAS. Payload savo langus apvynioja `DefaultTemplate`
+ * (šoninė navigacija, viršus, „breadcrumb“), bet SAVO langams jo neprideda:
+ * `getRouteData` tokiam maršrutui palieka `templateType` neapibrėžtą, ir
+ * `Root` tada atiduoda gryną komponentą be jokio rėmo. Todėl šablonas
+ * iškviečiamas čia rankomis, o reikšmės jam imamos iš `initPageResult` —
+ * lygiai tos pačios, kurias Payload paduoda savo langams.
  */
 
-export async function SaskaituVaizdas({ searchParams }: AdminViewServerProps) {
+export async function SaskaituVaizdas({
+  initPageResult,
+  params,
+  searchParams,
+}: AdminViewServerProps) {
+  const { req, permissions, visibleEntities, locale } = initPageResult
+
   const menesiai = menesiuSarasas(new Date(), 18)
   const prasytas = typeof searchParams?.menuo === 'string' ? searchParams.menuo : null
   const pasirinktas =
@@ -42,7 +56,25 @@ export async function SaskaituVaizdas({ searchParams }: AdminViewServerProps) {
     apzvalga.saskaitos.find((s) => s.isafBusena !== 'neteikta')?.isafBusena ?? 'neteikta'
 
   return (
-    <>
+    <DefaultTemplate
+      i18n={req.i18n}
+      locale={locale}
+      params={params}
+      payload={req.payload}
+      permissions={permissions}
+      req={req}
+      searchParams={searchParams}
+      user={req.user ?? undefined}
+      /**
+       * Laukai perduodami po vieną, o ne visas `visibleEntities` objektas:
+       * React 19 jį laiko tik skaitomu, ir atidavus kaip yra šablonas nulūžta
+       * su „Cannot assign to read only property“. Taip daro ir pats Payload.
+       */
+      visibleEntities={{
+        collections: visibleEntities?.collections,
+        globals: visibleEntities?.globals,
+      }}
+    >
       <SetStepNav nav={[{ label: 'Sąskaitos' }]} />
       <Gutter>
         <h1>Sąskaitos</h1>
@@ -59,6 +91,6 @@ export async function SaskaituVaizdas({ searchParams }: AdminViewServerProps) {
           }}
         />
       </Gutter>
-    </>
+    </DefaultTemplate>
   )
 }
