@@ -15,7 +15,7 @@ import {
   momentas,
   pridekDienas,
 } from '@/lib/laikas'
-import { arVyksta, type Pamoka } from '@/lib/pamokos'
+import { arVyksta, pauzuoja, type Pamoka } from '@/lib/pamokos'
 import { pastoNustatymai, pastoSiuntejas } from '@/lib/pastas'
 
 /**
@@ -148,12 +148,6 @@ export function atsisakymoNuoroda(mokinioId: number | string): string {
  */
 function numatytasParasas(): string[] {
   return ['Šilčiausi linkėjimai,', kontaktai.vardas]
-}
-
-/** Ar mokinys tą dieną ilsisi. Pauzė galioja imtinai. */
-function pauzuoja(pauzeIki: string | null | undefined, dataISO: string): boolean {
-  if (!pauzeIki) return false
-  return dataISO <= dataVilniuje(new Date(pauzeIki))
 }
 
 /**

@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { isafRinkmena } from '@/lib/isaf-xml'
+import { arAdministratorius } from '@/cms/prieiga'
 
 /**
  * i.SAF rinkmenos peržiūra ir atsisiuntimas: `/vidus/isaf/2026-09`.
@@ -21,7 +22,7 @@ const BE_KESO = { 'Cache-Control': 'no-store' }
 export async function GET(uzklausa: Request, ctx: RouteContext<'/vidus/isaf/[laikotarpis]'>) {
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers: uzklausa.headers })
-  if (!user) return new Response('Neleista.', { status: 401, headers: BE_KESO })
+  if (!arAdministratorius(user)) return new Response('Neleista.', { status: 401, headers: BE_KESO })
 
   const { laikotarpis } = await ctx.params
 

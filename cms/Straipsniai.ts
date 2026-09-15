@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { arAdministratorius } from './prieiga'
 
 /**
  * Straipsnio adresas peržiūrai. `?perziura=1` įjungia juodraščio rodymą —
@@ -27,7 +28,7 @@ export const Straipsniai: CollectionConfig = {
   },
   // Skaityti gali visi, bet tik paskelbtus; kurti ir taisyti — prisijungę.
   access: {
-    read: ({ req }) => (req.user ? true : { busena: { equals: 'paskelbta' } }),
+    read: ({ req }) => (arAdministratorius(req.user) ? true : { busena: { equals: 'paskelbta' } }),
   },
   /**
    * Juodraščiai su automatiniu išsaugojimu. Autosave čia reikalingas ne dėl

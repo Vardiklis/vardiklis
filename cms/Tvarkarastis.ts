@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { arLaikas, SAVAITES_DIENOS } from '../lib/laikas'
+import { tikAdministratoriui } from './prieiga'
 
 const dienuPasirinkimai = SAVAITES_DIENOS.map((d, i) => ({
   label: d[0].toUpperCase() + d.slice(1),
@@ -29,8 +30,8 @@ export const Tvarkarastis: GlobalConfig = {
    * nerodomas.
    */
   access: {
-    read: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
+    update: tikAdministratoriui,
   },
   admin: {
     description: 'Kalendorius po registracijos forma. Užimtumas imamas iš „Mokinių“.',

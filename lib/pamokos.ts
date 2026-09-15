@@ -1,4 +1,5 @@
 import {
+  data,
   dienuSkirtumas,
   MENESIAI,
   menesiuSkirtumas,
@@ -101,6 +102,17 @@ export function arVyksta(pamoka: Pamoka, dataISO: string): boolean {
   const savaites = dienuSkirtumas(savaitesPradzia(nuo), savaitesPradzia(dataISO)) / 7
   if (savaites < 0) return false
   return savaites % kasKiek === 0
+}
+
+/**
+ * Ar mokinys ar grupė tą dieną ilsisi. Pauzė galioja imtinai.
+ *
+ * Čia, o ne priminimuose, nes pagal ją sprendžia ir priminimai, ir dienyno
+ * „Kita pamoka“ — kad vaikas nematytų pamokos, apie kurią tėvai laiško negaus.
+ */
+export function pauzuoja(pauzeIki: string | null | undefined, dataISO: string): boolean {
+  if (!pauzeIki) return false
+  return dataISO <= data(new Date(pauzeIki))
 }
 
 /** Pamokos trukmė minutėmis. */

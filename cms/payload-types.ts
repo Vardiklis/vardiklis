@@ -64,6 +64,7 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     naudotojai: NaudotojaiAuthOperations;
+    'dienyno-paskyros': DienynoPaskyroAuthOperations;
   };
   blocks: {};
   collections: {
@@ -75,6 +76,7 @@ export interface Config {
     zurnalas: Zurnala;
     saskaitos: Saskaito;
     rezervacijos: Rezervacijo;
+    'dienyno-paskyros': DienynoPaskyro;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +92,7 @@ export interface Config {
     zurnalas: ZurnalasSelect<false> | ZurnalasSelect<true>;
     saskaitos: SaskaitosSelect<false> | SaskaitosSelect<true>;
     rezervacijos: RezervacijosSelect<false> | RezervacijosSelect<true>;
+    'dienyno-paskyros': DienynoPaskyrosSelect<false> | DienynoPaskyrosSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -115,7 +118,7 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: Naudotojai;
+  user: Naudotojai | DienynoPaskyro;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -137,6 +140,22 @@ export interface NaudotojaiAuthOperations {
   unlock: {
     email: string;
     password: string;
+  };
+}
+export interface DienynoPaskyroAuthOperations {
+  forgotPassword: {
+    username: string;
+  };
+  login: {
+    password: string;
+    username: string;
+  };
+  registerFirstUser: {
+    password: string;
+    username: string;
+  };
+  unlock: {
+    username: string;
   };
 }
 /**
@@ -432,6 +451,11 @@ export interface Zurnala {
    * „Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“.
    */
   busena?: ('suplanuota' | 'atidare' | 'ivyko' | 'neivyko') | null;
+  tema?: string | null;
+  /**
+   * Palikus tuščią, dienyne parašyta „Namų darbų nėra“.
+   */
+  namuDarbai?: string | null;
   /**
    * Užpildyta — priminimas nebesiunčiamas. Išvalius bus išsiųstas iš naujo.
    */
@@ -587,6 +611,31 @@ export interface Rezervacijo {
   createdAt: string;
 }
 /**
+ * Prisijungimai prie dienynas.vardiklis.lt. El. pašto nereikia: sugalvokite vardą ir slaptažodį ir perduokite vaikui ar tėvams. Pamiršus — įrašykite naują slaptažodį; senieji prisijungimai tada atsijungia patys.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dienyno-paskyros".
+ */
+export interface DienynoPaskyro {
+  id: number;
+  /**
+   * Tėvams su keliais vaikais — pasirinkite visus, bus viena paskyra.
+   */
+  mokiniai: (number | Mokiniai)[];
+  updatedAt: string;
+  createdAt: string;
+  email?: string | null;
+  username: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password?: string | null;
+  collection: 'dienyno-paskyros';
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -641,12 +690,21 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'rezervacijos';
         value: number | Rezervacijo;
+      } | null)
+    | ({
+        relationTo: 'dienyno-paskyros';
+        value: number | DienynoPaskyro;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'naudotojai';
-    value: number | Naudotojai;
-  };
+  user:
+    | {
+        relationTo: 'naudotojai';
+        value: number | Naudotojai;
+      }
+    | {
+        relationTo: 'dienyno-paskyros';
+        value: number | DienynoPaskyro;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -656,10 +714,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: number;
-  user: {
-    relationTo: 'naudotojai';
-    value: number | Naudotojai;
-  };
+  user:
+    | {
+        relationTo: 'naudotojai';
+        value: number | Naudotojai;
+      }
+    | {
+        relationTo: 'dienyno-paskyros';
+        value: number | DienynoPaskyro;
+      };
   key?: string | null;
   value?:
     | {
@@ -850,6 +913,8 @@ export interface ZurnalasSelect<T extends boolean = true> {
   tipas?: T;
   grupe?: T;
   busena?: T;
+  tema?: T;
+  namuDarbai?: T;
   issiusta?: T;
   atidaryta?: T;
   klausta?: T;
@@ -925,6 +990,23 @@ export interface RezervacijosSelect<T extends boolean = true> {
   pastabos?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dienyno-paskyros_select".
+ */
+export interface DienynoPaskyrosSelect<T extends boolean = true> {
+  mokiniai?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  username?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

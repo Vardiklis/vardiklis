@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { arLaikas, data as dataVilniuje } from '../lib/laikas'
+import { tikAdministratoriui } from './prieiga'
 
 /**
  * Pamokų žurnalas — po vieną įrašą kiekvienai suplanuotai pamokai.
@@ -38,18 +39,24 @@ const rysioId = (reiksme: unknown): number | string | null => {
   return reiksme as number | string
 }
 
+/** Laukai, kuriuos mato mokinys ir tėvai dienyne (`lib/dienynas.ts`). */
+const DIENYNO_LAUKAI = ['tema', 'namuDarbai'] as const
+
+/** `context` žymė: šis įrašas — grupės kopija, toliau kopijuoti nereikia. */
+const GRUPES_KOPIJA = 'dienynoGrupesKopija'
+
 export const Zurnalas: CollectionConfig = {
   slug: 'zurnalas',
   labels: { singular: 'Pamoka', plural: 'Pamokų žurnalas' },
   access: {
-    read: ({ req }) => Boolean(req.user),
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
+    create: tikAdministratoriui,
+    update: tikAdministratoriui,
+    delete: tikAdministratoriui,
   },
   admin: {
     useAsTitle: 'santrauka',
-    defaultColumns: ['santrauka', 'data', 'laikas', 'tipas', 'busena', 'kaina'],
+    defaultColumns: ['santrauka', 'data', 'laikas', 'tipas', 'busena', 'tema', 'kaina'],
     description:
       'Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria priminimai, bet neplanuotą pamoką galima įrašyti ir ranka.',
     group: 'Pamokos',
@@ -91,6 +98,52 @@ export const Zurnalas: CollectionConfig = {
         }
 
         return { ...data, santrauka: `${vardas} · ${dataISO} ${laikas}`.trim() }
+      },
+    ],
+    afterChange: [
+      /**
+       * Grupinės pamokos tema ir namų darbai — visiems nariams.
+       *
+       * Žurnale grupė palieka po įrašą kiekvienam vaikui, o tema ir namų darbai
+       * jiems tie patys. Be šito tektų tą patį tekstą įrašyti tris kartus, ir
+       * anksčiau ar vėliau vienas vaikas dienyne jo nerastų. Todėl užpildžius
+       * vieno nario įrašą, tas pats nukopijuojamas kitiems tos pačios grupės,
+       * datos ir laiko įrašams.
+       *
+       * Kopijuojami tik PASIKEITĘ laukai: pažymėjus vienam vaikui „Įvyko“, kitų
+       * temos nepaliečiamos. Kopijos vėl kviečia šį hook'ą — `context` žymė
+       * neleidžia joms kopijuoti toliau.
+       */
+      async ({ doc, previousDoc, operation, req, context }) => {
+        if (context?.[GRUPES_KOPIJA]) return doc
+
+        const grupeId = rysioId(doc.grupe)
+        if (grupeId == null || !doc.data || !doc.laikas) return doc
+
+        const pakeista: Record<string, string | null> = {}
+        for (const laukas of DIENYNO_LAUKAI) {
+          const naujas = doc[laukas] || null
+          const senas = operation === 'create' ? null : previousDoc?.[laukas] || null
+          if (naujas !== senas) pakeista[laukas] = naujas
+        }
+        if (Object.keys(pakeista).length === 0) return doc
+
+        await req.payload.update({
+          collection: 'zurnalas',
+          where: {
+            and: [
+              { grupe: { equals: grupeId } },
+              { data: { equals: doc.data } },
+              { laikas: { equals: doc.laikas } },
+              { id: { not_equals: doc.id } },
+            ],
+          },
+          data: pakeista,
+          overrideAccess: true,
+          context: { [GRUPES_KOPIJA]: true },
+          req,
+        })
+        return doc
       },
     ],
   },
@@ -173,6 +226,23 @@ export const Zurnalas: CollectionConfig = {
         description:
           '„Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“.',
       },
+    },
+    {
+      type: 'collapsible',
+      label: 'Dienynas (mato mokinys ir tėvai)',
+      admin: {
+        description:
+          'Rodoma dienynas.vardiklis.lt, kai pamoka jau prasidėjo. Grupinei pamokai užtenka įrašyti vienam nariui — kitiems nukopijuojama.',
+      },
+      fields: [
+        { name: 'tema', type: 'text', label: 'Tema' },
+        {
+          name: 'namuDarbai',
+          type: 'textarea',
+          label: 'Namų darbai',
+          admin: { description: 'Palikus tuščią, dienyne parašyta „Namų darbų nėra“.' },
+        },
+      ],
     },
     {
       type: 'row',

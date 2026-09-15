@@ -11,6 +11,17 @@ const saknis = fileURLToPath(new URL('.', import.meta.url))
 // ChunkLoadError. Trumpinam iki minutės, kad kešas pats atsistatytų.
 const PUSLAPIO_KESAS = 'public, max-age=0, s-maxage=60, must-revalidate'
 
+// `dienynas.vardiklis.lt` — tiesiogiai arba per atvirkštinį tarpininką (žr. `proxy.ts`).
+const DIENYNO_ADRESAI: ({ type: 'host'; value: string } | { type: 'header'; key: string; value: string })[] = [
+  { type: 'host', value: 'dienynas\\..*' },
+  { type: 'header', key: 'x-forwarded-host', value: 'dienynas\\..*' },
+]
+const NE_DIENYNAS = DIENYNO_ADRESAI
+const DIENYNO_ANTRASTES = [
+  { key: 'Cache-Control', value: 'private, no-store' },
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+]
+
 const nextConfig: NextConfig = {
   turbopack: { root: saknis },
   outputFileTracingRoot: saknis,
@@ -61,7 +72,11 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      { source: '/', headers: [{ key: 'Cache-Control', value: PUSLAPIO_KESAS }] },
+      {
+        source: '/',
+        missing: NE_DIENYNAS,
+        headers: [{ key: 'Cache-Control', value: PUSLAPIO_KESAS }],
+      },
       {
         // Viskas, išskyrus statiką, Payload API ir admin skydelį.
         //
@@ -69,9 +84,24 @@ const nextConfig: NextConfig = {
         // veiksmai (pamokos nuorodos atidarymo įrašymas, būsenos pažymėjimas,
         // priminimų siuntimas). Krašte užkešuotas atsakymas reikštų, kad
         // antras paspaudimas serverio nebepasiekia.
-        source: '/:kelias((?!_next/|api/|admin|p/|vidus/).+)',
+        //
+        // `dienynas` — asmeninis puslapis, žr. žemiau.
+        source: '/:kelias((?!_next/|api/|admin|p/|vidus/|dienynas).+)',
+        missing: NE_DIENYNAS,
         headers: [{ key: 'Cache-Control', value: PUSLAPIO_KESAS }],
       },
+      /**
+       * DIENYNAS NIEKADA NEKEŠUOJAMAS. Antraštės iš šio failo pritaikomos
+       * PRIEŠ `proxy.ts`, tad be `missing` viršuje `dienynas.vardiklis.lt/`
+       * gautų pagrindinio puslapio `s-maxage=60`, ir Hostinger CDN minutę
+       * rodytų vieno vaiko dienyną visiems.
+       */
+      ...DIENYNO_ADRESAI.map((salyga) => ({
+        source: '/:kelias*',
+        has: [salyga],
+        headers: DIENYNO_ANTRASTES,
+      })),
+      { source: '/dienynas/:kelias*', headers: DIENYNO_ANTRASTES },
     ]
   },
 }

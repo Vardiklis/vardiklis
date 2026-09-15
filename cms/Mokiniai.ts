@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import type { CollectionConfig } from 'payload'
 import { arLaikas } from '../lib/laikas'
 import { meetNuorodosLaukas, pamokuMasyvas } from './pamokos-laukai'
+import { tikAdministratoriui } from './prieiga'
 
 /**
  * Mokiniai — kas, kada ir kur turi pamoką.
@@ -20,10 +21,10 @@ export const Mokiniai: CollectionConfig = {
   slug: 'mokiniai',
   labels: { singular: 'Mokinys', plural: 'Mokiniai' },
   access: {
-    read: ({ req }) => Boolean(req.user),
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
+    create: tikAdministratoriui,
+    update: tikAdministratoriui,
+    delete: tikAdministratoriui,
   },
   admin: {
     useAsTitle: 'vardas',

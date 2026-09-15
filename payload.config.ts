@@ -12,6 +12,7 @@ import { seoPlugin } from '@payloadcms/plugin-seo'
 import { buildConfig } from 'payload'
 import { straipsnioBlokai } from './cms/blokai'
 import { Atsiskaitymai } from './cms/Atsiskaitymai'
+import { DienynoPaskyros } from './cms/DienynoPaskyros'
 import { Failai } from './cms/Failai'
 import { Grupes } from './cms/Grupes'
 import { Mokiniai } from './cms/Mokiniai'
@@ -60,6 +61,10 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `zurnalas` ADD `klausta` text',
   'ALTER TABLE `priminimai` ADD `po_pamokos` integer DEFAULT false',
   'ALTER TABLE `priminimai` ADD `po_pamokos_delsa` numeric DEFAULT 60',
+  'ALTER TABLE `zurnalas` ADD `tema` text',
+  'ALTER TABLE `zurnalas` ADD `namu_darbai` text',
+  'ALTER TABLE `payload_locked_documents_rels` ADD `dienyno_paskyros_id` integer REFERENCES `dienyno_paskyros`(`id`)',
+  'ALTER TABLE `payload_preferences_rels` ADD `dienyno_paskyros_id` integer REFERENCES `dienyno_paskyros`(`id`)',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -212,7 +217,17 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Straipsniai, Failai, Naudotojai, Mokiniai, Grupes, Zurnalas, Saskaitos, Rezervacijos],
+  collections: [
+    Straipsniai,
+    Failai,
+    Naudotojai,
+    Mokiniai,
+    Grupes,
+    Zurnalas,
+    Saskaitos,
+    Rezervacijos,
+    DienynoPaskyros,
+  ],
   globals: [Nustatymai, Priminimai, Tvarkarastis, Atsiskaitymai],
   /**
    * Redaktoriaus galimybės. Prie numatytųjų pridėta:
@@ -409,6 +424,20 @@ export default buildConfig({
        */
       {
         name: 'schema-2026-09-po-pamokos',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Dienynas: kolekcija „Dienyno paskyros“ (dvi naujos lentelės), žurnalo
+       * `tema` ir `namu_darbai`.
+       *
+       * Nauja auth kolekcija prisideda po stulpelį ne tik rakinimų, bet ir
+       * nustatymų (`payload_preferences_rels`) ryšių lentelėje — abiem dar
+       * kuriami indeksai. Todėl `TRUKSTAMI_STULPELIAI` pildyti būtina: lentelės
+       * sukuriamos pirmos, tad `REFERENCES dienyno_paskyros` jau turi į ką rodyti.
+       */
+      {
+        name: 'schema-2026-09-dienynas',
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },

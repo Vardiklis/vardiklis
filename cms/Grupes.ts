@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { meetNuorodosLaukas, pamokuMasyvas } from './pamokos-laukai'
+import { tikAdministratoriui } from './prieiga'
 
 /**
  * Grupės — kai tą patį laiką pas tą pačią Meet nuorodą ateina keli vaikai.
@@ -24,10 +25,10 @@ export const Grupes: CollectionConfig = {
   slug: 'grupes',
   labels: { singular: 'Grupė', plural: 'Grupės' },
   access: {
-    read: ({ req }) => Boolean(req.user),
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
+    create: tikAdministratoriui,
+    update: tikAdministratoriui,
+    delete: tikAdministratoriui,
   },
   admin: {
     useAsTitle: 'pavadinimas',

@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { eurai, suformatuok } from '../lib/pinigai'
 import { suskaiciuok, type SumuEilute } from '../lib/saskaitos-sumos'
+import { tikAdministratoriui } from './prieiga'
 
 /**
  * Sąskaitos tėvams.
@@ -29,11 +30,11 @@ export const Saskaitos: CollectionConfig = {
   slug: 'saskaitos',
   labels: { singular: 'Sąskaita', plural: 'Sąskaitos' },
   access: {
-    read: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
     // Kuria tik serveris per `overrideAccess`, kaip `Zurnalas` ir `Rezervacijos`.
     create: () => false,
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    update: tikAdministratoriui,
+    delete: tikAdministratoriui,
   },
   admin: {
     useAsTitle: 'santrauka',

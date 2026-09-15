@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { tikAdministratoriui } from './prieiga'
 
 /**
  * Sąskaitų nustatymai — pardavėjo rekvizitai, kainos, PVM ir i.SAF.
@@ -21,8 +22,8 @@ export const Atsiskaitymai: GlobalConfig = {
   slug: 'atsiskaitymai',
   label: 'Sąskaitų nustatymai',
   access: {
-    read: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
+    update: tikAdministratoriui,
   },
   admin: {
     description: 'Pardavėjo rekvizitai, kainos, PVM ir i.SAF teikimas.',

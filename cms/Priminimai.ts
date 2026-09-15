@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { arLaikas } from '../lib/laikas'
+import { tikAdministratoriui } from './prieiga'
 
 /**
  * Priminimų nustatymai — bendri visiems mokiniams.
@@ -20,8 +21,8 @@ export const Priminimai: GlobalConfig = {
   slug: 'priminimai',
   label: 'Priminimai',
   access: {
-    read: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
+    update: tikAdministratoriui,
   },
   admin: {
     description: 'Kada ir ar išvis siunčiami automatiniai priminimai tėvams.',

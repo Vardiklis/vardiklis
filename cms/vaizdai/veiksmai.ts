@@ -7,6 +7,7 @@ import config from '@payload-config'
 import { isafIkelk, isafPateik, isafTikrink } from '@/lib/isaf-teikimas'
 import { anuliuok, ismeskJuodrasti, israsyk, sugeneruokJuodrascius } from '@/lib/saskaitos'
 import { siuskSaskaita } from '@/lib/saskaitos-pastas'
+import { arAdministratorius } from '@/cms/prieiga'
 
 /**
  * Skydelio veiksmai.
@@ -33,7 +34,7 @@ const KELIAS = '/admin/saskaitos'
 async function butinaPrisijungti(): Promise<void> {
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers: await gautiAntrastes() })
-  if (!user) throw new Error('Neprisijungta.')
+  if (!arAdministratorius(user)) throw new Error('Neprisijungta.')
 }
 
 /** Bendras apvalkalas: prisijungimo patikra, klaidų gaudymas ir puslapio atnaujinimas. */

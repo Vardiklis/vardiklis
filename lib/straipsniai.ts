@@ -7,6 +7,8 @@
  * paskelbtus įrašus, tad filtras čia yra antras sluoksnis, ne vienintelis.
  */
 
+import { arAdministratorius } from '@/cms/prieiga'
+
 export type StraipsnioSantrauka = {
   id: string | number
   pavadinimas: string
@@ -93,7 +95,7 @@ async function prisijungesNaudotojas() {
   try {
     const [{ headers }, payload] = await Promise.all([import('next/headers'), payloadas()])
     const { user } = await payload.auth({ headers: await headers() })
-    return user ?? null
+    return arAdministratorius(user) ? user : null
   } catch {
     return null
   }

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { tikAdministratoriui } from './prieiga'
 
 /**
  * Rezervacijos — kai lankytojas svetainės kalendoriuje pasirenka laisvą laiką.
@@ -18,10 +19,10 @@ export const Rezervacijos: CollectionConfig = {
   slug: 'rezervacijos',
   labels: { singular: 'Rezervacija', plural: 'Rezervacijos' },
   access: {
-    read: ({ req }) => Boolean(req.user),
+    read: tikAdministratoriui,
     create: () => false,
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    update: tikAdministratoriui,
+    delete: tikAdministratoriui,
   },
   admin: {
     useAsTitle: 'santrauka',

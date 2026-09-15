@@ -5,6 +5,7 @@ import { skaicius, suformatuok } from '@/lib/pinigai'
 import { arTeisingasParasas } from '@/lib/priminimai'
 import { saskaitosPdf } from '@/lib/saskaitos-pdf'
 import { paruoskVaizda, type SaskaitosVaizdas } from '@/lib/saskaitos-vaizdas'
+import { arAdministratorius } from '@/cms/prieiga'
 
 /**
  * Sąskaitos peržiūra ir atsisiuntimas.
@@ -38,7 +39,7 @@ export async function GET(uzklausa: Request, ctx: RouteContext<'/vidus/saskaita/
   if (!arTeisingasParasas(String(numeris), 'saskaita', parasas)) {
     const payload = await getPayload({ config })
     const { user } = await payload.auth({ headers: uzklausa.headers })
-    if (!user) return new Response('Neleista.', { status: 401, headers: BE_KESO })
+    if (!arAdministratorius(user)) return new Response('Neleista.', { status: 401, headers: BE_KESO })
   }
 
   let v: SaskaitosVaizdas

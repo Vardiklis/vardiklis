@@ -18,7 +18,8 @@
     "schema": "node scripts/kurk-schema.mjs",
     "patikra:saskaitos": "tsx --env-file-if-exists=.env scripts/patikrink-saskaitas.ts",
     "importmap": "payload generate:importmap",
-    "patikra:pamokos": "tsx scripts/patikrink-pamokas.ts"
+    "patikra:pamokos": "tsx scripts/patikrink-pamokas.ts",
+    "patikra:dienynas": "tsx --env-file-if-exists=.env scripts/patikrink-dienyna.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",
