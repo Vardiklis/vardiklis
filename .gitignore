@@ -44,5 +44,6 @@ next-env.d.ts
 
 # Payload
 /public/ikelta
+/dienyno-failai
 *.db
 *.db-journal

@@ -77,6 +77,7 @@ export interface Config {
     saskaitos: Saskaito;
     rezervacijos: Rezervacijo;
     'dienyno-paskyros': DienynoPaskyro;
+    'dienyno-failai': DienynoFailai;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -93,6 +94,7 @@ export interface Config {
     saskaitos: SaskaitosSelect<false> | SaskaitosSelect<true>;
     rezervacijos: RezervacijosSelect<false> | RezervacijosSelect<true>;
     'dienyno-paskyros': DienynoPaskyrosSelect<false> | DienynoPaskyrosSelect<true>;
+    'dienyno-failai': DienynoFailaiSelect<false> | DienynoFailaiSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -453,9 +455,21 @@ export interface Zurnala {
   busena?: ('suplanuota' | 'atidare' | 'ivyko' | 'neivyko') | null;
   tema?: string | null;
   /**
-   * Palikus tuščią, dienyne parašyta „Namų darbų nėra“.
+   * Palikus tuščią ir be failų, dienyne parašyta „Namų darbų nėra“.
    */
   namuDarbai?: string | null;
+  /**
+   * Užduočių lapas, vadovėlio puslapio nuotrauka ir pan. Mato tik šio vaiko paskyra.
+   */
+  namuDarbuFailai?: (number | DienynoFailai)[] | null;
+  /**
+   * Kaip sekėsi, į ką atkreipti dėmesį. Grupės nariams nekopijuojamas.
+   */
+  atsiliepimas?: string | null;
+  /**
+   * Pvz. ištaisyto darbo nuotrauka.
+   */
+  atsiliepimoFailai?: (number | DienynoFailai)[] | null;
   /**
    * Užpildyta — priminimas nebesiunčiamas. Išvalius bus išsiųstas iš naujo.
    */
@@ -483,6 +497,36 @@ export interface Zurnala {
   klaida?: string | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * Prie pamokų prisegtos nuotraukos ir dokumentai. Mato tik to vaiko paskyra — ne viešai. Įkelti patogiausia tiesiai iš pamokos žurnale.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dienyno-failai".
+ */
+export interface DienynoFailai {
+  id: number;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    perzvalga?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * Sąskaitos tėvams. Juodraščius sudaro skydelis iš pamokų žurnalo.
@@ -611,7 +655,7 @@ export interface Rezervacijo {
   createdAt: string;
 }
 /**
- * Prisijungimai prie dienynas.vardiklis.lt. El. pašto nereikia: sugalvokite vardą ir slaptažodį ir perduokite vaikui ar tėvams. Pamiršus — įrašykite naują slaptažodį; senieji prisijungimai tada atsijungia patys.
+ * Prisijungimai prie dienynas.vardiklis.lt. El. pašto nereikia: sugalvokite vardą ir laikiną slaptažodį ir perduokite vaikui ar tėvams — pirmą kartą prisijungę jie susikurs savo. Pamiršus — įrašykite naują laikiną slaptažodį; senieji prisijungimai atsijungs patys.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "dienyno-paskyros".
@@ -622,6 +666,10 @@ export interface DienynoPaskyro {
    * Tėvams su keliais vaikais — pasirinkite visus, bus viena paskyra.
    */
   mokiniai: (number | Mokiniai)[];
+  /**
+   * Įjungta — prisijungęs vaikas pirmiausia sugalvos savo slaptažodį. Įsijungia pati, kai čia įrašote naują slaptažodį; išsijungia, kai vaikas jį pasikeičia.
+   */
+  keistiSlaptazodi?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email?: string | null;
@@ -694,6 +742,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'dienyno-paskyros';
         value: number | DienynoPaskyro;
+      } | null)
+    | ({
+        relationTo: 'dienyno-failai';
+        value: number | DienynoFailai;
       } | null);
   globalSlug?: string | null;
   user:
@@ -915,6 +967,9 @@ export interface ZurnalasSelect<T extends boolean = true> {
   busena?: T;
   tema?: T;
   namuDarbai?: T;
+  namuDarbuFailai?: T;
+  atsiliepimas?: T;
+  atsiliepimoFailai?: T;
   issiusta?: T;
   atidaryta?: T;
   klausta?: T;
@@ -997,6 +1052,7 @@ export interface RezervacijosSelect<T extends boolean = true> {
  */
 export interface DienynoPaskyrosSelect<T extends boolean = true> {
   mokiniai?: T;
+  keistiSlaptazodi?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1007,6 +1063,37 @@ export interface DienynoPaskyrosSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "dienyno-failai_select".
+ */
+export interface DienynoFailaiSelect<T extends boolean = true> {
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        perzvalga?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

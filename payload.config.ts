@@ -12,6 +12,7 @@ import { seoPlugin } from '@payloadcms/plugin-seo'
 import { buildConfig } from 'payload'
 import { straipsnioBlokai } from './cms/blokai'
 import { Atsiskaitymai } from './cms/Atsiskaitymai'
+import { DienynoFailai } from './cms/DienynoFailai'
 import { DienynoPaskyros } from './cms/DienynoPaskyros'
 import { Failai } from './cms/Failai'
 import { Grupes } from './cms/Grupes'
@@ -65,6 +66,9 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `zurnalas` ADD `namu_darbai` text',
   'ALTER TABLE `payload_locked_documents_rels` ADD `dienyno_paskyros_id` integer REFERENCES `dienyno_paskyros`(`id`)',
   'ALTER TABLE `payload_preferences_rels` ADD `dienyno_paskyros_id` integer REFERENCES `dienyno_paskyros`(`id`)',
+  'ALTER TABLE `zurnalas` ADD `atsiliepimas` text',
+  'ALTER TABLE `payload_locked_documents_rels` ADD `dienyno_failai_id` integer REFERENCES `dienyno_failai`(`id`)',
+  'ALTER TABLE `dienyno_paskyros` ADD `keisti_slaptazodi` integer DEFAULT true',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -227,6 +231,7 @@ export default buildConfig({
     Saskaitos,
     Rezervacijos,
     DienynoPaskyros,
+    DienynoFailai,
   ],
   globals: [Nustatymai, Priminimai, Tvarkarastis, Atsiskaitymai],
   /**
@@ -438,6 +443,22 @@ export default buildConfig({
        */
       {
         name: 'schema-2026-09-dienynas',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Dienyno failai, atsiliepimas ir laikino slaptažodžio keitimas:
+       * kolekcija „Dienyno failai“, `zurnalas_rels` — pirmas žurnalo ryšys
+       * „daug“ (failų sąrašai), tad ir pati ryšių lentelė nauja.
+       *
+       * Stulpeliai esamose lentelėse (`zurnalas.atsiliepimas`,
+       * `payload_locked_documents_rels.dienyno_failai_id`,
+       * `dienyno_paskyros.keisti_slaptazodi`) — `TRUKSTAMI_STULPELIAI`.
+       * Jau sukurtoms paskyroms `keisti_slaptazodi` tampa `true`: kitą kartą
+       * prisijungęs vaikas susikurs savo slaptažodį.
+       */
+      {
+        name: 'schema-2026-09-dienyno-failai',
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },

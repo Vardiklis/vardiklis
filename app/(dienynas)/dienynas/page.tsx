@@ -1,129 +1,104 @@
-import { redirect } from 'next/navigation'
-import { Logotipas } from '@/components/Logotipas'
+import Link from 'next/link'
+import { notFound, redirect } from 'next/navigation'
+import { DienynoAntraste, VaikoSkiltis } from '@/components/DienynoVaikas'
+import { DienynoSuvestine } from '@/components/DienynoSuvestine'
 import {
   dienynoKelias,
+  korepetitoresSuvestine,
+  prisijungesAdministratorius,
   prisijungusiPaskyra,
   vaikoDienynas,
-  type KitaPamoka,
   type VaikoDienynas,
 } from '@/lib/dienynas'
-import { data as dataVilniuje, dataZodziais, dienaGalininku, MENESIAI, pridekDienas } from '@/lib/laikas'
+import { data as dataVilniuje } from '@/lib/laikas'
 import { atsijungti } from './veiksmai'
 
 /**
- * Dienyno pradžia: kiekvienam paskyros vaikui — kita pamoka, mygtukas į ją
- * ir paskutinių pamokų temos su namų darbais.
+ * Dienyno pradžia. Kas rodoma, priklauso nuo to, kas atėjo:
  *
- * Vaikų sąrašas imamas TIK iš prisijungusios paskyros, tad svetimo vaiko
- * dienyno čia pamatyti neįmanoma — adrese jokio vaiko numerio nėra.
+ *   • VAIKAS AR TĖVAI (dienyno slapukas) — savo vaikų kita pamoka ir temos.
+ *     Vaikų sąrašas imamas TIK iš paskyros, o `?mokinys=` jiems ignoruojamas,
+ *     tad svetimo vaiko dienyno pamatyti neįmanoma.
+ *   • KOREPETITORĖ (prisijungusi prie `/admin`) — visų mokinių suvestinė, o su
+ *     `?mokinys=…` — konkretaus vaiko dienynas taip, kaip jį mato vaikas.
+ *
+ * Dienyno slapukas laimi: prisijungus bandomąja vaiko paskyra, matosi vaiko
+ * vaizdas, o ne suvestinė. Atsijungus nuo jos — vėl suvestinė.
  */
 
-const didziaja = (tekstas: string) => tekstas.charAt(0).toUpperCase() + tekstas.slice(1)
+type Props = { searchParams: Promise<{ mokinys?: string | string[] }> }
 
-function kada(dataISO: string, siandien: string): string {
-  if (dataISO === siandien) return 'Šiandien'
-  if (dataISO === pridekDienas(siandien, 1)) return 'Rytoj'
-  const [, menuo, diena] = dataISO.split('-').map(Number)
-  return `${didziaja(dienaGalininku(dataISO))}, ${MENESIAI[menuo - 1]} ${diena} d.`
-}
-
-export default async function DienynoPuslapis() {
-  const paskyra = await prisijungusiPaskyra()
-  if (!paskyra) redirect(await dienynoKelias('/prisijungti'))
-
+export default async function DienynoPuslapis({ searchParams }: Props) {
   const dabar = new Date()
   const siandien = dataVilniuje(dabar)
-  const vaikai = (await Promise.all(paskyra.mokiniai.map((id) => vaikoDienynas(id, dabar)))).filter(
-    (v): v is VaikoDienynas => v !== null,
-  )
 
-  return (
-    <div className="mx-auto w-full max-w-2xl px-5 pb-16">
-      <header className="flex items-center justify-between gap-4 border-b border-line py-5">
-        <div className="flex items-end gap-3">
-          <Logotipas kaipNuoroda={false} />
-          <span className="t-small pb-0.5 text-muted">dienynas</span>
-        </div>
-        <form action={atsijungti}>
-          <button type="submit" className="t-small text-muted underline-offset-4 hover:text-ink hover:underline">
-            Atsijungti
-          </button>
-        </form>
-      </header>
+  const saknis = await dienynoKelias('/')
 
-      <main>
-        {vaikai.length === 0 && (
-          <p className="t-body mt-10 text-muted">
-            Šiai paskyrai dar nepriskirtas nė vienas mokinys. Parašykite korepetitorei.
-          </p>
-        )}
+  const paskyra = await prisijungusiPaskyra()
+  if (paskyra?.keistiSlaptazodi) redirect(await dienynoKelias('/slaptazodis'))
+  if (paskyra) {
+    const vaikai = (await Promise.all(paskyra.mokiniai.map((id) => vaikoDienynas(id, dabar)))).filter(
+      (v): v is VaikoDienynas => v !== null,
+    )
+    return (
+      <div className="mx-auto w-full max-w-2xl px-5 pb-16">
+        <DienynoAntraste>
+          <form action={atsijungti}>
+            <button type="submit" className="text-muted underline-offset-4 hover:text-ink hover:underline">
+              Atsijungti
+            </button>
+          </form>
+        </DienynoAntraste>
+        <main>
+          {vaikai.length === 0 && (
+            <p className="t-body mt-10 text-muted">
+              Šiai paskyrai dar nepriskirtas nė vienas mokinys. Parašykite korepetitorei.
+            </p>
+          )}
+          {vaikai.map((vaikas) => (
+            <VaikoSkiltis
+              key={vaikas.id}
+              vaikas={vaikas}
+              siandien={siandien}
+              dienynoSaknis={saknis}
+              pasisveikinti={vaikai.length === 1}
+            />
+          ))}
+        </main>
+      </div>
+    )
+  }
 
-        {vaikai.map((vaikas) => (
-          <section key={vaikas.id} className="mt-10" aria-labelledby={`vaikas-${vaikas.id}`}>
-            <h1 id={`vaikas-${vaikas.id}`} className="t-h2">
-              {vaikai.length === 1 ? `Labas, ${vaikas.vardas}!` : vaikas.vardas}
-            </h1>
+  if (!(await prisijungesAdministratorius())) redirect(await dienynoKelias('/prisijungti'))
 
-            <KitosPamokosKortele kita={vaikas.kita} nuoroda={vaikas.nuoroda} siandien={siandien} />
+  const { mokinys } = await searchParams
 
-            <h2 className="t-h3 mt-10">Pamokos</h2>
-            {vaikas.pamokos.length === 0 ? (
-              <p className="t-small mt-2 text-muted">Kai pamoka įvyks, čia atsiras jos tema ir namų darbai.</p>
-            ) : (
-              <ol className="mt-3 divide-y divide-line border-y border-line">
-                {vaikas.pamokos.map((p) => (
-                  <li key={p.id} className="py-4">
-                    <p className="t-small text-muted">
-                      {didziaja(dataZodziais(p.dataISO))}
-                      {p.laikas ? ` · ${p.laikas}` : ''}
-                    </p>
-                    <p className="mt-1 font-semibold">{p.tema ?? <span className="font-normal text-muted">Tema neįrašyta</span>}</p>
-                    <div className="mt-2 rounded-[6px] bg-paper-2 px-3.5 py-2.5">
-                      <p className="t-small font-semibold">Namų darbai</p>
-                      <p className="t-body whitespace-pre-line">
-                        {p.namuDarbai ?? <span className="text-muted">Namų darbų nėra</span>}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-        ))}
-      </main>
-    </div>
-  )
-}
-
-function KitosPamokosKortele({
-  kita,
-  nuoroda,
-  siandien,
-}: {
-  kita: KitaPamoka | null
-  nuoroda: string | null
-  siandien: string
-}) {
-  return (
-    <div className="mt-5 rounded-[8px] border border-line bg-white p-5">
-      <p className="t-small font-semibold text-muted">{kita?.vyksta ? 'Pamoka vyksta dabar' : 'Kita pamoka'}</p>
-      {kita ? (
-        <p className="mt-1 font-display text-[1.5rem] leading-tight font-semibold tracking-[-0.01em]">
-          {kada(kita.dataISO, siandien)}, {kita.laikas}–{kita.pabaiga}
-          {kita.grupine && <span className="t-small ml-2 align-middle font-sans font-normal text-muted">grupinė</span>}
+  if (typeof mokinys === 'string') {
+    const vaikas = await vaikoDienynas(mokinys, dabar)
+    if (!vaikas) notFound()
+    return (
+      <div className="mx-auto w-full max-w-2xl px-5 pb-16">
+        <DienynoAntraste>
+          <a href={saknis} className="text-muted underline-offset-4 hover:text-ink hover:underline">
+            ← Suvestinė
+          </a>
+        </DienynoAntraste>
+        <p className="t-small mt-6 rounded-[6px] bg-orange-soft px-3.5 py-2.5">
+          Taip dienyną mato <strong>{vaikas.vardas}</strong> ir tėvai. Mygtukas į pamoką peržiūroje neveikia.
         </p>
-      ) : (
-        <p className="t-body mt-1">Artimiausių pamokų nesuplanuota.</p>
-      )}
+        <VaikoSkiltis vaikas={vaikas} siandien={siandien} dienynoSaknis={saknis} pasisveikinti perziura />
+      </div>
+    )
+  }
 
-      {nuoroda && (
-        <a
-          href={nuoroda}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[6px] border border-orange bg-orange px-6 py-3.5 text-[1.0625rem] font-semibold text-ink transition-colors duration-150 hover:bg-[#F05600] sm:w-auto"
-        >
-          Prisijungti į pamoką →
-        </a>
-      )}
+  return (
+    <div className="mx-auto w-full max-w-3xl px-5 pb-16">
+      <DienynoAntraste>
+        <Link href="/admin" prefetch={false} className="text-muted underline-offset-4 hover:text-ink hover:underline">
+          Į CMS
+        </Link>
+      </DienynoAntraste>
+      <DienynoSuvestine vaikai={await korepetitoresSuvestine(dabar)} siandien={siandien} dienynoSaknis={saknis} />
     </div>
   )
 }

@@ -47,12 +47,29 @@ export const DienynoPaskyros: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'username',
-    defaultColumns: ['username', 'mokiniai', 'updatedAt'],
+    defaultColumns: ['username', 'mokiniai', 'keistiSlaptazodi', 'updatedAt'],
     description:
-      'Prisijungimai prie dienynas.vardiklis.lt. El. pašto nereikia: sugalvokite vardą ir slaptažodį ir perduokite vaikui ar tėvams. Pamiršus — įrašykite naują slaptažodį; senieji prisijungimai tada atsijungia patys.',
+      'Prisijungimai prie dienynas.vardiklis.lt. El. pašto nereikia: sugalvokite vardą ir laikiną slaptažodį ir perduokite vaikui ar tėvams — pirmą kartą prisijungę jie susikurs savo. Pamiršus — įrašykite naują laikiną slaptažodį; senieji prisijungimai atsijungs patys.',
     group: 'Pamokos',
   },
   hooks: {
+    beforeChange: [
+      /**
+       * Korepetitorei įrašius naują slaptažodį, jis laikinas — vaikas turės jį
+       * pasikeisti. Taip pamiršto slaptažodžio atveju užtenka įrašyti bet kokį,
+       * o varnelės atskirai žymėti nereikia.
+       *
+       * Kai slaptažodį keičia pats vaikas (`lib/dienynas.ts`), atnaujinimas
+       * ateina su dienyno žyme ir varnelę nuima kviečiantysis.
+       */
+      ({ data, operation, context }) => {
+        if (context?.[DIENYNO_KONTEKSTAS] === true) return data
+        if (operation === 'update' && typeof data?.password === 'string' && data.password) {
+          return { ...data, keistiSlaptazodi: true }
+        }
+        return data
+      },
+    ],
     beforeLogin: [
       ({ context }) => {
         if (context?.[DIENYNO_KONTEKSTAS] !== true) {
@@ -71,6 +88,17 @@ export const DienynoPaskyros: CollectionConfig = {
       label: 'Kurių vaikų dienyną mato',
       admin: {
         description: 'Tėvams su keliais vaikais — pasirinkite visus, bus viena paskyra.',
+      },
+    },
+    {
+      name: 'keistiSlaptazodi',
+      type: 'checkbox',
+      label: 'Paprašyti pasikeisti slaptažodį',
+      defaultValue: true,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Įjungta — prisijungęs vaikas pirmiausia sugalvos savo slaptažodį. Įsijungia pati, kai čia įrašote naują slaptažodį; išsijungia, kai vaikas jį pasikeičia.',
       },
     },
   ],

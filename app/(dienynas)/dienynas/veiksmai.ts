@@ -2,7 +2,13 @@
 
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { DIENYNO_SLAPUKAS, dienynoKelias, prisijunk } from '@/lib/dienynas'
+import {
+  DIENYNO_SLAPUKAS,
+  dienynoKelias,
+  pakeiskSlaptazodi,
+  prisijungusiPaskyra,
+  prisijunk,
+} from '@/lib/dienynas'
 import { perDaznai } from '@/lib/greicio-riba'
 
 /**
@@ -43,14 +49,43 @@ export async function prisijungti(
     }
   }
 
-  ;(await cookies()).set(DIENYNO_SLAPUKAS, rezultatas.slapukas, {
+  await irasykSlapuka(rezultatas.slapukas, rezultatas.galiojaS)
+  // Su laikinu slaptažodžiu — pirmiausia susikurti savo.
+  redirect(await dienynoKelias(rezultatas.keistiSlaptazodi ? '/slaptazodis' : '/'))
+}
+
+async function irasykSlapuka(reiksme: string, galiojaS: number): Promise<void> {
+  ;(await cookies()).set(DIENYNO_SLAPUKAS, reiksme, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: rezultatas.galiojaS,
+    maxAge: galiojaS,
   })
+}
 
+export type KeitimoBusena = { klaida: string | null }
+
+/**
+ * Laikino slaptažodžio pakeitimas.
+ *
+ * Leidžiama TIK kol paskyroje pažymėta „Paprašyti pasikeisti slaptažodį“.
+ * Kitaip kas nors, prie svetimo atviro dienyno priėjęs, galėtų pakeisti
+ * slaptažodį ir užrakinti savininką — o dabartinio slaptažodžio čia neklausiam.
+ */
+export async function keistiSlaptazodi(_ankstesne: KeitimoBusena, forma: FormData): Promise<KeitimoBusena> {
+  const paskyra = await prisijungusiPaskyra()
+  if (!paskyra) redirect(await dienynoKelias('/prisijungti'))
+  if (!paskyra.keistiSlaptazodi) redirect(await dienynoKelias('/'))
+
+  const rezultatas = await pakeiskSlaptazodi(
+    paskyra,
+    String(forma.get('naujas') ?? '').slice(0, 200),
+    String(forma.get('pakartotas') ?? '').slice(0, 200),
+  )
+  if (!rezultatas.pavyko) return { klaida: rezultatas.klaida }
+
+  await irasykSlapuka(rezultatas.slapukas, rezultatas.galiojaS)
   redirect(await dienynoKelias('/'))
 }
 

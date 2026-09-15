@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { arLaikas, data as dataVilniuje } from '../lib/laikas'
+import { DIENYNO_FAILAI } from './DienynoFailai'
 import { tikAdministratoriui } from './prieiga'
 
 /**
@@ -39,8 +40,25 @@ const rysioId = (reiksme: unknown): number | string | null => {
   return reiksme as number | string
 }
 
-/** Laukai, kuriuos mato mokinys ir tėvai dienyne (`lib/dienynas.ts`). */
-const DIENYNO_LAUKAI = ['tema', 'namuDarbai'] as const
+/**
+ * Dienyno laukai, bendri visai grupei — jie kopijuojami kitiems nariams.
+ *
+ * `atsiliepimas` ir jo failai čia NEĮEINA: atsiliepimas rašomas konkrečiam
+ * vaikui, ir nukopijuotas jis nuvažiuotų kitų vaikų tėvams.
+ */
+const GRUPES_LAUKAI = ['tema', 'namuDarbai', 'namuDarbuFailai'] as const
+
+/**
+ * Lauko reikšmė palyginimui. Tekstas — tuščias virsta `null`. Failų sąrašas —
+ * id eilė, nes hook'e jis gali ateiti ir numeriais, ir dokumentais.
+ */
+function palyginimui(reiksme: unknown): string | null {
+  if (Array.isArray(reiksme)) {
+    const ids = reiksme.map(rysioId).filter((id) => id != null)
+    return ids.length ? JSON.stringify(ids) : null
+  }
+  return (reiksme as string | null | undefined) || null
+}
 
 /** `context` žymė: šis įrašas — grupės kopija, toliau kopijuoti nereikia. */
 const GRUPES_KOPIJA = 'dienynoGrupesKopija'
@@ -102,13 +120,14 @@ export const Zurnalas: CollectionConfig = {
     ],
     afterChange: [
       /**
-       * Grupinės pamokos tema ir namų darbai — visiems nariams.
+       * Grupinės pamokos tema, namų darbai ir jų failai — visiems nariams.
        *
        * Žurnale grupė palieka po įrašą kiekvienam vaikui, o tema ir namų darbai
        * jiems tie patys. Be šito tektų tą patį tekstą įrašyti tris kartus, ir
        * anksčiau ar vėliau vienas vaikas dienyne jo nerastų. Todėl užpildžius
        * vieno nario įrašą, tas pats nukopijuojamas kitiems tos pačios grupės,
-       * datos ir laiko įrašams.
+       * datos ir laiko įrašams. Failai nekopijuojami fiziškai — nariai rodo į
+       * tuos pačius dokumentus.
        *
        * Kopijuojami tik PASIKEITĘ laukai: pažymėjus vienam vaikui „Įvyko“, kitų
        * temos nepaliečiamos. Kopijos vėl kviečia šį hook'ą — `context` žymė
@@ -120,11 +139,14 @@ export const Zurnalas: CollectionConfig = {
         const grupeId = rysioId(doc.grupe)
         if (grupeId == null || !doc.data || !doc.laikas) return doc
 
-        const pakeista: Record<string, string | null> = {}
-        for (const laukas of DIENYNO_LAUKAI) {
-          const naujas = doc[laukas] || null
-          const senas = operation === 'create' ? null : previousDoc?.[laukas] || null
-          if (naujas !== senas) pakeista[laukas] = naujas
+        const pakeista: Record<string, unknown> = {}
+        for (const laukas of GRUPES_LAUKAI) {
+          const naujas = palyginimui(doc[laukas])
+          const senas = operation === 'create' ? null : palyginimui(previousDoc?.[laukas])
+          if (naujas === senas) continue
+          pakeista[laukas] = Array.isArray(doc[laukas])
+            ? (doc[laukas] as unknown[]).map(rysioId).filter((id) => id != null)
+            : naujas
         }
         if (Object.keys(pakeista).length === 0) return doc
 
@@ -232,7 +254,7 @@ export const Zurnalas: CollectionConfig = {
       label: 'Dienynas (mato mokinys ir tėvai)',
       admin: {
         description:
-          'Rodoma dienynas.vardiklis.lt, kai pamoka jau prasidėjo. Grupinei pamokai užtenka įrašyti vienam nariui — kitiems nukopijuojama.',
+          'Rodoma dienynas.vardiklis.lt, kai pamoka jau prasidėjo. Grupinei pamokai temą ir namų darbus užtenka įrašyti vienam nariui — kitiems nukopijuojama. Atsiliepimas — tik šiam vaikui.',
       },
       fields: [
         { name: 'tema', type: 'text', label: 'Tema' },
@@ -240,7 +262,31 @@ export const Zurnalas: CollectionConfig = {
           name: 'namuDarbai',
           type: 'textarea',
           label: 'Namų darbai',
-          admin: { description: 'Palikus tuščią, dienyne parašyta „Namų darbų nėra“.' },
+          admin: { description: 'Palikus tuščią ir be failų, dienyne parašyta „Namų darbų nėra“.' },
+        },
+        {
+          name: 'namuDarbuFailai',
+          type: 'upload',
+          relationTo: DIENYNO_FAILAI,
+          hasMany: true,
+          label: 'Namų darbų failai ir nuotraukos',
+          admin: { description: 'Užduočių lapas, vadovėlio puslapio nuotrauka ir pan. Mato tik šio vaiko paskyra.' },
+        },
+        {
+          name: 'atsiliepimas',
+          type: 'textarea',
+          label: 'Mokytojo atsiliepimas',
+          admin: {
+            description: 'Kaip sekėsi, į ką atkreipti dėmesį. Grupės nariams nekopijuojamas.',
+          },
+        },
+        {
+          name: 'atsiliepimoFailai',
+          type: 'upload',
+          relationTo: DIENYNO_FAILAI,
+          hasMany: true,
+          label: 'Atsiliepimo failai ir nuotraukos',
+          admin: { description: 'Pvz. ištaisyto darbo nuotrauka.' },
         },
       ],
     },
