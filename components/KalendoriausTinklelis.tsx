@@ -163,7 +163,12 @@ export default function KalendoriausTinklelis({ kalendorius, saltinis }: Props) 
       {/* Keturiolika stulpelių (dvi savaitės po septynias dienas) į `max-w-2xl`
           nebetelpa net kompiuteryje, tad lentelei leidžiama būti platesnei nei
           šalia esantis tekstas. Siaurame ekrane ji vis tiek slenkasi savyje. */}
-      <div className="mt-4 max-w-4xl overflow-x-auto">
+      {/* `relative` čia nėra dekoracija. Langelių `sr-only` etiketės yra
+          `position: absolute`; be pozicionuoto tėvo jų atskaitos taškas —
+          visas dokumentas, o ne ši dėžė, tad `overflow-x` jų nenukerpa ir jos
+          nutįsta iki pat lentelės galo. Telefone dėl to slinkdavo į dešinę ne
+          lentelė, o visas puslapis. Su `relative` jos lieka viduje. */}
+      <div className="relative mt-4 max-w-4xl overflow-x-auto">
         {/* `w-auto`, o ne `w-full`: langeliai turi likti kvadratiniai, o ne
             išsitempti per visą plotį iki plokščių juostelių. */}
         <table className="w-auto border-separate border-spacing-1">
