@@ -23,6 +23,8 @@ export type SaskaitosVaizdas = {
   id: number
   /** „PVM sąskaita faktūra“ arba „Sąskaita“ — pagal tai, ar yra PVM kodas. */
   pavadinimas: string
+  /** Ne PVM mokėtojo sąskaitoje PVM neminimas išvis — nei eilutėmis, nei antraštėje. */
+  arPvmMoketojas: boolean
   numeris: string
   busena: string
   data: string | null
@@ -110,6 +112,14 @@ export async function paruoskVaizda(id: number): Promise<SaskaitosVaizdas> {
      * tiesiog „Sąskaita“: „PVM sąskaita faktūra“ be PVM kodo būtų klaidinga.
      */
     pavadinimas: n.pardavejoPvmKodas ? 'PVM SĄSKAITA FAKTŪRA' : 'SĄSKAITA',
+    /**
+     * Ta pati sąlyga valdo ir sumų bloką: neturint PVM kodo dingsta „Suma be
+     * PVM“, PVM eilutės ir žodis „su PVM“ stulpelio antraštėje. Eilutė
+     * „PVM (PVM5, 0 %): 0,00 €“ būtų teisinga aritmetika, bet klaidinga kalba —
+     * PVM neskaičiuojantis pardavėjas jo neturi minėti. Sumos nuo to
+     * nesikeičia: nulinis tarifas ir taip nieko nepridėjo.
+     */
+    arPvmMoketojas: Boolean(n.pardavejoPvmKodas),
     numeris: dok.numeris ?? 'JUODRAŠTIS',
     busena: dok.busena ?? 'juodrastis',
     data: dok.data ?? null,

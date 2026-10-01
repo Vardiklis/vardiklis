@@ -141,7 +141,7 @@ function piesk(dok: Dok, v: SaskaitosVaizdas): void {
   paryskintas(dok, 8).fillColor(PILKA)
   dok.text('PASLAUGA', PARASTE + STULPELIAI.aprasymas, y)
   dok.text('KIEKIS', PARASTE + STULPELIAI.kiekis, y, { width: 60, align: 'right' })
-  dok.text(v.kainosSuPvm ? 'KAINA SU PVM' : 'KAINA', PARASTE + STULPELIAI.kaina, y, {
+  dok.text(v.arPvmMoketojas && v.kainosSuPvm ? 'KAINA SU PVM' : 'KAINA', PARASTE + STULPELIAI.kaina, y, {
     width: 80,
     align: 'right',
   })
@@ -203,9 +203,11 @@ function piesk(dok: Dok, v: SaskaitosVaizdas): void {
     y = dok.y + 3
   }
 
-  sumosEilute('Suma be PVM:', suformatuok(v.sumos.bePvm))
-  for (const g of v.sumos.grupes) {
-    sumosEilute(`PVM (${g.pvmKodas}, ${g.pvmProc} %):`, suformatuok(g.pvm))
+  if (v.arPvmMoketojas) {
+    sumosEilute('Suma be PVM:', suformatuok(v.sumos.bePvm))
+    for (const g of v.sumos.grupes) {
+      sumosEilute(`PVM (${g.pvmKodas}, ${g.pvmProc} %):`, suformatuok(g.pvm))
+    }
   }
 
   y += 3

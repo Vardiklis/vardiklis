@@ -78,8 +78,14 @@
  * paskelbtų prie pačios klasės, tad užtenka jas perrašyti. Tekstas tamsus, ne
  * baltas: balta ant #FF5C00 duoda 3,09:1 ir nepraeina WCAG AA — ta pati
  * taisyklė galioja ir svetainėje (`components/Mygtukas.tsx`).
+ *
+ * `:not(.btn--disabled)` BŪTINA. Išjungtiems mygtukams Payload tuos pačius
+ * kintamuosius perrašo pilkai, bet daro tai `@layer payload-default` viduje, o
+ * šis failas sluoksnio neturi — tad be šios išimties oranžinė nugalėtų ir
+ * išjungtą būseną. Tada „Pateikti registrą“ atrodytų vienodai ir veikdamas, ir
+ * neveikdamas, o būtent jo paspaudimo atšaukti nebegalima.
  */
-.btn--style-primary {
+.btn--style-primary:not(.btn--disabled) {
   --bg-color: var(--vardiklis-oranzine);
   --color: #12100e;
   --hover-bg: var(--vardiklis-oranzine-tamsi);

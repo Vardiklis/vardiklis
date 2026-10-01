@@ -98,7 +98,8 @@ function html(v: SaskaitosVaizdas, parasas: string): string {
     )
     .join('')
 
-  const pvmEilutes = v.sumos.grupes
+  // Ne PVM mokėtojas PVM eilučių neturi visai — žr. `arPvmMoketojas`.
+  const pvmEilutes = (v.arPvmMoketojas ? v.sumos.grupes : [])
     .map(
       (g) =>
         `<tr><td>PVM (${saugus(g.pvmKodas)}, ${g.pvmProc} %)</td><td class="d">${suformatuok(g.pvm)}</td></tr>`,
@@ -177,13 +178,17 @@ function html(v: SaskaitosVaizdas, parasas: string): string {
   <table>
     <thead><tr>
       <th>Paslauga</th><th class="d">Kiekis</th>
-      <th class="d">${v.kainosSuPvm ? 'Kaina su PVM' : 'Kaina'}</th><th class="d">Suma</th>
+      <th class="d">${v.arPvmMoketojas && v.kainosSuPvm ? 'Kaina su PVM' : 'Kaina'}</th><th class="d">Suma</th>
     </tr></thead>
     <tbody>${lentele}</tbody>
   </table>
 
   <table class="sumos">
-    <tr><td>Suma be PVM</td><td class="d">${suformatuok(v.sumos.bePvm)}</td></tr>
+    ${
+      v.arPvmMoketojas
+        ? `<tr><td>Suma be PVM</td><td class="d">${suformatuok(v.sumos.bePvm)}</td></tr>`
+        : ''
+    }
     ${pvmEilutes}
     <tr><td>Mokėti</td><td class="d">${suformatuok(v.sumos.isViso)}</td></tr>
   </table>
