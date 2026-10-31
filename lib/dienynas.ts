@@ -8,7 +8,8 @@ import { arAdministratorius } from '@/cms/prieiga'
 import { svetaine } from '@/lib/kontaktai'
 import { arDienynoSubdomenas, dienynoKeliasPagalHosta } from '@/lib/dienynas-adresas'
 import { data as dataVilniuje, momentas, pridekDienas } from '@/lib/laikas'
-import { arVyksta, pauzuoja, trukme, type Pamoka } from '@/lib/pamokos'
+import type { Pamoka } from '@/lib/pamokos'
+import { irasuSalyga, PLANO_LAUKAI, suplanuok, type PlanoIrasas } from '@/lib/pamoku-planas'
 
 /**
  * Dienynas: kas prisijungęs ir ką jam rodyti.
@@ -260,6 +261,9 @@ type Mokinys = {
 }
 
 type Grupe = {
+  id: number | string
+  aktyvi?: boolean | null
+  nariai?: (number | string)[] | null
   pauzeIki?: string | null
   pamokos?: Pamoka[] | null
 }
@@ -273,45 +277,46 @@ function pabaiga(laikas: string, minutes: number): string {
 /**
  * Artimiausia dar nepasibaigusi pamoka.
  *
- * Skaičiuojama iš pamokų laikų, o ne iš žurnalo: žurnalo įrašas atsiranda tik
- * priminimo dieną, tad kitos savaitės pamokos jame dar nėra. Taisyklės tos
- * pačios, kaip priminimų (`suplanuok` faile `lib/priminimai.ts`): neaktyvus
- * mokinys ar grupė pamokų neturi, pauzė galioja imtinai, o vaiko pauzė galioja
- * ir jo grupinėms pamokoms.
+ * Skaičiuojama iš pamokų laikų KARTU su žurnalu (`suplanuok`,
+ * `lib/pamoku-planas.ts`): pasikartojančios pamokos įrašas atsiranda tik
+ * priminimo dieną, tad kitos savaitės pamokos jame dar nėra, o perkelta ar
+ * papildoma — jau yra. Taisyklės tos pačios, kaip priminimų: neaktyvus
+ * mokinys ar grupė pamokų pagal tvarkaraštį neturi, pauzė galioja imtinai, o
+ * vaiko pauzė galioja ir jo grupinėms pamokoms.
+ *
+ * `irasai` — šio vaiko žurnalas nuo šiandien (žr. `kitosPamokosIrasai`).
  */
-function artimiausia(mokinys: Mokinys, grupes: Grupe[], dabar: Date): KitaPamoka | null {
-  if (mokinys.aktyvus === false) return null
-
+function artimiausia(
+  mokinys: Mokinys,
+  grupes: Grupe[],
+  irasai: PlanoIrasas[],
+  dabar: Date,
+): KitaPamoka | null {
   const siandien = dataVilniuje(dabar)
-  for (let i = 0; i <= KITOS_PAMOKOS_HORIZONTAS; i++) {
-    const dataISO = pridekDienas(siandien, i)
-    if (pauzuoja(mokinys.pauzeIki, dataISO)) continue
+  const datos = Array.from({ length: KITOS_PAMOKOS_HORIZONTAS + 1 }, (_, i) =>
+    pridekDienas(siandien, i),
+  )
 
-    const kandidatai: { pamoka: Pamoka; grupine: boolean }[] = [
-      ...(mokinys.pamokos ?? []).map((pamoka) => ({ pamoka, grupine: false })),
-      ...grupes
-        .filter((g) => !pauzuoja(g.pauzeIki, dataISO))
-        .flatMap((g) => (g.pamokos ?? []).map((pamoka) => ({ pamoka, grupine: true }))),
-    ]
-
-    let geriausia: KitaPamoka | null = null
-    for (const { pamoka, grupine } of kandidatai) {
-      if (!pamoka.laikas || !arVyksta(pamoka, dataISO)) continue
-      const pradzia = momentas(dataISO, pamoka.laikas)
-      const galas = new Date(pradzia.getTime() + trukme(pamoka) * 60000)
-      if (galas <= dabar) continue
-      if (geriausia && geriausia.laikas <= pamoka.laikas) continue
-      geriausia = {
-        dataISO,
-        laikas: pamoka.laikas,
-        pabaiga: pabaiga(pamoka.laikas, trukme(pamoka)),
-        grupine,
-        vyksta: pradzia <= dabar,
-      }
+  // Planas surikiuotas pagal laiką, tad pirmoji nepasibaigusi ir yra kita.
+  for (const p of suplanuok([mokinys], grupes, irasai, datos)) {
+    const pradzia = momentas(p.dataISO, p.laikas)
+    const galas = new Date(pradzia.getTime() + p.trukme * 60000)
+    if (galas <= dabar) continue
+    return {
+      dataISO: p.dataISO,
+      laikas: p.laikas,
+      pabaiga: pabaiga(p.laikas, p.trukme),
+      grupine: p.tipas === 'grupine',
+      vyksta: pradzia <= dabar,
     }
-    if (geriausia) return geriausia
   }
   return null
+}
+
+/** Žurnalo sąlyga kitai pamokai rasti: nuo šiandien iki horizonto. */
+function kitosPamokosIrasai(dabar: Date) {
+  const siandien = dataVilniuje(dabar)
+  return irasuSalyga(siandien, pridekDienas(siandien, KITOS_PAMOKOS_HORIZONTAS))
 }
 
 /**
@@ -338,14 +343,22 @@ export async function vaikoDienynas(mokinioId: string, dabar = new Date()): Prom
   }
   if (!mokinys) return null
 
-  const [{ docs: grupiuDokai }, { docs: zurnaloDokai }] = await Promise.all([
+  const [{ docs: grupiuDokai }, { docs: busimiDokai }, { docs: zurnaloDokai }] = await Promise.all([
     payload.find({
       collection: 'grupes',
       where: { and: [{ nariai: { in: [mokinioId] } }, { aktyvi: { equals: true } }] },
       limit: 50,
       depth: 0,
       overrideAccess: true,
-      select: { pauzeIki: true, pamokos: true },
+      select: { aktyvi: true, nariai: true, pauzeIki: true, pamokos: true },
+    }),
+    payload.find({
+      collection: 'zurnalas',
+      where: { and: [{ mokinys: { equals: mokinioId } }, kitosPamokosIrasai(dabar)] },
+      limit: 500,
+      depth: 0,
+      overrideAccess: true,
+      select: PLANO_LAUKAI,
     }),
     payload.find({
       collection: 'zurnalas',
@@ -353,8 +366,8 @@ export async function vaikoDienynas(mokinioId: string, dabar = new Date()): Prom
         and: [
           { mokinys: { equals: mokinioId } },
           { data: { less_than_equal: dataVilniuje(dabar) } },
-          // Neįvykusios pamokos temos neturi — sąraše jos tik trukdytų.
-          { busena: { not_equals: 'neivyko' } },
+          // Neįvykusios ir atšauktos pamokos temos neturi — sąraše jos tik trukdytų.
+          { busena: { not_in: ['neivyko', 'atsaukta'] } },
         ],
       },
       sort: '-data',
@@ -369,7 +382,12 @@ export async function vaikoDienynas(mokinioId: string, dabar = new Date()): Prom
     id: String(mokinys.id),
     vardas: mokinys.vardas ?? '',
     nuoroda: mokinys.raktas ? `${svetaine.url}/p/${mokinys.raktas}` : null,
-    kita: artimiausia(mokinys, grupiuDokai as unknown as Grupe[], dabar),
+    kita: artimiausia(
+      mokinys,
+      grupiuDokai as unknown as Grupe[],
+      busimiDokai as unknown as PlanoIrasas[],
+      dabar,
+    ),
     pamokos: prasidejusios(zurnaloDokai as unknown as ZurnaloIrasas[], dabar)
       .slice(0, PAMOKU_SARASE)
       .map(kaipIvykusi),
@@ -529,7 +547,7 @@ export async function korepetitoresSuvestine(dabar = new Date()): Promise<Suvest
   const payload = await payloadas()
   const siandien = dataVilniuje(dabar)
 
-  const [mokiniai, grupes, zurnalas, paskyros] = await Promise.all([
+  const [mokiniai, grupes, zurnalas, paskyros, busimi] = await Promise.all([
     payload.find({
       collection: 'mokiniai',
       where: { aktyvus: { equals: true } },
@@ -544,7 +562,7 @@ export async function korepetitoresSuvestine(dabar = new Date()): Promise<Suvest
       limit: 500,
       depth: 0,
       overrideAccess: true,
-      select: { nariai: true, pauzeIki: true, pamokos: true },
+      select: { aktyvi: true, nariai: true, pauzeIki: true, pamokos: true },
     }),
     payload.find({
       collection: 'zurnalas',
@@ -552,6 +570,7 @@ export async function korepetitoresSuvestine(dabar = new Date()): Promise<Suvest
         and: [
           { data: { less_than_equal: siandien } },
           { data: { greater_than_equal: pridekDienas(siandien, -SUVESTINES_LANGAS) } },
+          { busena: { not_equals: 'atsaukta' } },
         ],
       },
       sort: '-data',
@@ -567,6 +586,14 @@ export async function korepetitoresSuvestine(dabar = new Date()): Promise<Suvest
       depth: 0,
       overrideAccess: true,
       select: { username: true, mokiniai: true, keistiSlaptazodi: true },
+    }),
+    payload.find({
+      collection: 'zurnalas',
+      where: kitosPamokosIrasai(dabar),
+      limit: 5000,
+      depth: 0,
+      overrideAccess: true,
+      select: PLANO_LAUKAI,
     }),
   ])
 
@@ -585,7 +612,14 @@ export async function korepetitoresSuvestine(dabar = new Date()): Promise<Suvest
     else irasaiPagalVaika.set(id, [z])
   }
 
-  const grupiuDokai = grupes.docs as unknown as (Grupe & { nariai?: unknown[] | null })[]
+  const busimiPagalVaika = new Map<string, PlanoIrasas[]>()
+  for (const z of busimi.docs as unknown as PlanoIrasas[]) {
+    const id = idTekstu(z.mokinys)
+    if (!id) continue
+    busimiPagalVaika.set(id, [...(busimiPagalVaika.get(id) ?? []), z])
+  }
+
+  const grupiuDokai = grupes.docs as unknown as Grupe[]
   const paskyruDokai = paskyros.docs as unknown as {
     id: number | string
     username?: string | null
@@ -609,6 +643,7 @@ export async function korepetitoresSuvestine(dabar = new Date()): Promise<Suvest
         kita: artimiausia(
           m,
           grupiuDokai.filter((g) => (g.nariai ?? []).some((n) => idTekstu(n) === id)),
+          busimiPagalVaika.get(id) ?? [],
           dabar,
         ),
         pamokos: irasai.slice(0, PAMOKU_SUVESTINEJE).map((z) => ({ ...kaipIvykusi(z), busena: z.busena ?? null })),

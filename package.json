@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:mock": "node scripts/mock.mjs",
+    "mock:is-naujo": "node scripts/mock.mjs --is-naujo",
     "build": "payload generate:importmap && next build",
     "start": "next start",
     "lint": "eslint .",

@@ -34,18 +34,47 @@ jos šioje versijoje nedarome.
 | Komanda | Ką daro |
 |---|---|
 | `npm run dev` | Kūrimo serveris |
+| `npm run dev:mock` | Kūrimo serveris su netikrais duomenimis — žr. „Mock režimas“ |
+| `npm run mock:is-naujo` | Mock duomenis sukuria iš naujo (seni ištrinami) ir paleidžia |
 | `npm run build` | Produkcinis build'as |
 | `npm start` | Paleidžia sukompiliuotą svetainę |
 | `npm run lint` | ESLint |
 | `npm run patikra` | Sugeneruoja po 100 uždavinių iš kiekvieno generatoriaus ir tikrina, ar nėra bjaurių atsakymų, sugedusio KaTeX ar klaidų grafe |
 | `npm run patikra:diagnostika` | Pravažiuoja diagnostiką 8 scenarijais ir parodo, ką grąžina ataskaita |
-| `npm run patikra:pamokos` | Tikrina pamokų pasikartojimus: laikotarpį „nuo–iki“, kas N savaičių / mėnesių ir senų įrašų suderinamumą |
+| `npm run patikra:pamokos` | Tikrina pamokų pasikartojimus (laikotarpį „nuo–iki“, kas N savaičių / mėnesių, senus įrašus) ir žurnalo išimtis: perkeltas, atšauktas ir papildomas pamokas |
 | `npm run patikra:saskaitos` | Praeina visą sąskaitų kelią (juodraštis → išrašymas → PDF → i.SAF) su savo bandomaisiais duomenimis ir po to juos ištrina |
 | `npm run importmap` | Perrašo `app/(payload)/admin/importMap.js` — CMS savų komponentų sąrašą |
 | `npm run schema` | Perrašo `cms/pradine-schema.ts` iš vietinės bazės |
 
 `npx tsx scripts/patikrink-generatorius.ts 100 --pavyzdziai` papildomai atspausdina
 uždavinių pavyzdžius peržiūrai.
+
+### Mock režimas — CMS su netikrais duomenimis
+
+```bash
+npm run dev:mock          # pirmą kartą pats sukuria duomenis
+npm run mock:is-naujo     # ištrina ir sukuria iš naujo (datos — nuo šiandien)
+```
+
+Atsidaro tas pats `http://localhost:3000/admin`, tik **prisijungta automatiškai** netikru
+administratoriumi, o meniu viršuje geltonas ženklas „MOCK“. Viduje — dešimt mokinių, dvi grupės,
+penkių savaičių pamokų istorija, kitos savaitės perkelta, atšaukta ir papildoma pamoka,
+rezervacijos ir vaiko dienyno paskyra (`/dienynas`, `ugne` / `ugne-1234`).
+
+**Laiškai neišeina niekam.** Siuntimas sudaro laišką, bet vietoje SMTP jį atspausdina terminale
+(`[mock paštas — NEIŠSIŲSTA]`). Užraktas — kode (`lib/mock.ts`, `lib/pastas.ts`), tad laikosi ir
+tada, jei `.env` turi tikrą SMTP slaptažodį. i.SAF į VMI nesijungia. Priminimus galima paleisti
+ranka: `http://localhost:3000/vidus/priminimai?raktas=mock`.
+
+**Tikrų duomenų neliečia.** Bazė ir failai gyvena `mock/` kataloge, kuris git'e ignoruojamas — su
+`git push` jie niekur nenukeliauja, o serverio bazė (`DATABASE_URI` hPanel'yje) su vietine
+nesusijusi. Duomenų kūrimo skriptas trina bazę, todėl atsisako dirbti, jei ji ne `mock/` kataloge.
+
+Serveryje mock režimo nėra: `VARDIKLIS_MOCK` nustato tik `scripts/mock.mjs`, o `arMock()`
+produkcijoje grąžina `false` net ir su juo.
+
+> `npm run dev` ir `npm run dev:mock` vienu metu nepasileis — Next neleidžia dviejų kūrimo
+> serverių tame pačiame kataloge. Laiškų nuorodos veda į `vardiklis.lt`, kur mock įrašų nėra.
 
 ---
 
@@ -219,11 +248,56 @@ langą lygiai taip pat.
 
 **Pamokų žurnalas** (`cms/Zurnalas.ts`) — po įrašą kiekvienai pamokai; grupinė pamoka palieka po
 įrašą **kiekvienam nariui**, nes lankomumas ir apmokėjimas yra pervaikį, ne pergrupę. Įrašus kuria
-pati sistema; jie neleidžia išsiųsti to paties priminimo dukart ir kaupia lankomumo bei
+priminimai ir kalendorius; jie neleidžia išsiųsti to paties priminimo dukart ir kaupia lankomumo bei
 atsiskaitymo istoriją.
 
 Kiekvienam įrašui siuntimo metu užrašoma **rūšis** (individuali / grupinė) ir **kaina** — kad
 pakeitus kainoraštį praėjusio mėnesio sąskaitos nepersiskaičiuotų atgaline data.
+
+### Perkėlimas, atšaukimas ir papildomos pamokos
+
+Tvarkaraštis (pamokų laikai kortelėje) yra **taisyklė**, o žurnalas — jos **išimtys**, kaip
+pasikartojančio įvykio išimtys Google kalendoriuje. Visa logika — `lib/pamoku-planas.ts`, funkcija
+`suplanuok()`; ja remiasi ir priminimai, ir svetainės kalendorius, ir dienynas, ir CMS kalendorius.
+
+- **Perkelti** — žurnalo įraše pakeisti datą ir pradžią (arba nutempti pamoką CMS kalendoriuje).
+  Įrašas įsimena, kur pamoka buvo pagal tvarkaraštį („Perkelta iš“), ir ten ji nebevyksta: nei
+  priminimo, nei užimto laiko svetainėje. Priminimas išeina **naujuoju** laiku. Grąžinus atgal,
+  „Perkelta iš“ išsivalo.
+- **Atšaukti** — būsena „Atšaukta“. Priminimo nebus, laikas svetainėje atsilaisvina.
+- **Vienas vaikas praleidžia grupinę** — jo įraše „Neįvyko“ iš anksto: jis priminimo negauna, o
+  grupė vyksta.
+- **Papildoma pamoka** — tiesiog žurnalo įrašas be tvarkaraščio eilutės (CMS kalendoriuje —
+  paspaudus tuščią vietą). Priminimą ji gauna lygiai taip pat, kaip tvarkaraščio pamoka.
+
+Grupinė pamoka perkeliama ir atšaukiama **visa** — tai pasirūpina `Zurnalas` kabliukas. Tik
+perkeliant per pamokos langą, jis pasiekia tuos narius, kurie įrašą jau turi; kalendorius prieš
+perkeldamas įrašus sukuria visiems.
+
+„Aktyvus“ ir „Pauzė iki“ galioja **ir įrašams**: kortelėje pažadėta, kad nuėmus varnelę ar įrašius
+pauzę priminimai nebeina. Papildomai pamokai per atostogas pauzę reikia sutrumpinti — kalendorius
+apie tai pasako pats.
+
+Kaina, kaip ir anksčiau, fiksuojama siunčiant priminimą: iš anksto sukurtas įrašas jos neturi ir
+gauna ją tą rytą; ranka įrašyta kaina lieka.
+
+### CMS kalendorius — `/admin/kalendorius`
+
+Visų pamokų savaitė: individualios (oranžinės), grupinės (mėlynos, vienu langeliu su nariais),
+rezervacijos (punktyrinės) ir atšauktos (perbrauktos). Nuoroda — meniu viršuje.
+
+- **Paspaudus pamoką** atsidaro jos žurnalo įrašas (tema, namų darbai, būsena). Pamokai, kuri kol
+  kas tik tvarkaraštyje, įrašas sukuriamas tą akimirką — tą patį vėliau būtų padarę priminimai.
+- **Nutempus** — perkėlimas (su patvirtinimu ir įspėjimu, jei tuo metu kas nors jau yra).
+- **Paspaudus tuščią vietą** arba „+ Papildoma pamoka“ — vienkartinė pamoka mokiniui ar grupei.
+
+| Failas | Ką daro |
+|---|---|
+| `lib/pamoku-planas.ts` | `suplanuok()` — tvarkaraštis + žurnalo išimtys, gryna funkcija |
+| `lib/kalendorius.ts` | savaitės duomenys, įrašų sukūrimas, perkėlimas, papildoma pamoka |
+| `cms/vaizdai/KalendoriausVaizdas.tsx` | serverio pusė |
+| `cms/vaizdai/KalendoriausSavaite.tsx` | tinklelis, tempimas, papildomos pamokos langas |
+| `cms/vaizdai/kalendoriaus-veiksmai.ts` | serverio veiksmai (tikrina prisijungimą) |
 
 ### Kaip tai sukasi
 
@@ -278,7 +352,9 @@ Lentelės rėmuose „Paskutinė eilutė“ yra **vėliausia pamokos pradžia ir
 | `components/KalendoriausTinklelis.tsx` | lentelė, savaičių vartymas, modalas |
 | `lib/rezervacija.ts` | serverio veiksmas: patikros, įrašas, du laiškai |
 
-Užimtumas imamas **iš tų pačių mokinių pamokų** — antro tvarkaraščio pildyti nereikia. Prie to
+Užimtumas imamas **iš tų pačių mokinių pamokų** — antro tvarkaraščio pildyti nereikia; perkeltos,
+atšauktos ir papildomos pamokos iš žurnalo įskaičiuojamos (`suplanuok()`). Pauzė laiko
+neatlaisvina: per atostogas vaiko valanda lieka jo. Prie to
 prisideda „Rankiniai pataisymai“ (galioja PO skaičiavimo, tad gali ir uždaryti, ir atlaisvinti) ir
 rezervacijos, kurių būsena „nauja“ arba „patvirtinta“. Pažymėjus rezervaciją „Atmesta“, laikas
 svetainėje vėl tampa laisvas.
@@ -502,13 +578,15 @@ cms/
   Atsiskaitymai.ts            rekvizitai, kainos, PVM, i.SAF (globalas)
   Tvarkarastis.ts             laisvų laikų kalendorius (globalas)
   Rezervacijos.ts             ką lankytojai užsisakė kalendoriuje
-  vaizdai/                    `/admin/saskaitos` langas ir jo serverio veiksmai
+  vaizdai/                    `/admin/saskaitos` ir `/admin/kalendorius` langai bei jų veiksmai
 lib/
   temos.ts                    prielaidų grafas — DUOMENYS
   diagnostika.ts              adaptyvi logika
   matematika.ts               nsd, mbk, suprastinimas, normalizavimas
   generatoriai/               uždavinių generatoriai
   pamokos.ts                  pasikartojimai — ar pamoka vyksta tą dieną
+  pamoku-planas.ts            tvarkaraštis + žurnalo išimtys (perkelta, atšaukta, papildoma)
+  kalendorius.ts              CMS kalendoriaus savaitė ir jo veiksmai
   priminimai.ts               kam ir kada siųsti laišką
   kainos.ts                   kiek kainuoja pamoka + pardavėjo rekvizitai
   pinigai.ts                  centai, PVM išskaidymas, formatavimas
@@ -524,7 +602,10 @@ lib/
   rezervacija.ts              užsakymo veiksmas (patikros, įrašas, laiškai)
   greicio-riba.ts             bendras botų ribotuvas formoms
   laikas.ts                   Vilniaus laikas (serveris sukasi UTC)
+  mock.ts                     mock režimas: ar įjungtas, netikri prisijungimai
 scripts/                      patikros, nekeliaujančios į produkciją
+  mock.mjs, kurk-mock.ts      `npm run dev:mock` ir jo netikri duomenys
+mock/                         mock bazė ir failai (git'e ignoruojama)
 ```
 
 ## Dizainas

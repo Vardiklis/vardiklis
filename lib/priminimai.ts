@@ -2,12 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { kontaktai, svetaine } from '@/lib/kontaktai'
-import {
-  gautiAtsiskaitymus,
-  pamokosKaina,
-  type AtsiskaitymuNustatymai,
-  type PamokosTipas,
-} from '@/lib/kainos'
+import { gautiAtsiskaitymus, pamokosKaina, type AtsiskaitymuNustatymai } from '@/lib/kainos'
 import {
   data as dataVilniuje,
   dataZodziais,
@@ -15,7 +10,8 @@ import {
   momentas,
   pridekDienas,
 } from '@/lib/laikas'
-import { arVyksta, pauzuoja, type Pamoka } from '@/lib/pamokos'
+import type { Pamoka } from '@/lib/pamokos'
+import { irasuSalyga, suplanuok, type Planuota, type PlanoIrasas } from '@/lib/pamoku-planas'
 import { pastoNustatymai, pastoSiuntejas } from '@/lib/pastas'
 
 /**
@@ -33,10 +29,11 @@ import { pastoNustatymai, pastoSiuntejas } from '@/lib/pastas'
  * DUKART NEIŠSIUNČIA žurnalas: įrašas kuriamas prieš siunčiant, ir kitas
  * badymas tą pačią pamoką jau randa.
  *
- * INDIVIDUALIOS IR GRUPINĖS EINA VIENU KELIU. Pamokos pirma SUPLANUOJAMOS į
- * vieną sąrašą (`suplanuok`), ir tik paskui siunčiamos. Taip dvigubo siuntimo
- * apsauga, kainos fiksavimas ir klaidų tvarkymas lieka vienoje vietoje —
- * kitaip grupinė pamoka anksčiau ar vėliau imtų elgtis kitaip nei individuali.
+ * INDIVIDUALIOS, GRUPINĖS IR ŽURNALO PAMOKOS EINA VIENU KELIU. Pamokos pirma
+ * SUPLANUOJAMOS į vieną sąrašą (`suplanuok`, `lib/pamoku-planas.ts`), ir tik
+ * paskui siunčiamos. Taip dvigubo siuntimo apsauga, kainos fiksavimas ir klaidų
+ * tvarkymas lieka vienoje vietoje — kitaip grupinė, perkelta ar vienkartinė
+ * pamoka anksčiau ar vėliau imtų elgtis kitaip nei įprasta.
  */
 
 type Mokinys = {
@@ -91,13 +88,7 @@ export type Ataskaita = {
 }
 
 /** Viena konkreti pamoka konkrečią dieną konkrečiam vaikui. */
-type Suplanuota = {
-  mokinys: Mokinys
-  dataISO: string
-  laikas: string
-  tipas: PamokosTipas
-  grupe: Grupe | null
-}
+type Suplanuota = Planuota<Mokinys, Grupe>
 
 /** Parašas žymėjimo nuorodoms laiške — kad būseną galėtų pakeisti tik jų gavėjas. */
 export function zymejimoParasas(id: string, busena: string): string {
@@ -150,63 +141,9 @@ function numatytasParasas(): string[] {
   return ['Šilčiausi linkėjimai,', kontaktai.vardas]
 }
 
-/**
- * Visos pamokos, vykstančios nurodytomis dienomis — ir individualios, ir
- * grupinės — vienu sąrašu.
- *
- * RAKTAS `mokinys|data|laikas` neleidžia dviejų įrašų tam pačiam vaikui tuo
- * pačiu metu. Toks sutapimas įmanomas (vaikas įrašytas į dvi grupes arba turi
- * ir individualią, ir grupinę tuo pačiu laiku) ir be šito duotų DU laiškus bei
- * DVI eilutes sąskaitoje. Individualios planuojamos pirmos ir laimi: tai
- * paties vaiko laikas, o į grupę jis tą valandą fiziškai nespėtų.
- */
-function suplanuok(
-  mokiniai: Mokinys[],
-  grupes: Grupe[],
-  kandidatai: string[],
-): Suplanuota[] {
-  const pagalRakta = new Map<string, Suplanuota>()
-  const pagalId = new Map<number | string, Mokinys>(mokiniai.map((m) => [m.id, m]))
-
-  const idek = (p: Suplanuota) => {
-    const raktas = `${p.mokinys.id}|${p.dataISO}|${p.laikas}`
-    if (!pagalRakta.has(raktas)) pagalRakta.set(raktas, p)
-  }
-
-  /** Tas pačias sąlygas turi praeiti ir individuali, ir grupinė pamoka. */
-  const tinka = (m: Mokinys, dataISO: string): boolean =>
-    Boolean(m.tevoPastas && m.meetNuoroda && m.raktas) &&
-    m.sutikimas !== false &&
-    !pauzuoja(m.pauzeIki, dataISO)
-
-  for (const dataISO of kandidatai) {
-    for (const mokinys of mokiniai) {
-      if (!tinka(mokinys, dataISO)) continue
-      for (const pamoka of mokinys.pamokos ?? []) {
-        // Ta pati funkcija, pagal kurią dažomas ir svetainės kalendorius —
-        // kad tėvai negautų laiško apie pamoką, kurios kalendorius nerodo.
-        if (!pamoka.laikas || !arVyksta(pamoka, dataISO)) continue
-        idek({ mokinys, dataISO, laikas: pamoka.laikas, tipas: 'individuali', grupe: null })
-      }
-    }
-
-    for (const grupe of grupes) {
-      if (pauzuoja(grupe.pauzeIki, dataISO)) continue
-      for (const pamoka of grupe.pamokos ?? []) {
-        if (!pamoka.laikas || !arVyksta(pamoka, dataISO)) continue
-        for (const narioId of grupe.nariai ?? []) {
-          // Sąraše tik aktyvūs mokiniai, tad neaktyvus narys čia nerandamas
-          // ir priminimo negauna — lygiai kaip individualių pamokų atveju.
-          const mokinys = pagalId.get(narioId)
-          if (!mokinys || !tinka(mokinys, dataISO)) continue
-          idek({ mokinys, dataISO, laikas: pamoka.laikas, tipas: 'grupine', grupe })
-        }
-      }
-    }
-  }
-
-  return [...pagalRakta.values()]
-}
+/** Ar vaikui apskritai galima siųsti priminimą. Pauzę tikrina `suplanuok()`. */
+const galimaSiusti = (m: Mokinys): boolean =>
+  Boolean(m.tevoPastas && m.meetNuoroda && m.raktas) && m.sutikimas !== false
 
 /**
  * HTML laiške skaitomas kaip tekstas, tad tėvo vardas, prierašas ir parašas
@@ -354,6 +291,19 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
   }
   const siuntejas = pastoSiuntejas(pastas)
 
+  const siandien = dataVilniuje(dabar)
+  const kandidatai = [siandien, pridekDienas(siandien, 1)]
+
+  // Perkeltos, atšauktos ir vienkartinės pamokos — žr. `lib/pamoku-planas.ts`.
+  const { docs: irasuDokai } = await payload.find({
+    collection: 'zurnalas',
+    where: irasuSalyga(kandidatai[0], kandidatai[1]),
+    limit: 1000,
+    depth: 0,
+    overrideAccess: true,
+  })
+  const irasai = irasuDokai as unknown as PlanoIrasas[]
+
   const { docs: mokiniuDokai } = await payload.find({
     collection: 'mokiniai',
     where: { aktyvus: { equals: true } },
@@ -373,12 +323,10 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
   const grupes = grupiuDokai as unknown as Grupe[]
 
   const kainos = await gautiAtsiskaitymus()
-
-  const siandien = dataVilniuje(dabar)
-  const kandidatai = [siandien, pridekDienas(siandien, 1)]
   const paliestosDatos = new Set<string>()
 
-  for (const p of suplanuok(mokiniai, grupes, kandidatai)) {
+  const planas = suplanuok(mokiniai, grupes, irasai, kandidatai, { tinka: galimaSiusti })
+  for (const p of planas) {
     const { mokinys, dataISO, laikas } = p
 
     const pradzia = momentas(dataISO, laikas)
@@ -391,6 +339,10 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
     // spėja išsiųsti pietų, bet po pamokos pradžios nebesiunčia niekada.
     if (dabar > pradzia) continue
 
+    /**
+     * Įrašas klausiamas iš naujo, o ne imamas iš plano: planas sudarytas prieš
+     * kelias sekundes, o įrašą galėjo sukurti ir kitas badymas.
+     */
     const jau = await payload.find({
       collection: 'zurnalas',
       where: {
@@ -398,6 +350,7 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
           { mokinys: { equals: mokinys.id } },
           { data: { equals: dataISO } },
           { laikas: { equals: laikas } },
+          { busena: { not_equals: 'atsaukta' } },
         ],
       },
       limit: 1,
@@ -410,9 +363,14 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
      * (nulūžo SMTP, dingo tinklas). Tokį bandom iš naujo, o ne praleidžiam:
      * antraip vienas nepavykęs sujungimas reikštų, kad tėvai negaus nieko,
      * ir apie tai nesužinotų niekas.
+     *
+     * „Neįvyko“ iš anksto reiškia, kad vaikas šįkart praleidžia — tada
+     * priminti nėra apie ką.
      */
-    const senas = jau.docs[0] as unknown as { id: string | number; issiusta?: string | null }
-    if (senas?.issiusta) {
+    const senas = jau.docs[0] as unknown as
+      | { id: string | number; issiusta?: string | null; busena?: string | null; kaina?: number | null }
+      | undefined
+    if (senas?.issiusta || senas?.busena === 'neivyko') {
       ataskaita.praleista++
       continue
     }
@@ -422,6 +380,12 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
     const pirma = Boolean(mokinys.pirmaPamoka)
     const kaina = pamokosKaina(kainos, p.tipas, pirma)
 
+    /**
+     * Kaina fiksuojama čia ir istorijoje nebesikeičia — lygiai dėl tos pačios
+     * priežasties, kaip ir `pirmaPamoka`. Ranka ar iš kalendoriaus sukurtas
+     * įrašas jos dar neturi, tad gauna ją dabar; įrašyta ranka lieka.
+     */
+    const kainosLaukai = { pirmaPamoka: pirma, kaina }
     const irasas =
       senas ??
       (await payload.create({
@@ -431,16 +395,15 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
           santrauka: `${mokinys.vardas} · ${dataISO} ${laikas}`,
           data: dataISO,
           laikas,
+          trukmeMin: p.trukme,
           mokinys: mokinys.id,
           busena: 'suplanuota',
-          pirmaPamoka: pirma,
           tipas: p.tipas,
-          grupe: p.grupe?.id ?? null,
-          // Kaina fiksuojama čia ir istorijoje nebesikeičia — lygiai dėl tos
-          // pačios priežasties, kaip ir `pirmaPamoka`.
-          kaina,
+          grupe: p.grupesId == null ? null : Number(p.grupesId),
+          ...kainosLaukai,
         },
       }))
+    const kainuotiDabar = Boolean(senas) && senas?.kaina == null
 
     const atsisakymas = atsisakymoNuoroda(mokinys.id)
     const laiskas = laiskasTevams(
@@ -482,7 +445,11 @@ export async function siuskPriminimus(dabar = new Date()): Promise<Ataskaita> {
         id: irasas.id,
         overrideAccess: true,
         // `klaida` valoma: pavykus iš antro karto senas įrašas klaidintų.
-        data: { issiusta: new Date().toISOString(), klaida: null },
+        data: {
+          issiusta: new Date().toISOString(),
+          klaida: null,
+          ...(kainuotiDabar ? kainosLaukai : {}),
+        },
       })
       ataskaita.issiusta++
       ataskaita.eilutes.push(`✓ ${mokinys.vardas} ${dataISO} ${laikas}`)
@@ -536,7 +503,7 @@ async function siuskSantrauka(
 ): Promise<void> {
   const { docs } = await payload.find({
     collection: 'zurnalas',
-    where: { data: { in: datos } },
+    where: { and: [{ data: { in: datos } }, { busena: { not_equals: 'atsaukta' } }] },
     sort: ['data', 'laikas'],
     limit: 200,
     depth: 1,

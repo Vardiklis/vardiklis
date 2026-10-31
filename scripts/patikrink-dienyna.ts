@@ -11,7 +11,8 @@
  *   • vardas nejautrus didžiosioms raidėms, neteisingas slaptažodis — ne;
  *   • laikinas slaptažodis: keitimo taisyklės, senas nustoja tikti, CMS'e
  *     įrašius naują, vėl prašoma pasikeisti;
- *   • kita pamoka: individuali ir grupinė, pauzė jas nustumia;
+ *   • kita pamoka: individuali, grupinė ir įrašyta žurnale; atšaukta ir
+ *     pauzė jas nustumia;
  *   • praėjusios pamokos: neįvykusi ir dar neprasidėjusi nerodomos;
  *   • grupės narių įrašai gauna tą pačią temą, o „Įvyko“ jos neperrašo;
  *   • failai: nuotrauka sumažinama, gula ne į `public/`, SVG neleidžiamas;
@@ -130,6 +131,7 @@ try {
       { mokinys: kate.id, data: vakar, laikas: '17:00', busena: 'ivyko', tema: 'Trupmenos', namuDarbai: '42 psl.' },
       { mokinys: kate.id, data: uzvakar, laikas: '17:00', busena: 'neivyko', tema: 'Neturi matytis' },
       // Šiandien 23:59 — dar neprasidėjusi (nebent patikra paleista paskutinę minutę).
+      // Tvarkaraštyje jos nėra, tad tai papildoma pamoka — ir būtent ji yra kita.
       { mokinys: kate.id, data: siandien, laikas: '23:59', busena: 'suplanuota', tema: 'Dar neįvyko' },
       { mokinys: kate.id, data: vakar, laikas: '15:00', tipas: 'grupine', grupe: grupe.id },
       { mokinys: jonas.id, data: vakar, laikas: '15:00', tipas: 'grupine', grupe: grupe.id },
@@ -298,8 +300,8 @@ try {
   const d = await vaikoDienynas(String(kate.id), dabar)
   tikrink(Boolean(d), 'dienynas randamas')
   if (d) {
-    tikrink(d.kita?.dataISO === rytoj && d.kita.laikas === '23:00', 'kita pamoka — rytoj 23:00', JSON.stringify(d.kita))
-    tikrink(d.kita?.pabaiga === '00:00', 'pabaiga per vidurnaktį — 00:00', String(d.kita?.pabaiga))
+    tikrink(d.kita?.dataISO === siandien && d.kita.laikas === '23:59', 'kita pamoka — papildoma šiandien 23:59', JSON.stringify(d.kita))
+    tikrink(d.kita?.pabaiga === '00:59', 'pabaiga per vidurnaktį — 00:59', String(d.kita?.pabaiga))
     tikrink(Boolean(d.nuoroda?.includes('/p/')), 'nuoroda į pamoką — per /p/, ne tiesiai į Meet')
 
     const temos = d.pamokos.map((p) => p.tema)
@@ -311,6 +313,14 @@ try {
     const tekstas = JSON.stringify(d)
     tikrink(!tekstas.includes('example.com') && !tekstas.includes('meet.google.com'), 'tėvų paštas ir Meet nuoroda neišeina')
   }
+
+  // Atšaukus papildomą, kita vėl — pagal tvarkaraštį.
+  const papildoma = irasai.find((z) => z.tema === 'Dar neįvyko')!
+  await payload.update({ collection: 'zurnalas', id: papildoma.id, overrideAccess: true, data: { busena: 'atsaukta' } })
+  const beJos = await vaikoDienynas(String(kate.id), dabar)
+  tikrink(beJos?.kita?.dataISO === rytoj && beJos.kita.laikas === '23:00', 'atšaukus — kita rytoj 23:00', JSON.stringify(beJos?.kita))
+  tikrink(beJos?.kita?.pabaiga === '00:00', 'pabaiga per vidurnaktį — 00:00', String(beJos?.kita?.pabaiga))
+  await payload.update({ collection: 'zurnalas', id: papildoma.id, overrideAccess: true, data: { busena: 'suplanuota' } })
 
   console.log('\n6. Korepetitorės suvestinė')
 
@@ -328,7 +338,7 @@ try {
   if (sKate && sJonas) {
     tikrink(sKate.paskyros.map((p) => p.vardas).join() === 'patikra-dienynas', 'Katės paskyra rodoma')
     tikrink(sJonas.paskyros.length === 0, 'Jonas — be paskyros')
-    tikrink(sKate.kita?.dataISO === rytoj && !sKate.kita.grupine, 'Katės kita — rytoj individuali', JSON.stringify(sKate.kita))
+    tikrink(sKate.kita?.dataISO === siandien && !sKate.kita.grupine, 'Katės kita — šiandien papildoma individuali', JSON.stringify(sKate.kita))
     tikrink(
       sJonas.kita?.dataISO === pridekDienas(siandien, 2) && sJonas.kita.grupine,
       'Jono kita — poryt grupinė (grupės nariai suvestinėje atsekami)',
@@ -342,7 +352,7 @@ try {
     tikrink(!tekstas.includes('example.com') && !tekstas.includes('meet.google.com'), 'tėvų paštas ir Meet nuoroda neišeina')
   }
 
-  // Pauzė iki rytojaus imtinai: rytojaus individuali dingsta, lieka poryt grupinė.
+  // Pauzė iki rytojaus imtinai: šiandienos papildoma ir rytojaus individuali dingsta, lieka poryt grupinė.
   await payload.update({ collection: 'mokiniai', id: kate.id, overrideAccess: true, data: { pauzeIki: `${rytoj}T12:00:00.000Z` } })
   const suPauze = await vaikoDienynas(String(kate.id), dabar)
   tikrink(

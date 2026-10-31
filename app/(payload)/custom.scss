@@ -382,3 +382,334 @@ $kortelu-ikonos: (
     border-radius: 0.35rem;
   }
 }
+
+/**
+ * KALENDORIUS (`/admin/kalendorius`).
+ *
+ * Tinklelis — CSS grid: pirmas stulpelis laikams, po vieną kiekvienai dienai.
+ * Pamokos dienos stulpelyje padėtos absoliučiai, procentais nuo jo aukščio, tad
+ * aukštį keičia vienas `--valandos-aukstis`. Valandų linijos — fono gradientas,
+ * o ne šimtas elementų.
+ *
+ * Spalva pasako RŪŠĮ (individuali / grupinė / rezervacija), o būseną — ženklas
+ * ir blyškumas. Taip kaip Google kalendoriuje: spalva yra „kieno“, ne „kaip sekėsi“.
+ */
+.kalendorius {
+  --valandos-aukstis: 3.25rem;
+  --laiku-plotis: 3.25rem;
+  --individuali: #ffe9da;
+  --individuali-krastas: var(--vardiklis-oranzine);
+  --grupine: #dbeafe;
+  --grupine-krastas: #3b82f6;
+  --ivykio-tekstas: #12100e;
+
+  &__irankiai {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-block-end: 0.75rem;
+  }
+
+  &__etikete {
+    margin-inline: 0.5rem;
+  }
+
+  &__data {
+    padding: 0.3rem 0.5rem;
+    font: inherit;
+    color: var(--theme-elevation-800);
+    background: var(--theme-elevation-0);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: 0.3rem;
+  }
+
+  &__tarpas {
+    flex: 1;
+  }
+
+  &__legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    padding: 0;
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    color: var(--theme-elevation-650);
+    list-style: none;
+
+    /* Tie patys langeliai, kaip tinklelyje, tik ne absoliučiai. */
+    .kalendorius__ivykis {
+      position: static;
+      pointer-events: none;
+    }
+  }
+
+  /* Siauram ekranui dienos neišsispaudžia iki nieko — tinklelis slenka į šoną. */
+  &__slinktis {
+    overflow-x: auto;
+    border: 1px solid var(--theme-elevation-100);
+    border-radius: 0.5rem;
+
+    &--dirba {
+      cursor: progress;
+      opacity: 0.7;
+    }
+  }
+
+  &__tinklelis {
+    display: grid;
+    grid-template-columns: var(--laiku-plotis) repeat(7, minmax(7rem, 1fr));
+    grid-template-rows: auto calc(var(--valandu) * var(--valandos-aukstis));
+    min-inline-size: calc(var(--laiku-plotis) + 7 * 7rem);
+  }
+
+  &__kampas,
+  &__antraste {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--theme-elevation-0);
+    border-block-end: 1px solid var(--theme-elevation-150);
+  }
+
+  &__antraste {
+    display: flex;
+    gap: 0.4rem;
+    align-items: baseline;
+    justify-content: center;
+    padding-block: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--theme-elevation-650);
+
+    b {
+      font-size: 1.1rem;
+      color: var(--theme-elevation-800);
+    }
+
+    &--siandien b {
+      display: inline-grid;
+      place-items: center;
+      inline-size: 1.9rem;
+      block-size: 1.9rem;
+      color: var(--ivykio-tekstas);
+      background: var(--vardiklis-oranzine);
+      border-radius: 50%;
+    }
+  }
+
+  &__laikai {
+    position: relative;
+
+    span {
+      position: absolute;
+      inset-inline-end: 0.4rem;
+      font-size: 0.7rem;
+      color: var(--theme-elevation-500);
+      transform: translateY(-50%);
+    }
+
+    /* Pirmos valandos užrašas nusikirstų už antraštės. */
+    span:first-child {
+      transform: none;
+    }
+  }
+
+  &__diena {
+    position: relative;
+    cursor: copy;
+    background-image: linear-gradient(to bottom, var(--theme-elevation-100) 1px, transparent 1px);
+    border-inline-start: 1px solid var(--theme-elevation-100);
+
+    &--siandien {
+      background-color: var(--theme-elevation-50);
+    }
+  }
+
+  &__ivykis {
+    position: absolute;
+    z-index: 1;
+    display: block;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: 0.15rem 0.35rem;
+    margin: 0;
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    color: var(--ivykio-tekstas);
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    background: var(--individuali);
+    border: 1px solid var(--theme-elevation-0);
+    border-inline-start: 3px solid var(--individuali-krastas);
+    border-radius: 0.3rem;
+
+    &:hover,
+    &:focus-visible {
+      z-index: 3;
+      outline: 2px solid var(--individuali-krastas);
+      outline-offset: -1px;
+    }
+
+    &[draggable='true'] {
+      cursor: grab;
+    }
+
+    &--grupine {
+      background: var(--grupine);
+      border-inline-start-color: var(--grupine-krastas);
+
+      &:hover,
+      &:focus-visible {
+        outline-color: var(--grupine-krastas);
+      }
+    }
+
+    &--rezervacija {
+      color: var(--theme-elevation-800);
+      background: var(--theme-elevation-0);
+      border: 1px dashed var(--theme-elevation-500);
+    }
+
+    &--ivyko {
+      opacity: 0.75;
+    }
+
+    &--neivyko {
+      opacity: 0.5;
+    }
+
+    &--atsaukta {
+      text-decoration: line-through;
+      opacity: 0.45;
+    }
+
+    &--tempiamas {
+      opacity: 0.35;
+    }
+  }
+
+  &__laikas {
+    font-weight: 600;
+  }
+
+  &__vardas {
+    font-weight: 600;
+  }
+
+  &__smulkiai {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.8;
+  }
+
+  &__perziura {
+    position: absolute;
+    inset-inline: 0;
+    z-index: 4;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    pointer-events: none;
+    border: 2px dashed var(--vardiklis-oranzine);
+    border-radius: 0.3rem;
+  }
+
+  &__dabar {
+    position: absolute;
+    inset-inline: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-block-start: 2px solid #e11d48;
+
+    &::before {
+      position: absolute;
+      inset-block-start: -5px;
+      inset-inline-start: -5px;
+      inline-size: 8px;
+      block-size: 8px;
+      content: '';
+      background: #e11d48;
+      border-radius: 50%;
+    }
+  }
+
+  &__dialogas {
+    inline-size: min(32rem, calc(100vw - 2rem));
+    padding: 1.25rem;
+    color: var(--theme-elevation-800);
+    background: var(--theme-elevation-0);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: 0.5rem;
+
+    &::backdrop {
+      background: rgb(18 16 14 / 40%);
+    }
+
+    h3 {
+      margin-block: 0 0.25rem;
+    }
+
+    form {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    label {
+      display: grid;
+      gap: 0.25rem;
+      font-size: 0.8rem;
+      color: var(--theme-elevation-650);
+    }
+
+    input,
+    select {
+      padding: 0.45rem 0.55rem;
+      font: inherit;
+      font-size: 0.9rem;
+      color: var(--theme-elevation-800);
+      background: var(--theme-elevation-0);
+      border: 1px solid var(--theme-elevation-150);
+      border-radius: 0.3rem;
+    }
+  }
+
+  &__pastaba {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--theme-elevation-650);
+  }
+
+  &__eilute {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  &__mygtukai {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+}
+
+/** Mock režimo ženklas meniu viršuje (`cms/komponentai/MockZenklas.tsx`). */
+.mock-zenklas {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0.65rem;
+  margin-block-end: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #12100e;
+  background: #fde68a;
+  border-radius: 0.35rem;
+
+  strong {
+    letter-spacing: 0.08em;
+  }
+}

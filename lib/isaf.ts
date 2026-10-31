@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { request as httpsUzklausa } from 'node:https'
+import { arMock } from '@/lib/mock'
 
 /**
  * i.SAF žiniatinklio paslaugos (`iSAFUploaderService`).
@@ -47,6 +48,9 @@ export type IsafNustatymai = {
  * paaiškinimą, o ne bando jungtis ir laukia, kol baigsis laikas.
  */
 export function isafNustatymai(): IsafNustatymai | null {
+  // Mock režime (`lib/mock.ts`) į VMI nesijungiama niekada: rinkmena vis tiek sudaroma ir atsisiunčiama.
+  if (arMock()) return null
+
   const sertifikatoKelias = process.env.ISAF_SERTIFIKATAS?.trim()
   if (!sertifikatoKelias) return null
 

@@ -47,3 +47,6 @@ next-env.d.ts
 /dienyno-failai
 *.db
 *.db-journal
+
+# Mock režimas (`npm run dev:mock`): netikra bazė ir failai — tik vietoje
+/mock/

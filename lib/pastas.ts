@@ -1,4 +1,5 @@
 import nodemailer, { type Transporter } from 'nodemailer'
+import { arMock } from '@/lib/mock'
 
 /**
  * Išeinančio pašto siuntėjas.
@@ -32,6 +33,22 @@ export type PastoNustatymai = {
  * praryja užklausą.
  */
 export function pastoNustatymai(): PastoNustatymai | null {
+  /**
+   * Mock režime (`lib/mock.ts`) siuntimas „sukonfigūruotas“ — kad formos,
+   * priminimai ir sąskaitos praeitų visą kelią, — bet `pastoSiuntejas` laiškus
+   * tik atspausdina. Netikri adresai, ne tušti: tušti numuštų tuos pačius
+   * kelius, kuriuos norima išbandyti.
+   */
+  if (arMock()) {
+    return {
+      host: 'mock',
+      port: 0,
+      user: 'mock@example.invalid',
+      pass: 'mock',
+      gavejas: 'mock@example.invalid',
+    }
+  }
+
   const user = process.env.SMTP_USER?.trim()
 
   /**
@@ -61,6 +78,24 @@ export function pastoNustatymai(): PastoNustatymai | null {
 }
 
 export function pastoSiuntejas(n: PastoNustatymai): Transporter {
+  /**
+   * Mock režime — `jsonTransport`: nodemailer laišką sudaro, bet niekur
+   * nesijungia. Turinys spausdinamas terminale, kad matytųsi, kas būtų išėję.
+   */
+  if (arMock()) {
+    if (!siuntejas) {
+      siuntejas = nodemailer.createTransport({ jsonTransport: true })
+      siuntejas.use('compile', (laiskas, baigta) => {
+        const d = laiskas.data
+        console.log(
+          `\n[mock paštas — NEIŠSIŲSTA] kam: ${String(d.to)} · ${String(d.subject)}\n${String(d.text ?? '').trim()}\n`,
+        )
+        baigta()
+      })
+    }
+    return siuntejas
+  }
+
   if (!siuntejas) {
     siuntejas = nodemailer.createTransport({
       host: n.host,

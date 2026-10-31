@@ -32,6 +32,9 @@ import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 }
 import { MeetNuorodosCele as MeetNuorodosCele_49f1d94a11e6c7993e041562d555e258 } from '../../../cms/komponentai/MeetNuoroda'
 import { PamokosEilute as PamokosEilute_622399b2af823d016153f7a7d352b589 } from '../../../cms/komponentai/PamokosEilute'
 import { SaskaituNuoroda as SaskaituNuoroda_7348960138a3c096ce30986e192928c8 } from '../../../cms/komponentai/SaskaituNuoroda'
+import { MockZenklas as MockZenklas_04300c81f562c8d08d13561e6e202263 } from '../../../cms/komponentai/MockZenklas'
+import { KalendoriausNuoroda as KalendoriausNuoroda_897e3f41b5864e36320f0cd71d6a12b2 } from '../../../cms/komponentai/KalendoriausNuoroda'
+import { KalendoriausVaizdas as KalendoriausVaizdas_7f0b790741013f5eeb1e14dd35d6737f } from '../../../cms/vaizdai/KalendoriausVaizdas'
 import { SaskaituVaizdas as SaskaituVaizdas_92e2a35015320df63c437dd276fcba2a } from '../../../cms/vaizdai/SaskaituVaizdas'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -71,6 +74,9 @@ export const importMap = {
   "/cms/komponentai/MeetNuoroda#MeetNuorodosCele": MeetNuorodosCele_49f1d94a11e6c7993e041562d555e258,
   "/cms/komponentai/PamokosEilute#PamokosEilute": PamokosEilute_622399b2af823d016153f7a7d352b589,
   "/cms/komponentai/SaskaituNuoroda#SaskaituNuoroda": SaskaituNuoroda_7348960138a3c096ce30986e192928c8,
+  "/cms/komponentai/MockZenklas#MockZenklas": MockZenklas_04300c81f562c8d08d13561e6e202263,
+  "/cms/komponentai/KalendoriausNuoroda#KalendoriausNuoroda": KalendoriausNuoroda_897e3f41b5864e36320f0cd71d6a12b2,
+  "/cms/vaizdai/KalendoriausVaizdas#KalendoriausVaizdas": KalendoriausVaizdas_7f0b790741013f5eeb1e14dd35d6737f,
   "/cms/vaizdai/SaskaituVaizdas#SaskaituVaizdas": SaskaituVaizdas_92e2a35015320df63c437dd276fcba2a,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

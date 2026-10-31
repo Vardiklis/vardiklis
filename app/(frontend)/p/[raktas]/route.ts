@@ -109,6 +109,8 @@ async function artimiausiaPamoka(
       and: [
         { mokinys: { equals: mokinysId } },
         { data: { in: [siandien, pridekDienas(siandien, 1)] } },
+        // Atšaukta grupinė pamoka neturi nuvesti į grupės kambarį.
+        { busena: { not_equals: 'atsaukta' } },
       ],
     },
     limit: 10,

@@ -7,7 +7,14 @@ import {
   SAVAITES_DIENOS,
   savaitesDiena,
 } from '@/lib/laikas'
-import { arVyksta, trukme, type Pamoka } from '@/lib/pamokos'
+import {
+  irasuSalyga,
+  PLANO_LAUKAI,
+  suplanuok,
+  type PlanoGrupe,
+  type PlanoIrasas,
+  type PlanoMokinys,
+} from '@/lib/pamoku-planas'
 
 /**
  * Laisvų laikų kalendorius su tikromis datomis.
@@ -19,7 +26,9 @@ import { arVyksta, trukme, type Pamoka } from '@/lib/pamokos'
  * kas, atsidaręs puslapio kodą. Rezervacijų kontaktai — lygiai taip pat.
  *
  * KAS UŽIMA LANGELĮ:
- *   1. mokinio savaitinė pamoka (`Mokiniai`);
+ *   1. mokinio ar grupės pamoka — pagal tvarkaraštį ir žurnalą: perkelta
+ *      užima naują laiką ir atlaisvina seną, atšaukta atlaisvina, vienkartinė
+ *      užima (`lib/pamoku-planas.ts`);
  *   2. rankinis pataisymas (`Tvarkarastis.pakeitimai`) — jis paskutinis žodis
  *      ir gali tiek uždaryti, tiek atlaisvinti;
  *   3. rezervacija, kurios būsena „nauja“ arba „patvirtinta“.
@@ -158,12 +167,23 @@ async function surinkti(dabar: Date) {
   const pirmadienis = pridekDienas(siandien, -(savaitesDiena(siandien) - 1))
   const paskutine = pridekDienas(pirmadienis, savaiciu * 7 - 1)
 
+  const { docs: irasuDokai } = await payload.find({
+    collection: 'zurnalas',
+    where: irasuSalyga(pirmadienis, paskutine),
+    limit: 5000,
+    depth: 0,
+    overrideAccess: true,
+    select: PLANO_LAUKAI,
+  })
+  const irasai = irasuDokai as unknown as PlanoIrasas[]
+
   const { docs: mokiniai } = await payload.find({
     collection: 'mokiniai',
     where: { aktyvus: { equals: true } },
     limit: 500,
     depth: 0,
     overrideAccess: true,
+    select: { aktyvus: true, pauzeIki: true, pamokos: true },
   })
 
   const { docs: grupes } = await payload.find({
@@ -172,24 +192,40 @@ async function surinkti(dabar: Date) {
     limit: 200,
     depth: 0,
     overrideAccess: true,
+    select: { aktyvi: true, nariai: true, pauzeIki: true, pamokos: true },
   })
 
   /**
-   * Visų mokinių IR visų grupių pamokos vienu sąrašu.
+   * Visų mokinių IR visų grupių pamokos — po intervalų sąrašą kiekvienai datai.
    *
    * Grupės čia dalyvauja lygiai taip pat, kaip individualūs mokiniai: langas
    * užimtas nepriklausomai nuo to, kiek vaikų tuo metu sėdi. Be šito grupinės
    * pamokos laikas svetainėje atrodytų laisvas, o užsiregistravęs žmogus
    * gautų valandą, kurios nėra.
    *
-   * Nebe „savaitės diena → intervalas“: pasikartojimas gali būti ir kas antra
-   * savaitė, ir konkreti mėnesio diena, tad kiekvienai datai atskirai klausiam
-   * `arVyksta()` (`lib/pamokos.ts`) — tos pačios funkcijos, pagal kurią
-   * siunčiami ir rytiniai priminimai.
+   * Skaičiuoja `suplanuok()` — ta pati funkcija, pagal kurią siunčiami ir
+   * rytiniai priminimai, tad perkelta pamoka abiejose vietose yra ten pat.
+   * Pauzės NETAIKOMOS: per atostogas vaiko laikas lieka jo, ir svetimam jo
+   * siūlyti nereikia.
    */
-  const pamokos = [...mokiniai, ...grupes].flatMap(
-    (dok) => (dok as unknown as { pamokos?: Pamoka[] | null }).pamokos ?? [],
+  const datos: string[] = []
+  for (let d = pirmadienis; d <= paskutine; d = pridekDienas(d, 1)) datos.push(d)
+
+  const pamokos = new Map<string, Intervalas[]>()
+  const planas = suplanuok(
+    mokiniai as unknown as PlanoMokinys[],
+    grupes as unknown as PlanoGrupe[],
+    irasai,
+    datos,
+    { pauzes: false },
   )
+  for (const p of planas) {
+    const nuo = minutes(p.laikas)
+    pamokos.set(p.dataISO, [
+      ...(pamokos.get(p.dataISO) ?? []),
+      { data: p.dataISO, nuo, iki: nuo + p.trukme },
+    ])
+  }
 
   /**
    * Pataisymas gali galioti arba savaitės dienai (kartojasi), arba vienai
@@ -264,10 +300,8 @@ function langelioBusena(
 
   const pabaiga = pradzia + s.zingsnis
 
-  let uzimta = s.pamokos.some(
-    (p) =>
-      arVyksta(p, dataISO) &&
-      persidengia(minutes(p.laikas!), minutes(p.laikas!) + trukme(p), pradzia, pabaiga),
+  let uzimta = (s.pamokos.get(dataISO) ?? []).some((p) =>
+    persidengia(p.nuo, p.iki, pradzia, pabaiga),
   )
 
   // Rankiniai pataisymai — paskutinis žodis prieš rezervacijas.

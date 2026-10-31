@@ -27,6 +27,7 @@ import { straipsnioAdresas, Straipsniai } from './cms/Straipsniai'
 import { Tvarkarastis } from './cms/Tvarkarastis'
 import { Zurnalas } from './cms/Zurnalas'
 import { TEKSTO_BUSENOS } from './cms/stiliai'
+import { arMock, MOCK_ADMINAS } from './lib/mock'
 
 const katalogas = path.dirname(fileURLToPath(import.meta.url))
 
@@ -69,6 +70,9 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `zurnalas` ADD `atsiliepimas` text',
   'ALTER TABLE `payload_locked_documents_rels` ADD `dienyno_failai_id` integer REFERENCES `dienyno_failai`(`id`)',
   'ALTER TABLE `dienyno_paskyros` ADD `keisti_slaptazodi` integer DEFAULT true',
+  'ALTER TABLE `zurnalas` ADD `trukme_min` numeric',
+  'ALTER TABLE `zurnalas` ADD `pradine_data` text',
+  'ALTER TABLE `zurnalas` ADD `pradinis_laikas` text',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -183,24 +187,43 @@ export default buildConfig({
   admin: {
     user: Naudotojai.slug,
     meta: {
-      titleSuffix: ' · Vardiklis',
+      titleSuffix: arMock() ? ' · MOCK' : ' · Vardiklis',
     },
+    /**
+     * MOCK REŽIMAS (`npm run dev:mock`, `lib/mock.ts`) — prisijungiama iškart,
+     * netikru administratoriumi iš `mock/` bazės. Kitur `false`: `arMock()`
+     * produkcijoje grąžina `false` net ir su kintamuoju.
+     */
+    autoLogin: arMock() ? { email: MOCK_ADMINAS.email, password: MOCK_ADMINAS.password } : false,
     /**
      * SĄSKAITŲ LANGAS. Mėnesio suvestinė, juodraščių generavimas, siuntimas
      * tėvams ir i.SAF — viskas, ko nepatogu daryti vartant kolekcijos sąrašą.
      * Pati sąskaita taisoma įprastu dokumento redaktoriumi, tad čia tik
      * langas, o ne antra sąskaitų sistema.
      *
-     * `afterNavLinks` — nes savų langų Payload į meniu pats neįrašo.
+     * KALENDORIUS. Visų pamokų savaitė: atidaryti, perkelti, įrašyti papildomą.
+     * Irgi tik langas: pamoka lieka žurnalo įrašu (`lib/kalendorius.ts`).
+     *
+     * `beforeNavLinks` / `afterNavLinks` — nes savų langų Payload į meniu pats
+     * neįrašo.
      */
     components: {
       views: {
+        kalendorius: {
+          Component: '/cms/vaizdai/KalendoriausVaizdas#KalendoriausVaizdas',
+          path: '/kalendorius',
+          meta: { title: 'Kalendorius' },
+        },
         saskaitos: {
           Component: '/cms/vaizdai/SaskaituVaizdas#SaskaituVaizdas',
           path: '/saskaitos',
           meta: { title: 'Sąskaitos' },
         },
       },
+      beforeNavLinks: [
+        '/cms/komponentai/MockZenklas#MockZenklas',
+        '/cms/komponentai/KalendoriausNuoroda#KalendoriausNuoroda',
+      ],
       afterNavLinks: ['/cms/komponentai/SaskaituNuoroda#SaskaituNuoroda'],
     },
     /**
@@ -459,6 +482,17 @@ export default buildConfig({
        */
       {
         name: 'schema-2026-09-dienyno-failai',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Pamokų perkėlimas: žurnalo `trukme_min`, `pradine_data` ir
+       * `pradinis_laikas` (iš kur perkelta). Gryni stulpeliai esamoje
+       * lentelėje — `TRUKSTAMI_STULPELIAI`. Būsenai „atsaukta“ stulpelio
+       * nereikia: pasirinkimas SQLite'e saugomas tekstu, be apribojimo.
+       */
+      {
+        name: 'schema-2026-11-perkelimas',
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },

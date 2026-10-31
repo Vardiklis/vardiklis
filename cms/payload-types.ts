@@ -421,7 +421,7 @@ export interface Grupe {
   createdAt: string;
 }
 /**
- * Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria priminimai, bet neplanuotą pamoką galima įrašyti ir ranka.
+ * Kiekviena konkreti pamoka. Įrašus kuria priminimai ir kalendorius, bet papildomą pamoką galima įrašyti ir ranka — priminimą ji gaus lygiai taip pat. Perkelti: pakeiskite datą ir pradžią.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "zurnalas".
@@ -440,7 +440,19 @@ export interface Zurnala {
    * Formatas 17:00.
    */
   laikas?: string | null;
+  /**
+   * Tuščia — kaip pamokos eilutėje, kitaip 60.
+   */
+  trukmeMin?: number | null;
   mokinys?: (number | null) | Mokiniai;
+  /**
+   * Kur pamoka buvo pagal tvarkaraštį. Ten ji nebevyksta.
+   */
+  pradineData?: string | null;
+  /**
+   * Grąžinus datą ir laiką atgal, šie laukai išsivalo patys.
+   */
+  pradinisLaikas?: string | null;
   /**
    * Įrašoma siuntimo metu — kad ištrynus grupę istorija liktų teisinga.
    */
@@ -450,9 +462,9 @@ export interface Zurnala {
    */
   grupe?: (number | null) | Grupe;
   /**
-   * „Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“.
+   * „Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“. „Atšaukta“ — pamokos nebus: priminimas neišeina, laikas atsilaisvina, o grupinė atšaukiama visiems nariams. Pažymėta „Neįvyko“ iš anksto — vienas vaikas praleidžia, priminimo jis negauna.
    */
-  busena?: ('suplanuota' | 'atidare' | 'ivyko' | 'neivyko') | null;
+  busena?: ('suplanuota' | 'atidare' | 'ivyko' | 'neivyko' | 'atsaukta') | null;
   tema?: string | null;
   /**
    * Palikus tuščią ir be failų, dienyne parašyta „Namų darbų nėra“.
@@ -961,7 +973,10 @@ export interface ZurnalasSelect<T extends boolean = true> {
   santrauka?: T;
   data?: T;
   laikas?: T;
+  trukmeMin?: T;
   mokinys?: T;
+  pradineData?: T;
+  pradinisLaikas?: T;
   tipas?: T;
   grupe?: T;
   busena?: T;

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { arLaikas, data as dataVilniuje } from '../lib/laikas'
+import { arLaikas, data as dataVilniuje, momentas } from '../lib/laikas'
 import { DIENYNO_FAILAI } from './DienynoFailai'
 import { tikAdministratoriui } from './prieiga'
 
@@ -24,6 +24,12 @@ import { tikAdministratoriui } from './prieiga'
  * žurnalą, kitaip jos nebus nei lankomume, nei sąskaitoje. Todėl laukai taisomi
  * ranka, o `santrauka` visada sudaroma automatiškai — kad sąrašo stulpelis
  * nepriklausytų nuo to, ar kas nors jį užpildė.
+ *
+ * PERKĖLIMAS — TAI TIESIOG KITA DATA IR LAIKAS. Pakeitus juos, įrašas įsimena,
+ * kur pamoka buvo iš pradžių (`pradineData`, `pradinisLaikas`), ir pasikartojimas
+ * ta vieta nebevyksta — nei priminime, nei kalendoriuje (`lib/pamoku-planas.ts`).
+ * „Atšaukta“ vietą tiesiog atlaisvina. Abu dalykai grupinei pamokai galioja
+ * visiems nariams; vieno vaiko praleidimas yra „Neįvyko“.
  *
  * KO TAISANT NEPAMIRŠTI. `saskaita` yra apsauga nuo dvigubo apmokestinimo:
  * užpildyta reiškia „ši pamoka jau kažkur suskaičiuota“. Ją išvalius pamoka
@@ -63,6 +69,9 @@ function palyginimui(reiksme: unknown): string | null {
 /** `context` žymė: šis įrašas — grupės kopija, toliau kopijuoti nereikia. */
 const GRUPES_KOPIJA = 'dienynoGrupesKopija'
 
+/** Būsenos, kurias perkėlus reikia grąžinti į „Suplanuota“. */
+const GRAZINAMOS_PERKELUS = ['atidare', 'atsaukta']
+
 export const Zurnalas: CollectionConfig = {
   slug: 'zurnalas',
   labels: { singular: 'Pamoka', plural: 'Pamokų žurnalas' },
@@ -76,11 +85,51 @@ export const Zurnalas: CollectionConfig = {
     useAsTitle: 'santrauka',
     defaultColumns: ['santrauka', 'data', 'laikas', 'tipas', 'busena', 'tema', 'kaina'],
     description:
-      'Ką sistema išsiuntė ir kas iš to išėjo. Įrašus kuria priminimai, bet neplanuotą pamoką galima įrašyti ir ranka.',
+      'Kiekviena konkreti pamoka. Įrašus kuria priminimai ir kalendorius, bet papildomą pamoką galima įrašyti ir ranka — priminimą ji gaus lygiai taip pat. Perkelti: pakeiskite datą ir pradžią.',
     group: 'Pamokos',
   },
   hooks: {
     beforeChange: [
+      /**
+       * Perkėlimas. Pasikeitus datai ar laikui, įrašas įsimena PIRMĄJĄ savo vietą
+       * — perkėlus antrą kartą ji nesikeičia, nes būtent ją užima pasikartojimas.
+       * Grąžinus į pradinę vietą, atmintis išvaloma: pamoka vėl paprasta.
+       *
+       * Priminimas ir „ar įvyko?“ buvo apie seną laiką, tad ateities pamokai jie
+       * nuvalomi ir išeis iš naujo. Praeities pamokos taisymas (vyko 17:30, ne
+       * 17:00) istorijos neliečia.
+       */
+      ({ data, originalDoc, operation }) => {
+        if (operation !== 'update' || !originalDoc) return data
+
+        // Forma tuščią laiką atsiunčia `''`, bazė jį saugo kaip `null`.
+        const naujaData = (data?.data !== undefined ? data.data : originalDoc.data) || null
+        const naujasLaikas = (data?.laikas !== undefined ? data.laikas : originalDoc.laikas) || null
+        if (naujaData === (originalDoc.data || null) && naujasLaikas === (originalDoc.laikas || null)) {
+          return data
+        }
+        // Įrašas be laiko jokios pasikartojimo vietos neužima — nėra ko įsiminti.
+        if (!originalDoc.laikas) return data
+
+        const pradineData = originalDoc.pradineData || originalDoc.data
+        const pradinisLaikas = originalDoc.pradineData
+          ? originalDoc.pradinisLaikas
+          : originalDoc.laikas
+        const grizo = naujaData === pradineData && naujasLaikas === pradinisLaikas
+
+        const pakeista: Record<string, unknown> = {
+          ...data,
+          pradineData: grizo ? null : pradineData,
+          pradinisLaikas: grizo ? null : pradinisLaikas,
+        }
+
+        if (naujasLaikas && momentas(naujaData, naujasLaikas) > new Date()) {
+          Object.assign(pakeista, { issiusta: null, klaida: null, klausta: null, atidaryta: null })
+          const busena = data?.busena ?? originalDoc.busena
+          if (GRAZINAMOS_PERKELUS.includes(busena)) pakeista.busena = 'suplanuota'
+        }
+        return pakeista
+      },
       /**
        * `santrauka` yra ir sąrašo stulpelis, ir įrašo pavadinimas, tad ji negali
        * priklausyti nuo to, ar kas nors ją užpildė. Sudaroma iš to paties, iš ko
@@ -120,7 +169,8 @@ export const Zurnalas: CollectionConfig = {
     ],
     afterChange: [
       /**
-       * Grupinės pamokos tema, namų darbai ir jų failai — visiems nariams.
+       * Grupinės pamokos tema, namų darbai, jų failai, perkėlimas ir atšaukimas —
+       * visiems nariams.
        *
        * Žurnale grupė palieka po įrašą kiekvienam vaikui, o tema ir namų darbai
        * jiems tie patys. Be šito tektų tą patį tekstą įrašyti tris kartus, ir
@@ -128,6 +178,11 @@ export const Zurnalas: CollectionConfig = {
        * vieno nario įrašą, tas pats nukopijuojamas kitiems tos pačios grupės,
        * datos ir laiko įrašams. Failai nekopijuojami fiziškai — nariai rodo į
        * tuos pačius dokumentus.
+       *
+       * Perkelta ar atšaukta grupinė pamoka perkeliama ar atšaukiama VISA:
+       * kitaip CMS kalendoriuje ji subyrėtų į dvi dalis. Nariai ieškomi SENOJE
+       * vietoje — jie dar ten. „Neįvyko“ nekopijuojamas: tai vieno vaiko
+       * praleidimas, ne pamokos.
        *
        * Kopijuojami tik PASIKEITĘ laukai: pažymėjus vienam vaikui „Įvyko“, kitų
        * temos nepaliečiamos. Kopijos vėl kviečia šį hook'ą — `context` žymė
@@ -139,15 +194,29 @@ export const Zurnalas: CollectionConfig = {
         const grupeId = rysioId(doc.grupe)
         if (grupeId == null || !doc.data || !doc.laikas) return doc
 
+        const atnaujinta = operation === 'update' && previousDoc
         const pakeista: Record<string, unknown> = {}
         for (const laukas of GRUPES_LAUKAI) {
           const naujas = palyginimui(doc[laukas])
-          const senas = operation === 'create' ? null : palyginimui(previousDoc?.[laukas])
+          const senas = atnaujinta ? palyginimui(previousDoc?.[laukas]) : null
           if (naujas === senas) continue
           pakeista[laukas] = Array.isArray(doc[laukas])
             ? (doc[laukas] as unknown[]).map(rysioId).filter((id) => id != null)
             : naujas
         }
+
+        const perkelta =
+          atnaujinta && (previousDoc.data !== doc.data || previousDoc.laikas !== doc.laikas)
+        if (perkelta) {
+          pakeista.data = doc.data
+          pakeista.laikas = doc.laikas
+        }
+        const atsaukimas =
+          atnaujinta &&
+          previousDoc.busena !== doc.busena &&
+          (doc.busena === 'atsaukta' || previousDoc.busena === 'atsaukta')
+        if (atsaukimas) pakeista.busena = doc.busena
+
         if (Object.keys(pakeista).length === 0) return doc
 
         await req.payload.update({
@@ -155,8 +224,8 @@ export const Zurnalas: CollectionConfig = {
           where: {
             and: [
               { grupe: { equals: grupeId } },
-              { data: { equals: doc.data } },
-              { laikas: { equals: doc.laikas } },
+              { data: { equals: perkelta ? previousDoc.data : doc.data } },
+              { laikas: { equals: perkelta ? previousDoc.laikas : doc.laikas } },
               { id: { not_equals: doc.id } },
             ],
           },
@@ -199,11 +268,45 @@ export const Zurnalas: CollectionConfig = {
             !reiksme || arLaikas(reiksme) ? true : 'Rašykite kaip 17:00.',
         },
         {
+          name: 'trukmeMin',
+          type: 'number',
+          label: 'Trukmė (min.)',
+          min: 15,
+          max: 240,
+          admin: { description: 'Tuščia — kaip pamokos eilutėje, kitaip 60.' },
+        },
+        {
           name: 'mokinys',
           type: 'relationship',
           relationTo: 'mokiniai',
           label: 'Mokinys',
           index: true,
+        },
+      ],
+    },
+    {
+      type: 'row',
+      admin: {
+        condition: (duomenys) => Boolean(duomenys?.pradineData),
+      },
+      fields: [
+        {
+          name: 'pradineData',
+          type: 'text',
+          label: 'Perkelta iš (data)',
+          admin: {
+            readOnly: true,
+            description: 'Kur pamoka buvo pagal tvarkaraštį. Ten ji nebevyksta.',
+          },
+        },
+        {
+          name: 'pradinisLaikas',
+          type: 'text',
+          label: 'Perkelta iš (laikas)',
+          admin: {
+            readOnly: true,
+            description: 'Grąžinus datą ir laiką atgal, šie laukai išsivalo patys.',
+          },
         },
       ],
     },
@@ -243,10 +346,11 @@ export const Zurnalas: CollectionConfig = {
         { label: 'Atidarė nuorodą', value: 'atidare' },
         { label: 'Įvyko', value: 'ivyko' },
         { label: 'Neįvyko', value: 'neivyko' },
+        { label: 'Atšaukta', value: 'atsaukta' },
       ],
       admin: {
         description:
-          '„Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“.',
+          '„Atidarė nuorodą“ užsideda pati. „Įvyko“ / „Neįvyko“ pažymima iš laiško arba čia. Į sąskaitą patenka tik „Įvyko“. „Atšaukta“ — pamokos nebus: priminimas neišeina, laikas atsilaisvina, o grupinė atšaukiama visiems nariams. Pažymėta „Neįvyko“ iš anksto — vienas vaikas praleidžia, priminimo jis negauna.',
       },
     },
     {

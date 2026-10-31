@@ -9,10 +9,14 @@
  * tėvai parašo „mums niekas nepranešė“ — todėl čia tikrinamos ribos, mėnesio
  * intervalai ir senų įrašų suderinamumas.
  *
- * Duomenų bazės nereikia: `arVyksta()` yra gryna funkcija.
+ * Ta pati bėda ir su žurnalo išimtimis (`suplanuok()`): perkelta pamoka,
+ * gavusi priminimą senu laiku, yra lygiai toks pat tylus gedimas.
+ *
+ * Duomenų bazės nereikia: `arVyksta()` ir `suplanuok()` yra grynos funkcijos.
  */
 
 import { arVyksta, santrauka, type Pamoka } from '../lib/pamokos'
+import { suplanuok, type PlanoIrasas } from '../lib/pamoku-planas'
 
 let klaidu = 0
 
@@ -166,6 +170,101 @@ tikrink(
   'Kas 2 mėn. 15 d., 17:00',
 )
 tikrink('tuščia eilutė', santrauka({}), 'Nauja pamoka')
+
+console.log('\n10. Žurnalas nurungia tvarkaraštį (`suplanuok`)')
+
+// Jonas — antradieniais 17:00; Ugnė — grupėje ketvirtadieniais 16:00.
+// 2026-11-03 antradienis, 2026-11-04 trečiadienis, 2026-11-05 ketvirtadienis.
+const jonas = { id: 1, pamokos: [{ laikas: '17:00', savaitesDiena: '2', trukmeMin: 90 }] }
+const ugne = { id: 2, pamokos: [] }
+const pauzuojantis = { id: 3, pauzeIki: '2026-11-30', pamokos: [{ laikas: '15:00', savaitesDiena: '2' }] }
+const grupe = { id: 7, nariai: [1, 2], pamokos: [{ laikas: '16:00', savaitesDiena: '4' }] }
+const SAVAITE = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06']
+
+/** `mokinys data laikas` kiekvienai suplanuotai pamokai — palyginimui. */
+function planas(irasai: PlanoIrasas[], nuostatos = {}): string {
+  return suplanuok([jonas, ugne, pauzuojantis], [grupe], irasai, SAVAITE, nuostatos)
+    .map((p) => `${p.mokinys.id} ${p.dataISO} ${p.laikas}`)
+    .join(', ')
+}
+
+tikrink(
+  'be žurnalo — pagal tvarkaraštį; pauzė galioja',
+  planas([]),
+  '1 2026-11-03 17:00, 1 2026-11-05 16:00, 2 2026-11-05 16:00',
+)
+tikrink(
+  'svetainės kalendoriui pauzė negalioja',
+  planas([], { pauzes: false }),
+  '3 2026-11-03 15:00, 1 2026-11-03 17:00, 1 2026-11-05 16:00, 2 2026-11-05 16:00',
+)
+tikrink(
+  'perkelta: senu laiku nebėra, nauju yra',
+  planas([
+    { id: 10, mokinys: 1, data: '2026-11-04', laikas: '18:00', pradineData: '2026-11-03', pradinisLaikas: '17:00' },
+  ]),
+  '1 2026-11-04 18:00, 1 2026-11-05 16:00, 2 2026-11-05 16:00',
+)
+tikrink(
+  'perkelta į kitą savaitę: šią savaitę nebėra',
+  planas([
+    { id: 10, mokinys: 1, data: '2026-11-10', laikas: '17:00', pradineData: '2026-11-03', pradinisLaikas: '17:00' },
+  ]),
+  '1 2026-11-05 16:00, 2 2026-11-05 16:00',
+)
+tikrink(
+  'atšaukta: nebėra',
+  planas([{ id: 11, mokinys: 1, data: '2026-11-03', laikas: '17:00', busena: 'atsaukta' }]),
+  '1 2026-11-05 16:00, 2 2026-11-05 16:00',
+)
+tikrink(
+  'atšaukta, bet įrašyta iš naujo tuo pačiu laiku — vyksta',
+  planas([
+    { id: 11, mokinys: 1, data: '2026-11-03', laikas: '17:00', busena: 'atsaukta' },
+    { id: 12, mokinys: 1, data: '2026-11-03', laikas: '17:00', busena: 'suplanuota' },
+  ]),
+  '1 2026-11-03 17:00, 1 2026-11-05 16:00, 2 2026-11-05 16:00',
+)
+tikrink(
+  'vienkartinė pamoka vyksta',
+  planas([{ id: 13, mokinys: 2, data: '2026-11-06', laikas: '15:00' }]),
+  '1 2026-11-03 17:00, 1 2026-11-05 16:00, 2 2026-11-05 16:00, 2 2026-11-06 15:00',
+)
+tikrink(
+  'pauzė galioja ir įrašui — kortelėje pažadėta, kad priminimų nebus',
+  planas([{ id: 14, mokinys: 3, data: '2026-11-04', laikas: '15:00' }]),
+  '1 2026-11-03 17:00, 1 2026-11-05 16:00, 2 2026-11-05 16:00',
+)
+tikrink(
+  'neaktyvaus mokinio įrašas — taip pat ne',
+  suplanuok([{ ...jonas, aktyvus: false }], [], [{ id: 18, mokinys: 1, data: '2026-11-04', laikas: '18:00' }], SAVAITE).length,
+  0,
+)
+tikrink(
+  'neaktyvios grupės įrašas — ne',
+  suplanuok([ugne], [], [{ id: 19, mokinys: 2, grupe: 7, tipas: 'grupine', data: '2026-11-05', laikas: '16:00' }], SAVAITE).length,
+  0,
+)
+tikrink(
+  'grupinė perkelta visiems nariams',
+  planas([
+    { id: 15, mokinys: 1, grupe: 7, tipas: 'grupine', data: '2026-11-06', laikas: '16:00', pradineData: '2026-11-05', pradinisLaikas: '16:00' },
+    { id: 16, mokinys: 2, grupe: 7, tipas: 'grupine', data: '2026-11-06', laikas: '16:00', pradineData: '2026-11-05', pradinisLaikas: '16:00' },
+  ]),
+  '1 2026-11-03 17:00, 1 2026-11-06 16:00, 2 2026-11-06 16:00',
+)
+
+const susiejimas = suplanuok([jonas], [], [{ id: 17, mokinys: 1, data: '2026-11-03', laikas: '17:00' }], SAVAITE)
+tikrink('esamas įrašas prikabinamas prie pamokos', susiejimas[0]?.irasas?.id, 17)
+tikrink('senas įrašas be trukmės ją pasiima iš eilutės', susiejimas[0]?.trukme, 90)
+
+const perkeltas = suplanuok(
+  [jonas],
+  [],
+  [{ id: 10, mokinys: 1, data: '2026-11-04', laikas: '18:00', pradineData: '2026-11-03', pradinisLaikas: '17:00' }],
+  SAVAITE,
+)
+tikrink('perkeltas žino, iš kur', perkeltas[0]?.perkeltaIs?.data, '2026-11-03')
 
 console.log(klaidu === 0 ? '\n✓ Visos patikros praėjo.\n' : `\n✖ Nepavyko patikrų: ${klaidu}\n`)
 process.exit(klaidu === 0 ? 0 : 1)
