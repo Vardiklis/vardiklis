@@ -26,6 +26,22 @@ const nextConfig: NextConfig = {
   turbopack: { root: saknis },
   outputFileTracingRoot: saknis,
   /**
+   * HOSTINGER BUILD'UI DUODA TIK 3 GB RAM. Su numatytais nustatymais Turbopack
+   * kompiliuodamas vienas užima ~2,9 GB, o puslapiams Next paleidžia po
+   * worker'į kiekvienam branduoliui — ir skaičiuoja ne plano, o viso fizinio
+   * serverio branduolius. Peržengus ribą build'as tiesiog nužudomas: logo gale
+   * tik „Failed to build the application“, be jokios Next klaidos.
+   *
+   * Be source map'ų kompiliavimas telpa į ~1,8 GB, o vienas worker'is 28
+   * puslapiams nieko nepristabdo. Kaina — serverio klaidų stack trace'ai rodo
+   * į sukompiliuotus failus, o ne į šaltinį.
+   */
+  experimental: {
+    cpus: 1,
+    turbopackSourceMaps: false,
+    serverSourceMaps: false,
+  },
+  /**
    * `pdfkit` savo šriftų metrikas (`.afm`) skaito iš disko įprastu `require`
    * keliu. Supakuotas į Next paketą jis tų failų nebranda ir sąskaitos PDF
    * nulūžta — bet tik produkcijoje, kur to jau nebepamatysi. Todėl paliekamas
