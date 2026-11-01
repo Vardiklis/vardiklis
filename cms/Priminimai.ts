@@ -115,6 +115,24 @@ export const Priminimai: GlobalConfig = {
       },
     },
     {
+      name: 'telegramPries',
+      type: 'number',
+      label: 'Telegram pranešimas man — likus minučių',
+      defaultValue: 15,
+      min: 0,
+      max: 180,
+      admin: {
+        description:
+          'Prieš kiekvieną pamoką — žinutė į Telegram su paskutine tema ir namų darbais. 0 — nesiųsti. Cron’as sukasi kas 5 min., tad 15 reiškia „likus 10–15 min.“. Veikia tik nustačius TELEGRAM_* kintamuosius.',
+      },
+      // Savas `validate` pakeičia numatytąjį, tad ir `max` tikrinamas čia.
+      validate: (reiksme: number | null | undefined) => {
+        if (!reiksme) return true
+        if (reiksme < 5) return 'Bent 5 min. — kitaip kas 5 min. sukantis cron’as gali pramiegoti.'
+        return reiksme <= 180 ? true : 'Ne daugiau kaip 180 min.'
+      },
+    },
+    {
       name: 'paskutineSantrauka',
       type: 'text',
       label: 'Paskutinė išsiųsta santrauka',

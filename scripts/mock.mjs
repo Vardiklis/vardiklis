@@ -33,6 +33,16 @@ Object.assign(process.env, {
   PRIMINIMU_RAKTAS: 'mock',
   SMTP_USER: '',
   SMTP_PASS: '',
+  /**
+   * Telegram sekretorius: žinutės tik spausdinamos (`lib/sekretorius.ts` —
+   * `arMock()`), o webhook'ą galima kviesti ranka su antrašte
+   * `X-Telegram-Bot-Api-Secret-Token: mock`. `OPENROUTER_API_KEY` sąmoningai
+   * neliečiamas: jei jis yra `.env`, pokalbis veikia su tikru modeliu, bet
+   * netikrais mokiniais.
+   */
+  TELEGRAM_BOT_TOKEN: 'mock',
+  TELEGRAM_SLAPTAZODIS: 'mock',
+  TELEGRAM_CHAT_ID: '1',
   ISAF_SERTIFIKATAS: '',
   ISAF_RAKTAS: '',
   ISAF_RAKTO_SLAPTAZODIS: '',

@@ -73,6 +73,8 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `zurnalas` ADD `trukme_min` numeric',
   'ALTER TABLE `zurnalas` ADD `pradine_data` text',
   'ALTER TABLE `zurnalas` ADD `pradinis_laikas` text',
+  'ALTER TABLE `zurnalas` ADD `pranesta_sau` text',
+  'ALTER TABLE `priminimai` ADD `telegram_pries` numeric DEFAULT 15',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -493,6 +495,16 @@ export default buildConfig({
        */
       {
         name: 'schema-2026-11-perkelimas',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Telegram sekretorius: žurnalo `pranesta_sau` (pranešimas prieš pamoką
+       * jau išėjo) ir `priminimai.telegram_pries` (kiek minučių prieš). Gryni
+       * stulpeliai esamose lentelėse — `TRUKSTAMI_STULPELIAI`.
+       */
+      {
+        name: 'schema-2026-11-telegrama',
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },

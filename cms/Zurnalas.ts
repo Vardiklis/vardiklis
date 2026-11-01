@@ -124,7 +124,13 @@ export const Zurnalas: CollectionConfig = {
         }
 
         if (naujasLaikas && momentas(naujaData, naujasLaikas) > new Date()) {
-          Object.assign(pakeista, { issiusta: null, klaida: null, klausta: null, atidaryta: null })
+          Object.assign(pakeista, {
+            issiusta: null,
+            klaida: null,
+            klausta: null,
+            atidaryta: null,
+            pranestaSau: null,
+          })
           const busena = data?.busena ?? originalDoc.busena
           if (GRAZINAMOS_PERKELUS.includes(busena)) pakeista.busena = 'suplanuota'
         }
@@ -420,6 +426,15 @@ export const Zurnalas: CollectionConfig = {
             date: { pickerAppearance: 'dayAndTime' },
             description:
               'Užpildyta — laiškas „ar įvyko?“ jau išsiųstas. Išvalius bus paklausta dar kartą.',
+          },
+        },
+        {
+          name: 'pranestaSau',
+          type: 'date',
+          label: 'Pranešta man (Telegram)',
+          admin: {
+            date: { pickerAppearance: 'dayAndTime' },
+            description: 'Užpildyta — pranešimas prieš pamoką jau išėjo. Išvalius išeis dar kartą.',
           },
         },
       ],

@@ -21,7 +21,8 @@
     "patikra:saskaitos": "tsx --env-file-if-exists=.env scripts/patikrink-saskaitas.ts",
     "importmap": "payload generate:importmap",
     "patikra:pamokos": "tsx scripts/patikrink-pamokas.ts",
-    "patikra:dienynas": "tsx --env-file-if-exists=.env scripts/patikrink-dienyna.ts"
+    "patikra:dienynas": "tsx --env-file-if-exists=.env scripts/patikrink-dienyna.ts",
+    "patikra:sekretorius": "tsx --env-file-if-exists=.env scripts/patikrink-sekretoriu.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.88.0",

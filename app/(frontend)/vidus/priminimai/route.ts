@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import { siuskPriminimus } from '@/lib/priminimai'
+import { praneskPriesPamokas } from '@/lib/sekretorius'
 
 /**
  * Priminimų siuntimas. Šį adresą kviečia cron'as (Hostinger arba cron-job.org).
@@ -40,11 +41,23 @@ async function vykdyk(uzklausa: Request): Promise<Response> {
     return new Response('Neleista.', { status: 401, headers: BE_KESO })
   }
 
+  /**
+   * Pranešimas sau į Telegram (`lib/sekretorius.ts`) — po laiškų, nes šie
+   * įrašams užfiksuoja kainą, ir nepriklausomai nuo jų: nulūžęs SMTP
+   * neturi palikti be pranešimo apie pamoką.
+   */
+  const telegramai = () =>
+    praneskPriesPamokas().catch((klaida) => {
+      console.error('[priminimai] Telegram pranešimai nulūžo:', klaida)
+      return null
+    })
+
   try {
     const ataskaita = await siuskPriminimus()
-    return Response.json(ataskaita, { headers: BE_KESO })
+    return Response.json({ ...ataskaita, telegrama: await telegramai() }, { headers: BE_KESO })
   } catch (klaida) {
     console.error('[priminimai] siuntimas nulūžo:', klaida)
+    await telegramai()
     return new Response('Klaida.', { status: 500, headers: BE_KESO })
   }
 }

@@ -43,6 +43,7 @@ jos šioje versijoje nedarome.
 | `npm run patikra:diagnostika` | Pravažiuoja diagnostiką 8 scenarijais ir parodo, ką grąžina ataskaita |
 | `npm run patikra:pamokos` | Tikrina pamokų pasikartojimus (laikotarpį „nuo–iki“, kas N savaičių / mėnesių, senus įrašus) ir žurnalo išimtis: perkeltas, atšauktas ir papildomas pamokas |
 | `npm run patikra:saskaitos` | Praeina visą sąskaitų kelią (juodraštis → išrašymas → PDF → i.SAF) su savo bandomaisiais duomenimis ir po to juos ištrina |
+| `npm run patikra:sekretorius` | Telegram sekretorius be Telegram ir be modelio: pranešimai prieš pamoką, perkėlimas, atšaukimas ir tema tik paspaudus „Taip“. Bandomuosius duomenis po to ištrina |
 | `npm run importmap` | Perrašo `app/(payload)/admin/importMap.js` — CMS savų komponentų sąrašą |
 | `npm run schema` | Perrašo `cms/pradine-schema.ts` iš vietinės bazės |
 
@@ -366,6 +367,62 @@ Dienos pradžia atskira darbo dienoms ir savaitgaliui (numatytai 13:00 ir 10:00)
 variantus, o ankstyvieji darbo dienų langeliai lieka tušti — nei laisvi, nei užimti (`n` būsena).
 Todėl pirmoji lentelės eilutė yra ankstyvesnioji iš dviejų, o ne 08:00.
 
+## Telegram sekretorius
+
+Botas sau, ne tėvams. Daro du skirtingus dalykus:
+
+1. **Pranešimas prieš pamoką** — „Po 15 min. — Eva (8 kl.), 17:00“, paskutinė tema, namų darbai,
+   mygtukai į Meet ir žurnalą. Kalbos modelis čia nedalyvauja: tekstas sudaromas iš žurnalo, tad
+   nekainuoja nieko ir išeina, net kai OpenRouter neveikia. Jį siunčia tas pats cron'as, kaip ir
+   priminimus tėvams (`/vidus/priminimai`), o kiek minučių prieš, nustatoma CMS globale
+   „Priminimai“ (0 — nesiųsti).
+2. **Pokalbis** — „kokios buvo temos su Eva?“, „perkelk Evos rytojaus pamoką į 16:00“, „atšauk
+   penktadienio grupę“, „Evai: lygtys, ND 12 psl.“. Skaityti modelis gali pats, o **keisti — tik
+   pasiūlyti**: botas parodo, ką tiksliai pakeis, su mygtukais „Taip / Ne“, ir pakeičiama tik
+   paspaudus „Taip“. Todėl užtenka pigaus modelio — suklydęs jis tik pasiūlo ne tai.
+
+`/siandien` ir `/rytoj` parodo pamokas be modelio, `/is_naujo` pamiršta pokalbį.
+
+**Niekas neskaičiuojama savaip.** Pamokos imamos iš `suplanuok()`, perkeliama per
+`perkelkPamoka()`, įrašai kuriami per `irasykPamoka()` — kaip CMS kalendoriuje. Botu perkelta
+pamoka elgiasi lygiai taip pat, kaip nutempta pele: grupė perkeliama visa, pauzė tikrinama,
+priminimas tėvams eina naujuoju laiku, o pranešimas sau — iš naujo. Perkeliant botas dar
+perspėja, jei tuo metu jau yra kita pamoka ar rezervacija.
+
+**Ką mato modelis.** Mokinių vardus ir klases, pamokų laikus, temas, namų darbus ir atsiliepimus.
+Tėvų pašto, Meet nuorodų ir kainų įrankiai negrąžina. OpenRouter'iui nurodoma naudoti tik
+tiekėjus, kurie užklausų nenaudoja mokymui (`data_collection: deny`). Pokalbis laikomas tik
+serverio atmintyje ir pamirštamas po pusvalandžio tylos arba perkrovus serverį.
+
+**Prieiga.** Telegram'ui duodamas slaptažodis, ir be jo `/vidus/telegrama` atsako 401. Botas
+atsako tik pokalbiui `TELEGRAM_CHAT_ID`, kitiems tyli. Kaip jį sužinoti — `.env.example`.
+
+**Modelis** — `deepseek/deepseek-v4.1-flash` per OpenRouter, keičiamas `ASISTENTO_MODELIS`.
+Užklausa — įprastas OpenAI suderinamas `/chat/completions`, tad tinka bet kuris modelis, mokantis
+kviesti įrankius. Jei kuris prastai supranta lietuviškai, tiesiog pakeisk kintamąjį.
+
+| Failas | Ką daro |
+|---|---|
+| `lib/sekretorius.ts` | pranešimas prieš pamoką, įrankiai modeliui, žinučių ir mygtukų apdorojimas |
+| `lib/agentas/agentas.ts` | modelis + įrankiai + patvirtinimas mygtuku; pokalbio atmintis |
+| `lib/agentas/telegrama.ts` | Telegram Bot API (`fetch`, be bibliotekos) |
+| `app/(frontend)/vidus/telegrama/` | webhook'as: tikrina slaptažodį, atsako iškart, dirba po to (`after`) |
+
+`lib/agentas/` apie vardiklį nežino nieko — nė vieno `@/lib/…` importo. Jį galima perkelti į kitą
+projektą ar atskirą paketą, o kitam projektui parašyti savo įrankius, kaip `lib/sekretorius.ts`.
+
+**Mock režime** žinutės neišeina — spausdinamos terminale, kaip ir laiškai. Webhook'ą galima
+pakviesti ranka:
+
+```bash
+curl -X POST localhost:3000/vidus/telegrama -H 'X-Telegram-Bot-Api-Secret-Token: mock' \
+  -H 'Content-Type: application/json' \
+  -d '{"update_id":1,"message":{"message_id":1,"chat":{"id":1},"text":"/siandien"}}'
+```
+
+Su `OPENROUTER_API_KEY` `.env` faile pokalbis mock'e veikia su tikru modeliu, bet netikrais
+mokiniais — taip ir verta išbandyti, ar modelis supranta.
+
 ## Sąskaitos ir i.SAF
 
 Skydelio langas **`/admin/saskaitos`**: mėnesio suvestinė, juodraščių generavimas iš pamokų
@@ -564,6 +621,7 @@ app/
   p/[raktas]/                 pamokos nuoroda tėvams → įrašo ir permeta į Meet
   vidus/priminimai/           cron'o kviečiamas siuntimas
   vidus/zymeti/               „Buvo / Nebuvo“ iš santraukos laiško
+  vidus/telegrama/            Telegram sekretoriaus webhook'as
   vidus/saskaita/[id]/        sąskaitos peržiūra ir PDF (prisijungus arba su parašu)
   vidus/isaf/[laikotarpis]/   i.SAF rinkmena atsisiuntimui
   sitemap.ts  robots.ts
@@ -588,6 +646,8 @@ lib/
   pamoku-planas.ts            tvarkaraštis + žurnalo išimtys (perkelta, atšaukta, papildoma)
   kalendorius.ts              CMS kalendoriaus savaitė ir jo veiksmai
   priminimai.ts               kam ir kada siųsti laišką
+  sekretorius.ts              Telegram: pranešimas prieš pamoką ir pokalbis su įrankiais
+  agentas/                    modelis + įrankiai + Telegram — be nieko apie vardiklį
   kainos.ts                   kiek kainuoja pamoka + pardavėjo rekvizitai
   pinigai.ts                  centai, PVM išskaidymas, formatavimas
   saskaitos.ts                juodraščiai iš žurnalo, numeracija, mėnesio apžvalga
@@ -658,6 +718,9 @@ Suvedami hPanel'e, **ne** git'e (žr. `.env.example`):
 - `PRIMINIMU_RAKTAS` — slaptažodis priminimų maršrutui (žr. „Pamokų priminimai“). Nenurodžius,
   `/vidus/priminimai` atsako 503 ir laiškų nesiunčia; tai ir yra būdas juos laikinai išjungti
   serveryje, o švelnesnis — varnelė CMS globale „Priminimai“.
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_SLAPTAZODIS`, `TELEGRAM_CHAT_ID`, `OPENROUTER_API_KEY`,
+  `ASISTENTO_MODELIS` — Telegram sekretoriui (žr. „Telegram sekretorius“; kaip gauti ir
+  nustatyti webhook'ą — `.env.example`). Nebūtini: be jų botas tiesiog neveikia.
 
 - `ISAF_APLINKA`, `ISAF_SERTIFIKATAS`, `ISAF_RAKTAS`, `ISAF_RAKTO_SLAPTAZODIS` — i.SAF teikimui
   (žr. „Sąskaitos ir i.SAF“). Nebūtini: be jų rinkmena vis tiek sudaroma ir atsisiunčiama, tik

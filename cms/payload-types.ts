@@ -492,6 +492,10 @@ export interface Zurnala {
    */
   klausta?: string | null;
   /**
+   * Užpildyta — pranešimas prieš pamoką jau išėjo. Išvalius išeis dar kartą.
+   */
+  pranestaSau?: string | null;
+  /**
    * Įrašoma siuntimo metu — kad kaina istorijoje nepasikeistų atgaline data.
    */
   pirmaPamoka?: boolean | null;
@@ -988,6 +992,7 @@ export interface ZurnalasSelect<T extends boolean = true> {
   issiusta?: T;
   atidaryta?: T;
   klausta?: T;
+  pranestaSau?: T;
   pirmaPamoka?: T;
   kaina?: T;
   saskaita?: T;
@@ -1235,6 +1240,10 @@ export interface Priminimai {
    */
   poPamokosDelsa?: number | null;
   /**
+   * Prieš kiekvieną pamoką — žinutė į Telegram su paskutine tema ir namų darbais. 0 — nesiųsti. Cron’as sukasi kas 5 min., tad 15 reiškia „likus 10–15 min.“. Veikia tik nustačius TELEGRAM_* kintamuosius.
+   */
+  telegramPries?: number | null;
+  /**
    * Kad ta pati santrauka neišeitų kelis kartus per dieną.
    */
   paskutineSantrauka?: string | null;
@@ -1415,6 +1424,7 @@ export interface PriminimaiSelect<T extends boolean = true> {
   santraukaSau?: T;
   poPamokos?: T;
   poPamokosDelsa?: T;
+  telegramPries?: T;
   paskutineSantrauka?: T;
   updatedAt?: T;
   createdAt?: T;
