@@ -71,11 +71,28 @@ export const Mokiniai: CollectionConfig = {
         {
           name: 'tevoPastas',
           type: 'email',
-          label: 'Tėvo / mamos el. paštas',
+          label: 'El. paštas priminimams',
           required: true,
-          admin: { description: 'Šiuo adresu eina priminimai. Be jo siųsti nėra kur.' },
+          admin: {
+            description:
+              'Šiuo adresu eina priminimai su pamokos nuoroda — tėvų arba paties mokinio. Be jo siųsti nėra kur.',
+          },
         },
       ],
+    },
+    /**
+     * Atskiras nuo `tevoPastas`, nes nuorodą į pamoką kartais gauna pats
+     * vaikas, o sąskaitą moka tėvai. Tuščias — sąskaita eina priminimų adresu,
+     * kaip iki šio lauko atsiradimo.
+     */
+    {
+      name: 'saskaituPastas',
+      type: 'email',
+      label: 'El. paštas sąskaitoms',
+      admin: {
+        description:
+          'Kam siųsti sąskaitas. Palikus tuščią — tuo pačiu adresu kaip priminimai. Vaikai su tuo pačiu adresu gauna vieną bendrą sąskaitą.',
+      },
     },
     meetNuorodosLaukas(
       'Nuolatinė šio vaiko kambario nuoroda, pvz. https://meet.google.com/abc-defg-hij. Tėvams siunčiama ne ji, o vardiklis.lt nuoroda, kuri atveda čia — todėl pakeitus ją, tėvams pranešti nereikia. Grupinėms pamokoms nuoroda imama iš grupės, ne iš čia.',

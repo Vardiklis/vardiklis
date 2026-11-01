@@ -7,7 +7,8 @@
  * praeina visą kelią — juodraštis → išrašymas → PDF → i.SAF rinkmena — ir
  * paskui viską išsivalo. Tikrinama tai, ką sunkiausia pastebėti akimi:
  *
- *   • vienas tėvas su dviem vaikais gauna VIENĄ sąskaitą;
+ *   • vienas tėvas su dviem vaikais gauna VIENĄ sąskaitą — ir tada, kai vieno
+ *     vaiko priminimai eina jam pačiam, o sąskaitos — tėvams;
  *   • grupinė pamoka kainuoja kitaip nei individuali;
  *   • pirmoji pamoka atsiskiria į savo eilutę su nuolaida;
  *   • PVM išskaičiuojamas taip, kad eilučių suma sutaptų su mokėtina iki cento;
@@ -71,7 +72,12 @@ try {
   })
   console.log(`  → kainos: ind. ${nustatymai.individualiKaina} €, gr. ${nustatymai.grupineKaina} €`)
 
-  const kurkMokini = async (vardas: string, tevoPastas: string, tevoVardas: string) => {
+  const kurkMokini = async (
+    vardas: string,
+    tevoPastas: string,
+    tevoVardas: string,
+    saskaituPastas?: string,
+  ) => {
     const m = await payload.create({
       collection: 'mokiniai',
       overrideAccess: true,
@@ -79,6 +85,7 @@ try {
         vardas: `${ZYMA}${vardas}`,
         tevoVardas,
         tevoPastas,
+        saskaituPastas,
         meetNuoroda: 'https://meet.google.com/abc-defg-hij',
         aktyvus: true,
         pirmaPamoka: false,
@@ -88,9 +95,15 @@ try {
     return m.id
   }
 
-  // Viena šeima, du vaikai — tai ir yra svarbiausias atvejis.
+  // Viena šeima, du vaikai — tai ir yra svarbiausias atvejis. Ugnės priminimai
+  // eina jai pačiai, o sąskaita — tėvams: abu keliai turi sutekėti į vieną.
   const jonas = await kurkMokini('Jonas', 'patikra.seima@example.com', 'Rasa Patikrienė')
-  const ugne = await kurkMokini('Ugnė', 'patikra.seima@example.com', 'Rasa Patikrienė')
+  const ugne = await kurkMokini(
+    'Ugnė',
+    'patikra.ugne@example.com',
+    'Rasa Patikrienė',
+    'patikra.seima@example.com',
+  )
   // Kita šeima — kad grupavimas tikrai skirtų, o ne sudėtų visus į vieną.
   const emile = await kurkMokini('Emilė', 'patikra.kita@example.com', 'Tomas Patikra')
 
@@ -166,6 +179,10 @@ try {
     (seima?.vaikai ?? '').includes('Jonas') && (seima?.vaikai ?? '').includes('Ugnė'),
     'vienoje sąskaitoje abu vaikai',
     seima?.vaikai,
+  )
+  tikrink(
+    !apzvalga.saskaitos.some((s) => s.pirkejoPastas === 'patikra.ugne@example.com'),
+    'vaiko priminimų adresu sąskaita nekuriama, kai nurodytas sąskaitų adresas',
   )
 
   // 3 × 25 + 1 × 20 + 2 × 20 = 135 €

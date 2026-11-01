@@ -431,8 +431,9 @@ Skydelio langas **`/admin/saskaitos`**: mėnesio suvestinė, juodraščių gener
 ### Mėnesio eiga
 
 1. **Sugeneruoti juodraščius.** Imamos to mėnesio pamokos, pažymėtos **„Įvyko“** ir dar
-   neapmokestintos. Grupuojama pagal **tėvų el. paštą**: viena šeima — viena sąskaita, net jei
-   vaikai du.
+   neapmokestintos. Grupuojama pagal mokinio kortelės **„El. paštas sąskaitoms“** (tuščias —
+   imamas priminimų adresas): viena šeima — viena sąskaita, net jei vaikai du. Atskiras laukas
+   reikalingas tada, kai priminimai su pamokos nuoroda eina pačiam vaikui, o sąskaita — tėvams.
 2. **Peržiūrėti / pataisyti.** „Peržiūrėti“ atidaro sąskaitą naršyklėje, „Taisyti“ — įprastą
    Payload dokumento redaktorių. Pakeitus kiekį ar kainą, sumos persiskaičiuoja išsaugant.
 3. **Išrašyti.** Tik dabar suteikiamas numeris (`SERIJA-0001`), išrašymo data ir terminas.

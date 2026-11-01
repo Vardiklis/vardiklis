@@ -291,9 +291,13 @@ export interface Mokiniai {
   klase?: ('1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10') | null;
   tevoVardas?: string | null;
   /**
-   * Šiuo adresu eina priminimai. Be jo siųsti nėra kur.
+   * Šiuo adresu eina priminimai su pamokos nuoroda — tėvų arba paties mokinio. Be jo siųsti nėra kur.
    */
   tevoPastas: string;
+  /**
+   * Kam siųsti sąskaitas. Palikus tuščią — tuo pačiu adresu kaip priminimai. Vaikai su tuo pačiu adresu gauna vieną bendrą sąskaitą.
+   */
+  saskaituPastas?: string | null;
   /**
    * Nuolatinė šio vaiko kambario nuoroda, pvz. https://meet.google.com/abc-defg-hij. Tėvams siunčiama ne ji, o vardiklis.lt nuoroda, kuri atveda čia — todėl pakeitus ją, tėvams pranešti nereikia. Grupinėms pamokoms nuoroda imama iš grupės, ne iš čia.
    */
@@ -576,6 +580,9 @@ export interface Saskaito {
    */
   mokiniai?: (number | Mokiniai)[] | null;
   pirkejoVardas?: string | null;
+  /**
+   * Čia siunčiama sąskaita. Imama iš kortelės „El. paštas sąskaitoms“, o jo nesant — iš priminimų adreso. Galima pakeisti prieš siunčiant.
+   */
   pirkejoPastas?: string | null;
   /**
    * Nebūtina. Tuščias — i.SAF eina „ND“ (nežinomas).
@@ -915,6 +922,7 @@ export interface MokiniaiSelect<T extends boolean = true> {
   klase?: T;
   tevoVardas?: T;
   tevoPastas?: T;
+  saskaituPastas?: T;
   meetNuoroda?: T;
   pamokos?:
     | T

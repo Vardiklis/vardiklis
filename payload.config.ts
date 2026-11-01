@@ -75,6 +75,7 @@ const TRUKSTAMI_STULPELIAI: string[] = [
   'ALTER TABLE `zurnalas` ADD `pradinis_laikas` text',
   'ALTER TABLE `zurnalas` ADD `pranesta_sau` text',
   'ALTER TABLE `priminimai` ADD `telegram_pries` numeric DEFAULT 15',
+  'ALTER TABLE `mokiniai` ADD `saskaitu_pastas` text',
 ]
 
 /** Ar sakinys kuria lentelę (o ne indeksą). */
@@ -505,6 +506,16 @@ export default buildConfig({
        */
       {
         name: 'schema-2026-11-telegrama',
+        up: async ({ db }) => atnaujinkSchema(db),
+        down: async () => {},
+      },
+      /**
+       * Atskiras sąskaitų adresas mokinio kortelėje (`mokiniai.saskaitu_pastas`):
+       * priminimai su nuoroda gali eiti vaikui, o sąskaita — tėvams. Grynas
+       * stulpelis esamoje lentelėje — `TRUKSTAMI_STULPELIAI`.
+       */
+      {
+        name: 'schema-2026-11-saskaitu-pastas',
         up: async ({ db }) => atnaujinkSchema(db),
         down: async () => {},
       },

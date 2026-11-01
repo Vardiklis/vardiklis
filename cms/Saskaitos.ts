@@ -164,7 +164,15 @@ export const Saskaitos: CollectionConfig = {
           type: 'row',
           fields: [
             { name: 'pirkejoVardas', type: 'text', label: 'Vardas, pavardė' },
-            { name: 'pirkejoPastas', type: 'email', label: 'El. paštas' },
+            {
+              name: 'pirkejoPastas',
+              type: 'email',
+              label: 'El. paštas',
+              admin: {
+                description:
+                  'Čia siunčiama sąskaita. Imama iš kortelės „El. paštas sąskaitoms“, o jo nesant — iš priminimų adreso. Galima pakeisti prieš siunčiant.',
+              },
+            },
           ],
         },
         {

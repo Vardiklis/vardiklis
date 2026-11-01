@@ -26,9 +26,10 @@ import { suskaiciuok } from '@/lib/saskaitos-sumos'
  * išrašytos sąskaitos neliečiamos: jos turi numerį, o numeruotas dokumentas
  * atgaline data nebesikeičia.
  *
- * VIENA SĄSKAITA VIENAI ŠEIMAI. Grupuojama pagal tėvų el. paštą, ne pagal
+ * VIENA SĄSKAITA VIENAI ŠEIMAI. Grupuojama pagal sąskaitų el. paštą, ne pagal
  * vaiką: du vaikai — viena sąskaita su dviem eilučių grupėmis, o ne du laiškai
- * ir du pavedimai.
+ * ir du pavedimai. Adresas imamas iš `saskaitosAdresas()`, tad vaikai, kurių
+ * priminimai eina jiems patiems, vis tiek patenka į bendrą tėvų sąskaitą.
  */
 
 export type Laikotarpis = {
@@ -100,6 +101,17 @@ type MokinioDok = {
   klase?: string | null
   tevoVardas?: string | null
   tevoPastas?: string | null
+  saskaituPastas?: string | null
+}
+
+/**
+ * Kam siunčiama vaiko sąskaita — ir pagal ką vaikai sudedami į šeimą.
+ *
+ * Pirmiausia atskiras sąskaitų adresas: priminimų adresu kartais eina paties
+ * vaiko paštas, o sąskaita jam neskirta. Jo nesant — priminimų adresas.
+ */
+function saskaitosAdresas(m: MokinioDok | undefined): string | undefined {
+  return (m?.saskaituPastas?.trim() || m?.tevoPastas?.trim())?.toLowerCase() || undefined
 }
 
 export type SaskaitosEilute = {
@@ -273,13 +285,11 @@ export async function sugeneruokJuodrascius(raktas: string): Promise<GeneravimoA
   const visiId = [...new Set(naujos.map((z) => z.mokinys).filter((x) => x != null))] as number[]
   const mokiniai = await mokiniuZemelapis(payload, visiId)
 
-  /** Šeima = tėvų el. paštas. Be jo sąskaitos nėra kam siųsti. */
+  /** Šeima = sąskaitų el. paštas. Be jo sąskaitos nėra kam siųsti. */
   const pagalSeima = new Map<string, ZurnaloEilute[]>()
   let praleistaBePasto = 0
   for (const z of naujos) {
-    const pastas = (z.mokinys == null ? undefined : mokiniai.get(z.mokinys))?.tevoPastas
-      ?.trim()
-      .toLowerCase()
+    const pastas = saskaitosAdresas(z.mokinys == null ? undefined : mokiniai.get(z.mokinys))
     if (!pastas) {
       praleistaBePasto++
       continue
@@ -383,7 +393,7 @@ export async function sugeneruokJuodrascius(raktas: string): Promise<GeneravimoA
   const dalys: string[] = []
   if (sukurta) dalys.push(`sukurta ${sukurta}`)
   if (papildyta) dalys.push(`papildyta ${papildyta}`)
-  if (praleistaBePasto) dalys.push(`praleista be tėvų el. pašto: ${praleistaBePasto}`)
+  if (praleistaBePasto) dalys.push(`praleista be el. pašto: ${praleistaBePasto}`)
 
   return {
     sukurta,
@@ -544,8 +554,8 @@ export async function menesioApzvalga(raktas: string): Promise<Apzvalga> {
   const seimos = new Set<string>()
   let laukiaSuma = 0
   for (const z of laukia) {
-    const m = z.mokinys == null ? undefined : laukiaMokiniai.get(z.mokinys)
-    if (m?.tevoPastas) seimos.add(m.tevoPastas.trim().toLowerCase())
+    const pastas = saskaitosAdresas(z.mokinys == null ? undefined : laukiaMokiniai.get(z.mokinys))
+    if (pastas) seimos.add(pastas)
     laukiaSuma += centai(eilutesKaina(z, n))
   }
 
